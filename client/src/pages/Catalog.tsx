@@ -55,7 +55,7 @@ export default function Catalog() {
         </label>
         <input
           id="catalog-search"
-          placeholder="Rechercher une prestation ou un problème"
+          placeholder="Rechercher une prestation…"
           value={q}
           onChange={e => setQ(e.target.value)}
         />

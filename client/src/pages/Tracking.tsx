@@ -244,34 +244,9 @@ export default function Tracking() {
         <>
           <h1 className="page-title">Suivre ma demande</h1>
           <p className="lead muted">
-            Utilisez le lien privé reçu à la fin de votre demande, ou retrouvez
-            vos dossiers dans votre compte.
+            Entrez la référence de votre dossier pour consulter son avancement
+            en direct, ou retrouvez vos demandes dans votre compte.
           </p>
-          <p className="action-example">
-            Exemple : copiez la référence reçue par e-mail, puis la clé privée
-            si elle est demandée.
-          </p>
-          <section className="panel stack tracking-start-panel">
-            <h2>Que voulez-vous faire ?</h2>
-            <div className="tracking-start-actions">
-              <Link className="btn primary" href="/demande">
-                Faire une nouvelle demande <ArrowRight size={17} />
-              </Link>
-              {user ? (
-                <a className="btn secondary" href="#mes-demandes">
-                  Voir mes demandes enregistrées
-                </a>
-              ) : (
-                <button
-                  type="button"
-                  className="btn secondary"
-                  onClick={() => startLogin()}
-                >
-                  Me connecter pour retrouver mes demandes
-                </button>
-              )}
-            </div>
-          </section>
           <form
             className="panel stack"
             style={{ maxWidth: 560, marginTop: 28 }}

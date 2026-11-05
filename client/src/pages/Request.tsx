@@ -143,29 +143,54 @@ export default function Request() {
   const catalog = trpc.mds.catalog.list.useQuery({});
   const service = catalog.data?.find(s => s.id === selected);
   const selectedTrade = trades.find(trade => trade.slug === tradeChoice);
-  const problemOptions =
-    selectedTrade?.slug === "plomberie"
-      ? [
-          { label: "Fuite d’eau", value: "Fuite" },
-          {
-            label: "Robinetterie",
-            value: "Robinetterie",
-            hint: "robinet, mitigeur…",
-          },
-          { label: "WC et chasse d’eau", value: "WC" },
-          { label: "Évier et lavabo", value: "Lavabo et évier" },
-          {
-            label: "Débouchage",
-            value: "Débouchage",
-            hint: "évier, douche, WC…",
-          },
-          { label: "Douche et baignoire", value: "Douche et baignoire" },
-        ]
-      : (selectedTrade?.services ?? []).map(problem => ({
-          label: problem,
-          value: problem,
-          hint: undefined as string | undefined,
-        }));
+  const problemHints: Record<string, string> = {
+    Fuite: "fuite d’eau visible",
+    Robinetterie: "robinet, mitigeur…",
+    Débouchage: "évier, douche, WC…",
+    WC: "remplacement, réparation",
+    "Chasse d’eau": "mécanisme, flotteur",
+    "Lavabo et évier": "remplacement, vidage",
+    "Douche et baignoire": "débouchage, remplacement",
+    "Chauffe-eau": "ballon d’eau chaude",
+    Raccordements: "évacuation, alimentation",
+    "Panne électrique": "coupure partielle ou totale",
+    Prises: "remplacement, ajout",
+    Interrupteurs: "simple, va-et-vient",
+    Éclairage: "luminaire, spot, ampoule",
+    "Tableau électrique": "disjoncteur, différentiel",
+    "Mise en sécurité": "mise aux normes",
+    VMC: "nettoyage, remplacement",
+    "Panne de chauffage": "ne chauffe plus",
+    Radiateurs: "purge, robinet",
+    Chaudière: "diagnostic, réglage",
+    Thermostat: "installation, remplacement",
+    Entretien: "entretien périodique",
+    "Circuit de chauffage": "désembouage, raccordements",
+    Murs: "intérieur ou extérieur",
+    Plafonds: "mise en peinture",
+    Portes: "peinture et finition",
+    "Préparation des surfaces": "décollement, lissage",
+    Rebouchage: "trous et fissures",
+    Ponçage: "préparation des surfaces",
+    Rénovation: "remise à neuf complète",
+    "Montage de meubles": "kits type IKEA",
+    Fixations: "étagères, tringles, miroirs",
+    Réglages: "portes, tiroirs",
+    "Petites réparations": "poignées, joints…",
+    "Entretien courant": "bricolage du quotidien",
+  };
+  const problemOptions = (selectedTrade?.services ?? []).map(problem => ({
+    label:
+      problem === "Fuite"
+        ? "Fuite d’eau"
+        : problem === "WC"
+          ? "WC et chasse d’eau"
+          : problem === "Lavabo et évier"
+            ? "Évier et lavabo"
+            : problem,
+    value: problem,
+    hint: problemHints[problem],
+  }));
   const today = new Date().toLocaleDateString("en-CA");
   const upcomingDays = Array.from({ length: 7 }, (_, index) => {
     const day = new Date();
@@ -492,13 +517,13 @@ export default function Request() {
           <p className="request-kicker">Demande d’intervention</p>
           <h1 ref={headingRef} tabIndex={-1} className="page-title">
             {step === 1 && !selectedTrade && !isFreeRequest
-              ? "Quel service vous faut-il ?"
+              ? "Votre service"
               : [
-                  "Quel type de logement ou bâtiment ?",
-                  "Quel est votre problème ?",
-                  "Détails de votre demande",
-                  "Vos disponibilités",
-                  "Vérifiez votre demande",
+                  "Votre logement",
+                  "Votre problème",
+                  "Détails",
+                  "Votre disponibilité",
+                  "Vérification",
                 ][step]}
           </h1>
           {(step === 0 || step === 2 || step === 4) && (
@@ -522,33 +547,51 @@ export default function Request() {
             />
           )}
           {step === 0 && (
-            <div className="choice-list" aria-label="Choisir un type de lieu">
+            <div className="property-grid" aria-label="Choisir un type de lieu">
               {[
-                { value: "appartement", label: "Appartement", icon: Home },
-                { value: "maison", label: "Maison", icon: Home },
+                {
+                  value: "appartement",
+                  label: "Appartement",
+                  hint: "studio, 2 pièces…",
+                  icon: Home,
+                },
+                {
+                  value: "maison",
+                  label: "Maison",
+                  hint: "individuelle",
+                  icon: Home,
+                },
                 {
                   value: "immeuble",
                   label: "Immeuble ou copropriété",
+                  hint: "parties communes",
                   icon: Building2,
                 },
                 {
                   value: "local-professionnel",
                   label: "Local professionnel",
+                  hint: "bureau, commerce…",
                   icon: Building2,
                 },
                 {
                   value: "batiment-public",
                   label: "Bâtiment public ou collectivité",
+                  hint: "école, mairie…",
                   icon: Building2,
                 },
-                { value: "autre", label: "Autre bâtiment", icon: Home },
+                {
+                  value: "autre",
+                  label: "Autre bâtiment",
+                  hint: "autre type de lieu",
+                  icon: Home,
+                },
               ].map(building => {
                 const Icon = building.icon;
                 return (
                   <button
                     key={building.value}
                     type="button"
-                    className="btn secondary"
+                    className="property-card"
                     onClick={() => {
                       setDraft(d => ({
                         ...d,
@@ -560,9 +603,11 @@ export default function Request() {
                       setStep(1);
                     }}
                   >
-                    <Icon size={20} aria-hidden="true" />
-                    <strong>{building.label}</strong>
-                    <ArrowRight size={17} aria-hidden="true" />
+                    <Icon size={26} strokeWidth={1.7} aria-hidden="true" />
+                    <span className="property-card-text">
+                      <strong>{building.label}</strong>
+                      <small>{building.hint}</small>
+                    </span>
                   </button>
                 );
               })}

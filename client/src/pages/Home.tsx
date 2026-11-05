@@ -72,12 +72,16 @@ export default function Home() {
               >
                 <Icon size={25} strokeWidth={1.7} aria-hidden="true" />
                 <span>{trade.name}</span>
+                <small className="simple-trade-hint">{trade.short}</small>
               </Link>
             );
           })}
           <Link href="/demande?libre=1" className="simple-trade simple-other">
             <CircleHelp size={25} strokeWidth={1.7} aria-hidden="true" />
             <span>Autre besoin</span>
+            <small className="simple-trade-hint">
+              décrivez votre problème librement
+            </small>
           </Link>
         </div>
       </section>

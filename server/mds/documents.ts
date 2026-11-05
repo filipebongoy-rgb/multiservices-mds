@@ -28,7 +28,14 @@ import {
 import { fail } from "./workflow";
 const reference = z.string().min(4).max(40).optional();
 const token = z.string().min(16).max(100).optional();
-const kind = z.enum(["photo", "quote", "invoice", "contract", "other"]);
+const kind = z.enum([
+  "photo",
+  "quote",
+  "invoice",
+  "contract",
+  "other",
+  "signature",
+]);
 const photoStage = z.enum(["before", "after", "other"]).default("other");
 async function documentScope(
   db: SqlDb,

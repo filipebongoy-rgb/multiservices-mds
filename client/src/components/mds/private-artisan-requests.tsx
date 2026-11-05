@@ -12,6 +12,7 @@ import {
   MapPin,
   MessageSquare,
   Phone,
+  Pen,
   Play,
   Search,
   SquareCheck,
@@ -46,6 +47,48 @@ import {
   parseEuroCents,
   PricingSnapshotSummary,
 } from "./private-pricing";
+import { SignaturePad } from "./SignaturePad";
+
+function SignatureThumb({ id, reference }: { id: number; reference: string }) {
+  const download = trpc.mds.documents.download.useMutation();
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    let objectUrl = "";
+    let cancelled = false;
+    download
+      .mutateAsync({ id, reference })
+      .then(file => {
+        if (cancelled) return;
+        const bytes = Uint8Array.from(atob(file.base64), c => c.charCodeAt(0));
+        objectUrl = URL.createObjectURL(
+          new Blob([bytes], { type: file.mimeType })
+        );
+        setUrl(objectUrl);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, reference]);
+  if (!url)
+    return <div className="muted small-text">Chargement de la signature…</div>;
+  return (
+    <img
+      src={url}
+      alt="Signature du client"
+      style={{
+        maxWidth: 320,
+        maxHeight: 120,
+        background: "#fff",
+        border: "1px solid #e7e5e2",
+        borderRadius: 6,
+        padding: 4,
+      }}
+    />
+  );
+}
 
 type ArtisanAction = z.infer<typeof artisanActionSchema>["action"];
 const actionLabels: Record<ArtisanAction, string> = {
@@ -272,6 +315,7 @@ export function RequestDetail({
   const [error, setError] = useState<unknown>(null);
   const mutation = trpc.mds.requests.artisanAction.useMutation();
   const locationPush = trpc.mds.location.push.useMutation();
+  const confirmCompletion = trpc.mds.requests.clientAction.useMutation();
   const [gpsRequested, setGpsRequested] = useState(false);
   const [gpsMessage, setGpsMessage] = useState("");
   const gpsWatch = useRef<number | null>(null);
@@ -299,6 +343,24 @@ export function RequestDetail({
     } catch (cause) {
       setError(cause);
       // Re-read authoritative version on rejection, notably CONFLICT or expiration.
+      await refresh();
+    }
+  }
+  async function handleClientSign(dataUrl: string) {
+    if (!request) return;
+    setError(null);
+    setSuccess("");
+    try {
+      await confirmCompletion.mutateAsync({
+        reference: request.reference,
+        version: request.version,
+        action: "confirmCompletion",
+        signatureDataUrl: dataUrl,
+      });
+      setSuccess("Signature du client enregistrée. Les travaux sont validés.");
+      await refresh();
+    } catch (cause) {
+      setError(cause);
       await refresh();
     }
   }
@@ -402,7 +464,9 @@ export function RequestDetail({
     { label: "Travaux", done: workStatuses.includes(request.status) },
     { label: "Photos", done: hasAfterPhoto },
     {
-      label: "Validation",
+      label: detail.data?.intervention?.clientSignedAt
+        ? "Validation signée"
+        : "Validation",
       done: !!detail.data?.intervention?.clientConfirmedAt,
     },
   ];
@@ -549,6 +613,58 @@ export function RequestDetail({
           </p>
         )}
       </section>
+      {detail.data?.intervention?.clientSignedAt ? (
+        <section className="stack">
+          <h4>Signature du client</h4>
+          <p className="success-message" role="status">
+            Signée le {dateTime(detail.data.intervention.clientSignedAt)}.
+            {detail.data.intervention.clientConfirmationMessage &&
+              ` « ${detail.data.intervention.clientConfirmationMessage} »`}
+          </p>
+          {detail.data.intervention.clientSignatureDocumentId && (
+            <SignatureThumb
+              id={detail.data.intervention.clientSignatureDocumentId}
+              reference={request.reference}
+            />
+          )}
+        </section>
+      ) : detail.data?.intervention?.clientConfirmedAt ? (
+        <section className="stack">
+          <h4>Validation client</h4>
+          <p className="success-message" role="status">
+            Confirmée le {dateTime(detail.data.intervention.clientConfirmedAt)}.
+            {detail.data.intervention.clientConfirmationMessage &&
+              ` « ${detail.data.intervention.clientConfirmationMessage} »`}
+          </p>
+        </section>
+      ) : null}
+      {request.status === "completed" &&
+        !detail.data?.intervention?.clientConfirmedAt && (
+          <details
+            className="panel stack"
+            style={{ background: "#fffaf7", borderColor: "#e4cbbd" }}
+          >
+            <summary
+              style={{
+                minHeight: 36,
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
+            >
+              <Pen size={15} color="#bc4c23" aria-hidden="true" /> Faire signer
+              le client sur cet écran
+            </summary>
+            <p className="small-text muted" style={{ marginTop: 8 }}>
+              Tendez cet écran au client pour qu’il confirme et signe la fin des
+              travaux avec son doigt.
+            </p>
+            <SignaturePad
+              disabled={confirmCompletion.isPending}
+              error={confirmCompletion.error}
+              onSign={handleClientSign}
+            />
+          </details>
+        )}
       {detail.data && (
         <PrivateOperations detail={detail.data} onChanged={refresh} />
       )}

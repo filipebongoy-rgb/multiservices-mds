@@ -623,3 +623,137 @@ describe("devis brouillons dans les espaces professionnels", () => {
     ).toEqual([10, 11]);
   });
 });
+
+describe("supervision admin (admin.overview)", () => {
+  it("renvoie KPIs, connexions, demandes complètes et paiements à l’artisan admin", async () => {
+    const overview = await caller(user(1, "admin")).admin.overview();
+    expect(overview.stats.totalRequests).toBe(1);
+    expect(overview.users).toHaveLength(3);
+    expect(overview.users[0]).toHaveProperty("lastSignedIn");
+    expect(overview.requests[0]).toMatchObject({
+      name: "Test client",
+      phone: "0102030405",
+      email: "client@example.test",
+    });
+  });
+  it("refuse l’accès aux non-admins", async () => {
+    await expect(caller(user(2)).admin.overview()).rejects.toThrow("artisan");
+  });
+  it("détaille les paiements avec le motif d’échec lorsqu’un paiement a échoué", async () => {
+    db.put(s.payments, [
+      {
+        id: 1,
+        requestId: 1,
+        clientId: 1,
+        provider: "stripe",
+        amountCents: 15000,
+        currency: "EUR",
+        purpose: "intégral",
+        mode: "test",
+        status: "succeeded",
+        failureReason: null,
+        stripeEventId: null,
+        checkoutSessionId: null,
+        paymentIntentId: null,
+        receiptUrl: null,
+        confirmedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 2,
+        requestId: 1,
+        clientId: 1,
+        provider: "stripe",
+        amountCents: 15000,
+        currency: "EUR",
+        purpose: "intégral",
+        mode: "test",
+        status: "failed",
+        failureReason: "card_error: Carte refusée par la banque du client",
+        stripeEventId: null,
+        checkoutSessionId: null,
+        paymentIntentId: null,
+        receiptUrl: null,
+        confirmedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
+    const overview = await caller(user(1, "admin")).admin.overview();
+    expect(overview.payments).toHaveLength(2);
+    expect(overview.failures).toHaveLength(1);
+    expect(overview.failures[0].failureReason).toContain("Carte refusée");
+    expect(overview.stats.revenueCents).toBe(15000);
+  });
+});
+
+describe("signature client en fin de travaux (confirmCompletion)", () => {
+  const png1px =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+  function setupCompleted() {
+    db.put(s.requests, [request(1, { status: "completed", version: 3 })]);
+    db.put(s.interventions, [
+      {
+        id: 1,
+        requestId: 1,
+        startedAt: new Date(),
+        arrivedAt: null,
+        completedAt: new Date(),
+        summary: "Travaux terminés",
+        clientConfirmedAt: null,
+        clientConfirmationMessage: null,
+        clientSignatureDocumentId: null,
+        clientSignedAt: null,
+      },
+    ]);
+  }
+  it("enregistre la signature chiffrée, met à jour l’intervention et crée un audit", async () => {
+    setupCompleted();
+    boundary.put.mockResolvedValueOnce({ key: "mds/private/sig.bin" });
+    const result = await caller(user(2)).requests.clientAction({
+      reference: "MDS-test-1",
+      version: 3,
+      action: "confirmCompletion",
+      signatureDataUrl: png1px,
+    });
+    expect(result).toEqual({ success: true });
+    const intervention = db.rows(s.interventions)[0];
+    expect(intervention.clientSignedAt).toBeInstanceOf(Date);
+    expect(intervention.clientConfirmedAt).toBeInstanceOf(Date);
+    expect(intervention.clientSignatureDocumentId).toBeTypeOf("number");
+    const docs = db.rows(s.documents);
+    const sigDoc = docs.find(d => d.kind === "signature");
+    expect(sigDoc).toBeTruthy();
+    expect(sigDoc?.mimeType).toBe("image/png");
+    expect(sigDoc?.photoAuthor).toBe("client");
+    expect(boundary.put).toHaveBeenCalledTimes(1);
+    expect(db.rows(s.audit).some(a => a.action === "intervention.sign")).toBe(
+      true
+    );
+  });
+  it("refuse un format de signature non PNG", async () => {
+    setupCompleted();
+    await expect(
+      caller(user(2)).requests.clientAction({
+        reference: "MDS-test-1",
+        version: 3,
+        action: "confirmCompletion",
+        signatureDataUrl: "data:image/jpeg;base64,abc",
+      })
+    ).rejects.toThrow();
+  });
+  it("conserve la confirmation texte sans signature pour rétro-compatibilité", async () => {
+    setupCompleted();
+    await caller(user(2)).requests.clientAction({
+      reference: "MDS-test-1",
+      version: 3,
+      action: "confirmCompletion",
+      message: "Tout est parfait",
+    });
+    const intervention = db.rows(s.interventions)[0];
+    expect(intervention.clientConfirmedAt).toBeInstanceOf(Date);
+    expect(intervention.clientSignatureDocumentId).toBeNull();
+    expect(intervention.clientConfirmationMessage).toBe("Tout est parfait");
+  });
+});

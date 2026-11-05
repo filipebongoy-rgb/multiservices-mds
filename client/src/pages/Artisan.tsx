@@ -1,12 +1,23 @@
 import { useState } from "react";
 import {
+  Activity,
+  AlertTriangle,
   Bell,
   CalendarDays,
+  CheckCircle2,
+  ChevronRight,
   ClipboardList,
+  Clock,
+  CreditCard,
+  ExternalLink,
+  HelpCircle,
   LockKeyhole,
   Settings2,
+  User,
+  Users,
   Wrench,
   WalletCards,
+  XCircle,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -40,6 +51,7 @@ const navigation = [
   { id: "planning", name: "Planning", icon: CalendarDays },
   { id: "interventions", name: "Interventions", icon: Wrench },
   { id: "settlements", name: "Mes règlements", icon: WalletCards },
+  { id: "activity", name: "Activité", icon: Activity },
 ] as const;
 type Tab = (typeof navigation)[number]["id"];
 
@@ -225,6 +237,21 @@ function ArtisanWorkspace() {
           >
             <item.icon size={19} aria-hidden="true" />
             {item.name}
+            {item.id === "requests" && pending.length > 0 && (
+              <span
+                style={{
+                  background: "#bc4c23",
+                  color: "#fff",
+                  borderRadius: 12,
+                  padding: "1px 8px",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  marginLeft: 4,
+                }}
+              >
+                {pending.length}
+              </span>
+            )}
           </ActionButton>
         ))}
       </nav>
@@ -236,6 +263,79 @@ function ArtisanWorkspace() {
       <div className="stack" style={{ minWidth: 0 }}>
         {tab === "requests" && (
           <>
+            {pending.length > 0 && (
+              <aside
+                role="status"
+                aria-live="polite"
+                style={{
+                  background: "#fff5ee",
+                  border: "2px solid #bc4c23",
+                  borderRadius: 10,
+                  padding: "14px 18px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  flexWrap: "wrap",
+                }}
+              >
+                <AlertTriangle size={24} color="#bc4c23" aria-hidden="true" />
+                <div style={{ flex: 1, minWidth: 240 }}>
+                  <strong style={{ color: "#bc4c23" }}>
+                    {pending.length} demande{pending.length > 1 ? "s" : ""} en
+                    attente de votre réponse
+                  </strong>
+                  <p className="small-text muted" style={{ margin: "2px 0 0" }}>
+                    Traitez-les dès aujourd’hui : un retour rapide évite de
+                    perdre des clients.
+                  </p>
+                </div>
+                <span
+                  style={{
+                    background: "#bc4c23",
+                    color: "#fff",
+                    borderRadius: 999,
+                    padding: "4px 12px",
+                    fontWeight: 700,
+                    fontSize: 14,
+                  }}
+                >
+                  {pending.length} à traiter
+                </span>
+              </aside>
+            )}
+            <details
+              className="panel"
+              style={{ background: "#f8f7f5", border: "1px solid #e7e5e2" }}
+            >
+              <summary
+                className="row"
+                style={{ minHeight: 40, cursor: "pointer", fontWeight: 600 }}
+              >
+                <HelpCircle size={18} aria-hidden="true" color="#bc4c23" />
+                Comment répondre à une demande en 3 clics
+              </summary>
+              <ol
+                className="small-text stack"
+                style={{ marginTop: 10, paddingLeft: 20 }}
+              >
+                <li>
+                  <strong>Ouvrez</strong> la demande dans la liste ci-dessous.
+                </li>
+                <li>
+                  <strong>Vérifiez</strong> le problème décrit et le créneau
+                  souhaité par le client.
+                </li>
+                <li>
+                  <strong>Choisissez</strong> : <em>Accepter</em> (1 clic,
+                  confirmation envoyée au client), <em>Autre créneau</em> si
+                  vous êtes indisponible, ou <em>Refuser</em> poliment.
+                </li>
+              </ol>
+              <p className="small-text muted" style={{ marginTop: 8 }}>
+                💡 Vous recevez automatiquement une notification pour chaque
+                nouvelle demande. Répondez au plus vite depuis cet atelier.
+              </p>
+            </details>
             <TodaySummary
               pending={pending.length}
               appointments={appointments}
@@ -316,6 +416,14 @@ function ArtisanWorkspace() {
           />
         )}
         {tab === "settlements" && <Settlements />}
+        {tab === "activity" && (
+          <AdminActivity
+            onSelectRequest={openRequest}
+            onGoSettings={() => {
+              setTab("planning");
+            }}
+          />
+        )}
       </div>
     </main>
   );
@@ -614,5 +722,378 @@ function Notifications({ onOpen }: { onOpen: (id: number) => void }) {
         </ActionButton>
       )}
     </div>
+  );
+}
+
+function AdminActivity({
+  onSelectRequest,
+  onGoSettings,
+}: {
+  onSelectRequest: (id: number) => void;
+  onGoSettings: () => void;
+}) {
+  const query = trpc.mds.admin.overview.useQuery(undefined, {
+    retry: false,
+    refetchInterval: 30_000,
+  });
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const d = query.data;
+  const stats = d?.stats;
+  const payments = (d?.payments ?? []).filter(p =>
+    paymentFilter === "all"
+      ? true
+      : paymentFilter === "failures"
+        ? ["failed", "cancelled", "expired"].includes(p.status)
+        : p.status === "succeeded"
+  );
+  return (
+    <section className="stack">
+      <div className="section-heading">
+        <h2>Activité & supervision</h2>
+        <p className="muted">
+          Vue complète de l’activité MDS : connexions, demandes reçues et
+          paiements.
+        </p>
+      </div>
+      {query.isLoading && <QueryState loading />}
+      {query.error && <QueryState error={query.error} retry={query.refetch} />}
+      {d && (
+        <>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 12,
+            }}
+          >
+            <article
+              className="panel stack"
+              style={{
+                background:
+                  (stats?.pendingRequests ?? 0) > 0 ? "#fff5ee" : undefined,
+                borderColor:
+                  (stats?.pendingRequests ?? 0) > 0 ? "#bc4c23" : undefined,
+              }}
+            >
+              <span className="small-text muted">Demandes à traiter</span>
+              <strong style={{ fontSize: 28, color: "#bc4c23" }}>
+                {stats?.pendingRequests ?? 0}
+              </strong>
+              <small className="muted">
+                sur {stats?.totalRequests ?? 0} au total
+              </small>
+            </article>
+            <article className="panel stack">
+              <span className="small-text muted">Interventions actives</span>
+              <strong style={{ fontSize: 28 }}>
+                {(stats?.inProgressRequests ?? 0) +
+                  (stats?.confirmedRequests ?? 0)}
+              </strong>
+              <small className="muted">en cours ou confirmées</small>
+            </article>
+            <article className="panel stack">
+              <span className="small-text muted">Paiements reçus</span>
+              <strong style={{ fontSize: 28 }}>
+                {money(stats?.revenueCents ?? 0)}
+              </strong>
+              <small className="muted">paiements réussis</small>
+            </article>
+            <article className="panel stack">
+              <span className="small-text muted">Clients uniques</span>
+              <strong style={{ fontSize: 28 }}>{stats?.clients ?? 0}</strong>
+              <small className="muted">par e-mail distinct</small>
+            </article>
+          </div>
+          <article
+            className="panel stack"
+            style={{ background: "#fcf6f2", borderColor: "#e4cbbd" }}
+          >
+            <div
+              className="row"
+              style={{
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 8,
+              }}
+            >
+              <div>
+                <strong>Zone d’intervention configurée</strong>
+                <p className="small-text" style={{ margin: "4px 0 0" }}>
+                  {d.zone || "Aucune zone renseignée"}
+                </p>
+                <p className="small-text muted" style={{ margin: "2px 0 0" }}>
+                  Téléphone public : {d.contactPhone || "non renseigné"} ·
+                  E-mail : {d.contactEmail || "non renseigné"} · Calendrier :{" "}
+                  {d.calendarEnabled ? "activé" : "désactivé"}
+                </p>
+              </div>
+              <ActionButton onClick={onGoSettings}>
+                Modifier dans les Paramètres
+              </ActionButton>
+            </div>
+          </article>
+          <article className="panel stack">
+            <div
+              className="row"
+              style={{
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 8,
+              }}
+            >
+              <strong>Dernières demandes reçues ({d.requests.length})</strong>
+              <span className="small-text muted">
+                qui fait les demandes et où
+              </span>
+            </div>
+            {d.requests.length === 0 ? (
+              <p className="muted small-text">Aucune demande enregistrée.</p>
+            ) : (
+              <div className="stack" style={{ gap: 8 }}>
+                {d.requests.map(r => (
+                  <div
+                    key={r.id}
+                    className="data-row row"
+                    style={{
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 12,
+                      padding: 12,
+                    }}
+                  >
+                    <div style={{ minWidth: 200, flex: 1 }}>
+                      <div>
+                        <strong>{r.name}</strong>{" "}
+                        <span className="small-text muted">
+                          · {r.reference}
+                        </span>
+                      </div>
+                      <div
+                        className="small-text muted"
+                        style={{ marginTop: 2 }}
+                      >
+                        {r.phone && (
+                          <a
+                            href={`tel:${r.phone}`}
+                            style={{ color: "#bc4c23", fontWeight: 600 }}
+                          >
+                            {r.phone}
+                          </a>
+                        )}{" "}
+                        {r.email && (
+                          <a href={`mailto:${r.email}`} className="text-link">
+                            {r.email}
+                          </a>
+                        )}
+                      </div>
+                      <div className="small-text muted">
+                        {r.serviceName || r.problemType} · {r.postcode} {r.city}{" "}
+                        · {dateTime(r.createdAt)}
+                      </div>
+                    </div>
+                    <div
+                      className="row"
+                      style={{ alignItems: "center", gap: 8, flexWrap: "wrap" }}
+                    >
+                      <StatusBadge status={r.status} />
+                      <ActionButton
+                        className="primary"
+                        onClick={() => onSelectRequest(r.id)}
+                      >
+                        Ouvrir
+                      </ActionButton>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </article>
+          <article className="panel stack">
+            <div
+              className="row"
+              style={{
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 8,
+              }}
+            >
+              <strong>Dernières connexions</strong>
+              <span className="small-text muted">qui se connecte et quand</span>
+            </div>
+            {d.users.length === 0 ? (
+              <p className="muted small-text">Aucun utilisateur enregistré.</p>
+            ) : (
+              <div className="stack" style={{ gap: 8 }}>
+                {d.users.map(u => (
+                  <div
+                    key={u.id}
+                    className="data-row row"
+                    style={{
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 8,
+                      padding: 12,
+                    }}
+                  >
+                    <div>
+                      <strong>{u.name || "Utilisateur"}</strong>{" "}
+                      <span className="small-text muted">#{u.id}</span>
+                      <div className="small-text muted">{u.email}</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <span className="badge">
+                        {u.role === "admin" ? "Artisan / Admin" : "Client"}
+                      </span>
+                      <div
+                        className="small-text muted"
+                        style={{ marginTop: 2 }}
+                      >
+                        Dernière connexion : {dateTime(u.lastSignedIn)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </article>
+          <article className="panel stack">
+            <div
+              className="row"
+              style={{
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 8,
+              }}
+            >
+              <strong>Paiements & échecs ({d.payments.length})</strong>
+              <div className="row" style={{ gap: 6 }}>
+                <ActionButton
+                  className={paymentFilter === "all" ? "primary" : "secondary"}
+                  onClick={() => setPaymentFilter("all")}
+                >
+                  Tous
+                </ActionButton>
+                <ActionButton
+                  className={
+                    paymentFilter === "failures" ? "primary" : "secondary"
+                  }
+                  onClick={() => setPaymentFilter("failures")}
+                >
+                  Échecs ({d.failures.length})
+                </ActionButton>
+                <ActionButton
+                  className={paymentFilter === "ok" ? "primary" : "secondary"}
+                  onClick={() => setPaymentFilter("ok")}
+                >
+                  Réussis
+                </ActionButton>
+              </div>
+            </div>
+            {payments.length === 0 ? (
+              <p className="muted small-text">Aucun paiement dans cette vue.</p>
+            ) : (
+              <div className="stack" style={{ gap: 8 }}>
+                {payments.map(p => {
+                  const failed = ["failed", "cancelled", "expired"].includes(
+                    p.status
+                  );
+                  const statusLabel: Record<string, string> = {
+                    succeeded: "Réussi",
+                    failed: "Échoué",
+                    expired: "Expiré",
+                    cancelled: "Annulé",
+                    pending: "En attente",
+                  };
+                  return (
+                    <div
+                      key={p.id}
+                      className="data-row stack"
+                      style={{
+                        padding: 12,
+                        borderColor: failed ? "#e8b4ad" : undefined,
+                        background: failed ? "#fff8f7" : undefined,
+                      }}
+                    >
+                      <div
+                        className="row"
+                        style={{
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          flexWrap: "wrap",
+                          gap: 8,
+                        }}
+                      >
+                        <div>
+                          <strong>{money(p.amountCents)}</strong>{" "}
+                          <span className="small-text muted">
+                            · {p.purpose} · {p.provider} ({p.mode})
+                          </span>
+                          <div className="small-text muted">
+                            {p.clientName}{" "}
+                            {p.clientEmail ? `· ${p.clientEmail}` : ""}
+                            {p.requestReference
+                              ? ` · dossier ${p.requestReference}`
+                              : ""}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <span
+                            className="badge"
+                            style={{
+                              background:
+                                p.status === "succeeded"
+                                  ? "#e6f4ea"
+                                  : failed
+                                    ? "#fde8e4"
+                                    : undefined,
+                              color:
+                                p.status === "succeeded"
+                                  ? "#1e7e34"
+                                  : failed
+                                    ? "#c0392b"
+                                    : undefined,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {statusLabel[p.status] ?? p.status}
+                          </span>
+                          <div
+                            className="small-text muted"
+                            style={{ marginTop: 2 }}
+                          >
+                            {dateTime(p.confirmedAt ?? p.createdAt)}
+                          </div>
+                        </div>
+                      </div>
+                      {p.failureReason && (
+                        <div
+                          className="row small-text"
+                          style={{
+                            gap: 6,
+                            color: "#c0392b",
+                            alignItems: "center",
+                            marginTop: 4,
+                          }}
+                        >
+                          <AlertTriangle size={15} aria-hidden="true" />
+                          <strong>Motif de l’échec :</strong> {p.failureReason}
+                        </div>
+                      )}
+                      {p.verificationNote && (
+                        <p className="small-text muted" style={{ margin: 0 }}>
+                          {p.verificationNote}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </article>
+        </>
+      )}
+    </section>
   );
 }

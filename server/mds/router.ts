@@ -35,6 +35,7 @@ import {
 import { paymentsRouter } from "./payments";
 import { locationRouter } from "./location";
 import { clientsRouter } from "./clients";
+import { adminRouter } from "./admin";
 const identifier = z.object({ id: z.number().int().positive() });
 const settingsSchema = z.object({
   zone: z.string().trim().max(300),
@@ -544,4 +545,5 @@ export const mdsRouter = router({
         .orderBy(s.appointments.startAt);
     }),
   }),
+  admin: adminRouter,
 });

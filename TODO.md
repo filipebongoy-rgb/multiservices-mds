@@ -65,3 +65,14 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 - [ ] Audit final : tester particulier demande→acceptation→confirmation→intervention→facture→paiement ; professionnel connexion→bâtiment→demande→suivi→devis→facture ; artisan réception→décision→planning→intervention→clôture. Vérifier erreurs, doublons, annulations, intégrations externes indisponibles, transitions et doubles exécutions ; ne pas déclarer opérationnelle une fonction simulée.
 
 État de cette tranche : rapprochement serveur prudent des fiches clients, consultation artisan et édition contrôlée des contrats intégrés ; cycles contractuels avancés, gouvernance RGPD, audit enrichi, modération, liens documentaires temporaires et recette réelle restent ouverts. Les fournisseurs e-mail/SMS, Stripe live, publication et tâche autonome native restent désactivés jusqu’à configuration et autorisation réelles. Rapport : `docs/COMPTE_RENDU_PROMPT3.md`.
+
+## PROMPT 7/8/9 — Suivi Uber, sécurité des paiements, espace admin, signature client
+
+- [x] Compte artisan activé (Ngoyone = admin, artisanUserId=1), zone Rennes 30 km et coordonnées préconfigurées, calendrier activé avec zones de déplacement.
+- [x] Hero d’accueil corrigé : texte blanc lisible, dégradé professionnel, suppression du figcaption amateur.
+- [x] Raisons d’échec Stripe capturées et stockées sur chaque paiement ; audit des connexions utilisateurs.
+- [x] Routeur admin MDS avec KPI, dernières connexions, demandes complètes, paiements et échecs détaillés.
+- [x] Notification push propriétaire (Manus notifyOwner) pour chaque nouvelle demande et action client.
+- [ ] Onglet Activité / Admin dans l’espace artisan avec tableau de bord complet (connexions, demandes, paiements, échecs).
+- [ ] Bannière d’alerte demandes en attente et guide de réponse rapide dans l’espace artisan.
+- [ ] Signature du client sur l’écran en fin de chantier (canvas tactile, stockage chiffré, affichage preuves et dossier artisan).

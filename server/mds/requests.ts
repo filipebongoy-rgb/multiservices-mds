@@ -53,6 +53,18 @@ import { quoteValidityEnd, validateQuoteContent } from "./quote-builder";
 import { checkCalendar } from "./calendar";
 import { commercialPaidCents } from "./payments";
 import { findOrCreateClient } from "./clients";
+import { encryptFile } from "./files";
+import { storagePut } from "../storage";
+import { notifyOwner } from "../_core/notification";
+
+function parseSignaturePng(dataUrl: string): Buffer {
+  const m = dataUrl.match(/^data:image\/png;base64,([A-Za-z0-9+/=]+)$/);
+  if (!m) fail("Signature invalide : format PNG attendu.", "BAD_REQUEST");
+  const buf = Buffer.from(m[1], "base64");
+  if (buf.length < 32 || buf.length > 500_000)
+    fail("Signature invalide : taille inattendue.", "BAD_REQUEST");
+  return buf;
+}
 
 export async function expireRequest(tx: Tx, request: s.MdsRequest) {
   if (!isExpired(request)) return false;
@@ -1196,17 +1208,75 @@ export const requestsRouter = router({
                 "CONFLICT"
               );
             if (!intervention.clientConfirmedAt) {
+              let signatureDocId: number | null = null;
+              if (input.signatureDataUrl) {
+                const png = parseSignaturePng(input.signatureDataUrl);
+                const encrypted = encryptFile(png);
+                const stored = await storagePut(
+                  `mds/private/${randomBytes(24).toString("hex")}.bin`,
+                  encrypted.ciphertext,
+                  "application/octet-stream"
+                );
+                const [created] = await tx
+                  .insert(s.documents)
+                  .values({
+                    requestId: r.id,
+                    organizationId: r.organizationId,
+                    uploadedBy:
+                      ctx.user && ctx.user.id > 0 ? ctx.user.id : null,
+                    name: "signature-client.png",
+                    mimeType: "image/png",
+                    kind: "signature",
+                    photoStage: "other",
+                    photoAuthor: "client",
+                    description:
+                      "Signature du client sur l’écran à la fin des travaux",
+                    byteSize: png.length,
+                    storageKey: stored.key,
+                    encryptionKey: encrypted.encryptionKey,
+                    iv: encrypted.iv,
+                    authTag: encrypted.authTag,
+                  })
+                  .$returningId();
+                signatureDocId = created.id;
+              }
               await tx
                 .update(s.interventions)
                 .set({
                   clientConfirmedAt: new Date(),
                   clientConfirmationMessage: message || null,
+                  ...(signatureDocId
+                    ? {
+                        clientSignatureDocumentId: signatureDocId,
+                        clientSignedAt: new Date(),
+                      }
+                    : {}),
                 })
                 .where(eq(s.interventions.id, intervention.id));
               await emit(
                 "completed",
-                message || "Le client confirme la fin de l’intervention."
+                message ||
+                  (input.signatureDataUrl
+                    ? "Le client a validé et signé la fin des travaux sur l’écran."
+                    : "Le client confirme la fin de l’intervention.")
               );
+              if (signatureDocId) {
+                await recordAudit(
+                  tx,
+                  ctx.user?.id || null,
+                  "intervention.sign",
+                  "intervention",
+                  intervention.id
+                );
+                try {
+                  await notifyOwner({
+                    title: `[MDS] Fin des travaux validée — ${r.reference}`,
+                    content: `${r.name || "Client"} a confirmé et signé la fin de l’intervention sur l’écran (${r.city || ""}). Dossier : ${r.reference}.`,
+                  });
+                } catch {
+                  // owner notification failure must never block the signature
+                }
+              }
             }
             break;
           }

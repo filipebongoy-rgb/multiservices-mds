@@ -223,6 +223,11 @@ export const clientActionSchema = trackSchema.extend({
   message: z.string().trim().max(3000).optional(),
   desiredStart: z.string().datetime({ offset: true }).optional(),
   alternativeId: z.string().min(1).max(80).optional(),
+  signatureDataUrl: z
+    .string()
+    .max(500_000)
+    .regex(/^data:image\/png;base64,/, "Format de signature invalide")
+    .optional(),
 });
 export function money(cents: number | null | undefined) {
   return cents == null

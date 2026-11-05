@@ -33,7 +33,6 @@ export default function Home() {
               Nous nous occupons de vos travaux et dépannages.
             </p>
           </div>
-          <figcaption>Photo illustrative</figcaption>
         </figure>
         <div className="home-access" aria-label="Choisir un espace">
           <Link className="home-access-card active" href="/demande">
@@ -74,10 +73,6 @@ export default function Home() {
             <span>Autre besoin</span>
           </Link>
         </div>
-        <Link href="/suivi" className="home-follow-link">
-          J’ai déjà une demande : suivre mon intervention
-          <ArrowRight size={17} aria-hidden="true" />
-        </Link>
       </section>
     </main>
   );

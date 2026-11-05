@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, CircleCheck, Lock } from "lucide-react";
+import { ArrowRight, CircleCheck, Lock, Pen } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { dateTime } from "@shared/mds";
+import { SignaturePad } from "./SignaturePad";
 
 type Photo = { id: number };
 
@@ -63,17 +64,30 @@ export function ProofOfWorkCard({
   before,
   after,
   clientConfirmedAt,
+  clientSignedAt,
+  clientSignatureDocumentId,
+  version = 0,
+  onValidated,
 }: {
   reference: string;
   token?: string;
   before: Photo[];
   after: Photo[];
   clientConfirmedAt?: Date | string | null;
+  clientSignedAt?: Date | string | null;
+  clientSignatureDocumentId?: number | null;
+  version?: number;
+  onValidated?: () => void;
 }) {
   const records = trpc.mds.payments.list.useQuery(
     { reference, token },
     { retry: false, refetchInterval: 10000 }
   );
+  const confirmCompletion = trpc.mds.requests.clientAction.useMutation({
+    onSuccess: () => {
+      onValidated?.();
+    },
+  });
   const paid = records.data?.find(record => record.status === "succeeded");
   const validated = !!clientConfirmedAt;
   const steps = [
@@ -86,11 +100,13 @@ export function ProofOfWorkCard({
     },
     {
       title: validated
-        ? "Intervention validée"
+        ? clientSignedAt
+          ? "Intervention signée et validée"
+          : "Intervention validée"
         : "En attente de votre validation",
       detail: validated
         ? dateTime(clientConfirmedAt)
-        : "Confirmez la fin des travaux ou signalez un problème.",
+        : "Signez sur l’écran ci-dessous pour attester la conformité.",
       state: validated ? "done" : "active",
     },
     {
@@ -135,6 +151,80 @@ export function ProofOfWorkCard({
           </figure>
         ))}
       </div>
+      {clientSignatureDocumentId ? (
+        <div
+          className="stack"
+          style={{
+            padding: 12,
+            background: "#f8f7f5",
+            borderRadius: 8,
+            border: "1px solid #e7e5e2",
+            gap: 8,
+          }}
+        >
+          <strong
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 13,
+            }}
+          >
+            <Pen size={15} color="#bc4c23" aria-hidden="true" />
+            Signature du client
+          </strong>
+          <PrivatePhotoThumb
+            id={clientSignatureDocumentId}
+            reference={reference}
+            token={token}
+            label="Signature du client sur l’écran"
+          />
+          <small className="muted">
+            Signée le {clientSignedAt ? dateTime(clientSignedAt) : "—"}
+          </small>
+        </div>
+      ) : null}
+      {!validated && (
+        <details
+          className="stack"
+          open
+          style={{
+            padding: 12,
+            background: "#fffaf7",
+            borderRadius: 8,
+            border: "1px solid #e4cbbd",
+            marginTop: 4,
+          }}
+        >
+          <summary
+            className="row"
+            style={{
+              minHeight: 36,
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: 14,
+            }}
+          >
+            <Pen size={15} color="#bc4c23" aria-hidden="true" />
+            Signer la fin des travaux sur cet écran
+          </summary>
+          <div style={{ marginTop: 10 }}>
+            <SignaturePad
+              disabled={confirmCompletion.isPending}
+              error={confirmCompletion.error}
+              onSign={dataUrl =>
+                confirmCompletion.mutate({
+                  reference,
+                  token,
+                  version,
+                  action: "confirmCompletion",
+                  signatureDataUrl: dataUrl,
+                })
+              }
+            />
+          </div>
+        </details>
+      )}
       <div className="proof-secure">
         <Lock size={22} aria-hidden="true" />
         <div>

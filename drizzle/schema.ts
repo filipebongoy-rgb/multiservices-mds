@@ -333,6 +333,10 @@ export const interventions = mysqlTable("mds_interventions", {
   summary: text("summary"),
   clientConfirmedAt: timestamp("clientConfirmedAt"),
   clientConfirmationMessage: text("clientConfirmationMessage"),
+  clientSignedAt: timestamp("clientSignedAt"),
+  clientSignatureDocumentId: int("clientSignatureDocumentId").references(
+    () => documents.id
+  ),
   ...dates(),
 });
 export const availability = mysqlTable("mds_availability", {
@@ -359,6 +363,7 @@ export const documents = mysqlTable("mds_documents", {
     "invoice",
     "contract",
     "other",
+    "signature",
   ]).notNull(),
   photoStage: mysqlEnum("photoStage", ["before", "after", "other"])
     .default("other")
@@ -536,6 +541,7 @@ export const payments = mysqlTable(
     verificationNote: text("verificationNote"),
     expiresAt: timestamp("expiresAt"),
     confirmedAt: timestamp("confirmedAt"),
+    failureReason: text("failureReason"),
     ...dates(),
   },
   t => [

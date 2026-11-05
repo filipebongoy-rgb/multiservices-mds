@@ -460,6 +460,12 @@ export default function Tracking() {
               before={beforePhotos}
               after={afterPhotos}
               clientConfirmedAt={details.data?.intervention?.clientConfirmedAt}
+              clientSignedAt={details.data?.intervention?.clientSignedAt}
+              clientSignatureDocumentId={
+                details.data?.intervention?.clientSignatureDocumentId
+              }
+              version={r.version}
+              onValidated={() => void details.refetch()}
             />
           )}
           <div className="tracking-layout">

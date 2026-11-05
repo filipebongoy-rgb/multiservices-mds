@@ -22,6 +22,7 @@ type Evidence = {
   intentId: string | null;
   reference: string | null;
   validObject: boolean;
+  failureReason: string | null;
 };
 function positiveId(value: string | undefined) {
   if (!value || !/^[1-9]\d*$/.test(value)) return null;
@@ -44,6 +45,8 @@ function evidence(event: Stripe.Event): Evidence | null {
         session.id.startsWith("cs_") &&
         session.mode === "payment" &&
         session.livemode === event.livemode,
+      failureReason:
+        session.payment_status !== "paid" ? "Session non complétée" : null,
     };
   }
   if (
@@ -65,6 +68,12 @@ function evidence(event: Stripe.Event): Evidence | null {
         intent.id.startsWith("pi_") &&
         intent.livemode === event.livemode &&
         (!successful || intent.status === "succeeded"),
+      failureReason: !successful
+        ? intent.last_payment_error?.message ||
+          intent.last_payment_error?.code ||
+          intent.cancellation_reason ||
+          "Paiement refusé par la banque"
+        : null,
     };
   }
   return null;
@@ -248,7 +257,11 @@ async function applyEvidence(
       return rejectEvidence("rejected_failed_amount");
     await tx
       .update(s.payments)
-      .set({ ...ids, status: "failed" })
+      .set({
+        ...ids,
+        status: "failed",
+        failureReason: proof.failureReason || "Paiement refusé",
+      })
       .where(eq(s.payments.id, payment.id));
     await recordAudit(
       tx,

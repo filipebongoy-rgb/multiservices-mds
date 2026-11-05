@@ -3,6 +3,7 @@ import * as s from "../../drizzle/schema";
 import type { SqlDb } from "./common";
 import { createHmac } from "node:crypto";
 import { dateTime, statusLabels, type RequestStatus } from "../../shared/mds";
+import { notifyOwner } from "../_core/notification";
 
 export function providerReadiness() {
   return {
@@ -138,6 +139,20 @@ export async function enqueueEventMessages(
           : "Canal ou adresse de suivi non configuré.",
       });
     }
+  if (actor !== "artisan") {
+    try {
+      await notifyOwner({
+        title: `[MDS] ${title.slice(0, 100)}`,
+        content:
+          `${request.name || "Nouveau client"} : ${(message || statusLabels[status] || "").slice(0, 200)} — ${request.phone || ""}, ${request.city || ""}. Ouvrez l’espace artisan pour répondre.`.slice(
+            0,
+            500
+          ),
+      });
+    } catch {
+      // owner notification failure must never block the business event
+    }
+  }
 }
 type ProviderResult = { status: "accepted" | "delivered"; id: string };
 class ProviderFailure extends Error {

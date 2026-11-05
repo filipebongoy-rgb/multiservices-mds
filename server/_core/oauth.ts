@@ -1,9 +1,15 @@
-import { COOKIE_NAME, ONE_YEAR_MS, OAUTH_STATE_COOKIE, decodeOAuthState } from "@shared/const";
+import {
+  COOKIE_NAME,
+  ONE_YEAR_MS,
+  OAUTH_STATE_COOKIE,
+  decodeOAuthState,
+} from "@shared/const";
 import { parse as parseCookieHeader } from "cookie";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
+import { recordAudit } from "../mds/common";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -24,12 +30,18 @@ export function registerOAuthRoutes(app: Express) {
     // startLogin set in the browser that began this login. An attacker can
     // forge `state`, but cannot plant this cookie in the victim's browser.
     const { nonce } = decodeOAuthState(state);
-    const expectedNonce = parseCookieHeader(req.headers.cookie ?? "")[OAUTH_STATE_COOKIE];
+    const expectedNonce = parseCookieHeader(req.headers.cookie ?? "")[
+      OAUTH_STATE_COOKIE
+    ];
     if (!nonce || nonce !== expectedNonce) {
       res.status(403).json({ error: "invalid oauth state" });
       return;
     }
-    res.clearCookie(OAUTH_STATE_COOKIE, { path: "/", secure: true, sameSite: "none" });
+    res.clearCookie(OAUTH_STATE_COOKIE, {
+      path: "/",
+      secure: true,
+      sameSite: "none",
+    });
 
     try {
       const tokenResponse = await sdk.exchangeCodeForToken(code, state);
@@ -47,6 +59,21 @@ export function registerOAuthRoutes(app: Express) {
         loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
         lastSignedIn: new Date(),
       });
+      try {
+        const existingUser = await db.getUserByOpenId(userInfo.openId);
+        const dbConn = await db.getDb();
+        if (dbConn && existingUser) {
+          await recordAudit(
+            dbConn,
+            existingUser.id,
+            "user.login",
+            "user",
+            existingUser.id
+          );
+        }
+      } catch {
+        // audit failure must never block login
+      }
 
       const sessionToken = await sdk.createSessionToken(userInfo.openId, {
         name: userInfo.name || "",
@@ -54,11 +81,17 @@ export function registerOAuthRoutes(app: Express) {
       });
 
       const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      res.cookie(COOKIE_NAME, sessionToken, {
+        ...cookieOptions,
+        maxAge: ONE_YEAR_MS,
+      });
 
       res.redirect(302, "/");
     } catch (error) {
-      console.error("[OAuth] Callback failed", error instanceof Error ? error.message : "unknown error");
+      console.error(
+        "[OAuth] Callback failed",
+        error instanceof Error ? error.message : "unknown error"
+      );
       res.status(500).json({ error: "OAuth callback failed" });
     }
   });

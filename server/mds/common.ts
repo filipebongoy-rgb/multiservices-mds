@@ -272,6 +272,8 @@ export async function detailData(
       summary: s.interventions.summary,
       clientConfirmedAt: s.interventions.clientConfirmedAt,
       clientConfirmationMessage: s.interventions.clientConfirmationMessage,
+      clientSignatureDocumentId: s.interventions.clientSignatureDocumentId,
+      clientSignedAt: s.interventions.clientSignedAt,
     })
     .from(s.interventions)
     .where(eq(s.interventions.requestId, request.id));

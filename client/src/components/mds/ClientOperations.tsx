@@ -4,6 +4,7 @@ import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 import { dateTime, money } from "@shared/mds";
 import { ApiError } from "./Layout";
+import { SignaturePad } from "./SignaturePad";
 
 type Detail = inferRouterOutputs<AppRouter>["mds"]["requests"]["track"];
 const labels: Record<string, string> = {
@@ -43,13 +44,30 @@ export function ClientOperations({
   const confirmCompletion = trpc.mds.requests.clientAction.useMutation({
     onSuccess: () => {
       setMessage("");
-      setNotice("Votre confirmation de fin est enregistrée.");
+      setNotice("Votre confirmation et signature sont enregistrées. Merci.");
       onChanged();
     },
     onError: () => onChanged(),
   });
   return (
     <>
+      {detail.request.status === "completed" &&
+        detail.intervention?.completedAt &&
+        detail.intervention.clientConfirmedAt && (
+          <section className="panel stack">
+            <h2 style={{ fontSize: 22 }}>Fin des travaux</h2>
+            <p className="success-message" role="status">
+              {detail.intervention.clientSignedAt
+                ? `Vous avez validé et signé la fin des travaux le ${dateTime(detail.intervention.clientSignedAt)}.`
+                : `Vous avez confirmé la fin des travaux le ${dateTime(detail.intervention.clientConfirmedAt)}.`}
+            </p>
+            {detail.intervention.clientConfirmationMessage && (
+              <p className="muted" style={{ fontStyle: "italic" }}>
+                « {detail.intervention.clientConfirmationMessage} »
+              </p>
+            )}
+          </section>
+        )}
       {detail.request.status === "completed" &&
         detail.intervention?.completedAt &&
         !detail.intervention.clientConfirmedAt && (
@@ -59,10 +77,23 @@ export function ClientOperations({
               Vérifiez les photos après travaux. Votre absence de réponse ne
               vaut pas validation automatique.
             </p>
+            <SignaturePad
+              disabled={confirmCompletion.isPending}
+              onSign={dataUrl =>
+                confirmCompletion.mutate({
+                  reference: detail.request.reference,
+                  token,
+                  version: detail.request.version,
+                  action: "confirmCompletion",
+                  message: message.trim() || undefined,
+                  signatureDataUrl: dataUrl,
+                })
+              }
+            />
             <textarea
               rows={3}
               maxLength={3000}
-              placeholder="Commentaire facultatif"
+              placeholder="Commentaire facultatif (sera joint à votre confirmation)"
               value={message}
               onChange={event => setMessage(event.target.value)}
             />
@@ -79,7 +110,7 @@ export function ClientOperations({
                 })
               }
             >
-              Confirmer que les travaux sont terminés
+              Ou confirmer sans signer
             </button>
             {confirmCompletion.error && (
               <ApiError message={confirmCompletion.error.message} />

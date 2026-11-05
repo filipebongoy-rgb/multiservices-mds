@@ -43,6 +43,10 @@ function ProfessionalLanding() {
     <section className="panel stack" style={{ maxWidth: 640 }}>
       <h2 className="simple-panel-title">Vos bâtiments et vos demandes</h2>
       <p>Connectez-vous pour retrouver votre organisation ou en créer une.</p>
+      <p className="action-example">
+        Exemple : créez « Immeuble des Lilas », ajoutez son adresse, puis
+        déclarez une fuite dans le bâtiment.
+      </p>
       <LoginButton />
     </section>
   );
@@ -119,6 +123,10 @@ function ProfessionalWorkspace({ currentUserId }: { currentUserId: number }) {
                       : "Collaborateur"}
                 </span>
               </div>
+              <p className="action-example">
+                Exemple : commencez par sélectionner un bâtiment, puis
+                choisissez « Déclarer » pour signaler un problème.
+              </p>
               <OrganizationDetail
                 key={selected.id}
                 summary={selected}

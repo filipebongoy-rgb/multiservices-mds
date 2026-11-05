@@ -226,6 +226,11 @@ function ArtisanWorkspace() {
           </ActionButton>
         ))}
       </nav>
+      <p className="action-example workspace-example">
+        Exemple : ouvrez « Demandes » pour traiter un nouveau dossier, «
+        Planning » pour voir vos créneaux, ou « Interventions » pour clôturer un
+        chantier.
+      </p>
       <div className="stack" style={{ minWidth: 0 }}>
         {tab === "requests" && (
           <>

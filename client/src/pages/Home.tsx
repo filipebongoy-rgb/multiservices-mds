@@ -81,6 +81,9 @@ export default function Home() {
           }}
         >
           <label htmlFor="home-description">Décrivez votre problème</label>
+          <p className="action-example">
+            Exemple : « Une prise ne fonctionne plus dans la cuisine. »
+          </p>
           <textarea
             id="home-description"
             name="description"
@@ -118,6 +121,10 @@ export default function Home() {
         aria-labelledby="home-services-title"
       >
         <h2 id="home-services-title">Choisissez un service</h2>
+        <p className="action-example">
+          Exemple : choisissez Plomberie pour une fuite ou Électricité pour une
+          panne.
+        </p>
         <div className="simple-trades">
           {trades.map((trade, index) => {
             const Icon = icons[index];

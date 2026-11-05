@@ -416,6 +416,9 @@ export default function Request() {
               )}
               <div className="field">
                 <label htmlFor="description">Décrivez votre problème</label>
+                <p className="action-example">
+                  Exemple : « Le robinet fuit sous l’évier depuis ce matin. »
+                </p>
                 <textarea
                   id="description"
                   rows={4}
@@ -480,6 +483,9 @@ export default function Request() {
             <>
               <div className="field">
                 <label htmlFor="address">Adresse de l’intervention</label>
+                <p className="action-example">
+                  Exemple : 12 rue des Lilas, bâtiment B, 2e étage.
+                </p>
                 <input
                   id="address"
                   autoComplete="street-address"
@@ -515,6 +521,10 @@ export default function Request() {
               </div>
               <div className="field">
                 <label htmlFor="date">Date souhaitée (facultative)</label>
+                <p className="action-example">
+                  Exemple : choisissez une date si vous avez une préférence ;
+                  MDS confirmera ensuite.
+                </p>
                 <input
                   id="date"
                   type="date"
@@ -602,6 +612,10 @@ export default function Request() {
               )}
               <div className="field">
                 <label htmlFor="name">Nom</label>
+                <p className="action-example">
+                  Exemple : indiquez le nom de la personne à contacter sur
+                  place.
+                </p>
                 <input
                   id="name"
                   autoComplete="name"

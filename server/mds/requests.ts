@@ -6,6 +6,7 @@ import { createRequestSchema, artisanActionSchema, clientActionSchema, trackSche
 import * as s from "../../drizzle/schema";
 import { authenticated, artisan, authorizeRequest, dbRequired, detailData, event, hash, membership, principal, procedure, publicRequest, recordAudit, requestFilter, secretHash, secureEqual, type Identity, type Tx } from "./common";
 import { analysisStates, checkVersion, fail, isExpired, mayConfirm, negotiableStates, requireMessage, requireState, safeAnswers, slot } from "./workflow";
+import { requireContractPrice, resolvePricing } from "./tariffs";
 
 async function expire(tx: Tx, request: s.MdsRequest) {
   if (!isExpired(request)) return false;
@@ -55,7 +56,6 @@ async function checkPlanning(tx: Tx, times: { startAt: Date; endAt: Date }) {
 export const requestsRouter = router({
   create: procedure.input(createRequestSchema).mutation(async ({ input, ctx }) => {
     safeAnswers(input.answers);
-    if (input.desiredStart && new Date(input.desiredStart) <= new Date()) fail("Le créneau souhaité doit être futur.");
     if (input.siteId && !input.organizationId) fail("Le site doit appartenir à une organisation autorisée.");
     const db = await dbRequired();
     const identity = ctx.user && ctx.user.id > 0 ? ctx.user : null;
@@ -75,17 +75,15 @@ export const requestsRouter = router({
         if (existing.payloadHash !== payload) fail("Cette clé de dépôt a déjà été utilisée pour une autre demande.", "CONFLICT");
         return { id: existing.id, reference: existing.reference, trackingToken: secretHash(`tracking:${existing.reference}:${idem}`, p.trackingSecret) };
       }
-      let service: typeof s.services.$inferSelect | undefined;
-      if (input.serviceId) {
-        [service] = await tx.select().from(s.services).where(and(eq(s.services.id, input.serviceId), eq(s.services.active, true)));
-        if (!service || service.deletedAt) fail("Cette prestation n’est pas proposée actuellement. Vous pouvez déposer une demande libre.");
-        if (input.problemType && !service.problemTypes.includes(input.problemType)) fail("Le type de problème ne correspond pas à cette prestation.");
-      }
+      if (input.desiredStart && new Date(input.desiredStart) <= new Date()) fail("Le créneau souhaité doit être futur.");
+      const { service, snapshot, fingerprint } = await resolvePricing(tx, input.serviceId, input.postcode);
+      if (service && input.pricingFingerprint !== fingerprint) fail("Les règles tarifaires ont changé ou n’ont pas été relues. Relisez le prix et les conditions avant d’envoyer la demande.", "CONFLICT");
+      if (service && input.problemType && !service.problemTypes.includes(input.problemType)) fail("Le type de problème ne correspond pas à cette prestation.");
       const [client] = await tx.insert(s.clients).values({ userId: identity?.id || null, organizationId: input.organizationId, name: input.name, email: input.email, phone: input.phone }).$returningId();
       const reference = `MDS-${randomBytes(8).toString("hex").toUpperCase()}`;
       const trackingToken = secretHash(`tracking:${reference}:${idem}`, p.trackingSecret);
-      const { idempotencyKey, consent, desiredStart, ...fields } = input;
-      const [created] = await tx.insert(s.requests).values({ ...fields, reference, trackingHash: hash(trackingToken), idempotencyHash: idem, payloadHash: payload, userId: identity?.id || null, clientId: client.id, serviceName: service?.name || null, desiredStart: desiredStart ? new Date(desiredStart) : null, durationMinutes: service?.durationMinutes || 60, proposedPriceCents: service?.priceCents ?? null, consentAt: new Date(), status: service ? "awaiting_mds" : "to_analyze" }).$returningId();
+      const { idempotencyKey, consent, desiredStart, pricingFingerprint, ...fields } = input;
+      const [created] = await tx.insert(s.requests).values({ ...fields, reference, trackingHash: hash(trackingToken), idempotencyHash: idem, payloadHash: payload, userId: identity?.id || null, clientId: client.id, serviceName: service?.name || null, desiredStart: desiredStart ? new Date(desiredStart) : null, pricingSnapshot: snapshot, durationMinutes: snapshot.durationMinutes, proposedPriceCents: snapshot.totalCents, consentAt: new Date(), status: service ? "awaiting_mds" : "to_analyze" }).$returningId();
       const r = await load(tx, created);
       await event(tx, r, "sent", "La demande a été déposée avec le consentement du client.", "client", identity?.id || null);
       await event(tx, r, r.status, service ? "La demande attend l’analyse et l’accord de MDS." : "Demande libre conservée pour analyse par MDS.", "system", null);
@@ -139,6 +137,7 @@ export const requestsRouter = router({
           const proposedStart = input.proposedStart ? new Date(input.proposedStart) : input.action === "propose" ? null : r.proposedStart || r.desiredStart;
           const price = input.priceCents ?? r.proposedPriceCents;
           const duration = input.durationMinutes ?? r.durationMinutes;
+          if (input.action !== "quote") requireContractPrice(r, price);
           const times = slot(proposedStart, price, duration);
           await checkPlanning(tx, times);
           const expiry = new Date(Date.now() + p.proposalExpiryHours * 3600000);
@@ -195,16 +194,29 @@ export const requestsRouter = router({
           patch.status = "completed"; await emit("completed", message || "L’artisan a déclaré l’intervention terminée."); break;
         case "invoice": {
           requireState(r, ["completed"]);
+          if (r.proposedPriceCents === null || !Number.isSafeInteger(r.proposedPriceCents) || r.proposedPriceCents < 0) fail("Un montant contractuel validé est obligatoire avant de déclarer la facture. Aucun montant ne sera inventé.", "CONFLICT");
+          requireContractPrice(r, r.proposedPriceCents);
           const docs = await tx.select().from(s.documents).where(and(eq(s.documents.requestId, r.id), eq(s.documents.kind, "invoice"))).orderBy(s.documents.id);
           const doc = docs.at(-1);
           if (!doc) fail("Ajoutez le vrai document de facture avant de déclarer son émission.");
-          await tx.insert(s.invoices).values({ requestId: r.id, documentId: doc.id });
+          await tx.insert(s.invoices).values({ requestId: r.id, documentId: doc.id, amountCents: r.proposedPriceCents, currency: "EUR" });
           patch.status = "invoiced"; await emit("invoiced", message || "L’artisan a déclaré la facture émise ; le document est disponible dans le dossier."); break;
         }
-        case "paid":
+        case "paid": {
           requireState(r, ["invoiced"]);
-          await tx.update(s.invoices).set({ paidAt: new Date(), paymentVerifiedBy: actor, verificationNote: requireMessage(message, "Indiquez la vérification réelle du paiement (mode, date ou référence). Aucun paiement n’est traité par l’application.") }).where(eq(s.invoices.requestId, r.id));
+          const note = requireMessage(message, "Indiquez la vérification réelle du paiement hors ligne (mode, date ou référence). Cette action n’encaisse aucun paiement.");
+          const [invoice] = await tx.select().from(s.invoices).where(eq(s.invoices.requestId, r.id)).for("update");
+          if (!invoice || invoice.amountCents == null || !Number.isSafeInteger(invoice.amountCents) || invoice.amountCents < 0 || invoice.currency !== "EUR") fail("La facture doit avoir un montant réel validé et une devise EUR avant la vérification du paiement. Les anciennes factures sans montant exigent une nouvelle validation.", "CONFLICT");
+          if (invoice.paidAt) fail("Cette facture est déjà réglée. Actualisez le dossier.", "CONFLICT");
+          if (invoice.amountCents !== r.proposedPriceCents) fail("Le montant de la facture ne correspond pas au prix contractuel validé. Une nouvelle validation est nécessaire.", "CONFLICT");
+          requireContractPrice(r, r.proposedPriceCents);
+          const [livePending] = await tx.select({ id: s.payments.id }).from(s.payments).where(and(eq(s.payments.invoiceId, invoice.id), eq(s.payments.provider, "stripe"), eq(s.payments.mode, "live"), inArray(s.payments.status, ["pending", "failed"]))).limit(1).for("update");
+          if (livePending) fail("Une session Stripe réelle reste réutilisable pour cette facture, même après un échec de carte. Faites vérifier ou expirer cette session avant de déclarer un paiement manuel, pour éviter un double règlement.", "CONFLICT");
+          const confirmedAt = new Date();
+          await tx.update(s.invoices).set({ paidAt: confirmedAt, paymentVerifiedBy: actor, verificationNote: note }).where(eq(s.invoices.id, invoice.id));
+          await tx.insert(s.payments).values({ requestId: r.id, invoiceId: invoice.id, provider: "manual", mode: "offline", status: "succeeded", amountCents: invoice.amountCents, currency: "EUR", verifiedBy: actor, verificationNote: note, confirmedAt });
           patch.status = "paid"; await emit("paid", `Paiement vérifié explicitement par l’artisan : ${message}. L’application n’a pas encaissé ce paiement.`); break;
+        }
         case "close":
           requireState(r, ["paid"]); patch.status = "closed"; await emit("closed", message || "L’artisan a clôturé le dossier après paiement vérifié."); break;
       }
@@ -232,6 +244,7 @@ export const requestsRouter = router({
       switch (input.action) {
         case "confirm": {
           mayConfirm(r);
+          requireContractPrice(r, r.proposedPriceCents);
           const times = slot(r.proposedStart, r.proposedPriceCents, r.durationMinutes);
           await checkPlanning(tx, times); // Global settings row lock makes overlapping confirmations mutually exclusive.
           const [appointment] = await tx.insert(s.appointments).values({ requestId: r.id, ...times, status: "confirmed" }).$returningId();

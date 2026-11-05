@@ -8,6 +8,7 @@ import { Header, Footer, Loading } from "./components/mds/Layout";
 import Home from "./pages/Home";
 const Catalog = lazy(() => import("./pages/Catalog"));
 const Request = lazy(() => import("./pages/Request"));
+const Payments = lazy(() => import("./pages/Payments"));
 const Tracking = lazy(() => import("./pages/Tracking"));
 const Artisan = lazy(() => import("./pages/Artisan"));
 const Professional = lazy(() => import("./pages/Professional"));
@@ -18,6 +19,7 @@ const titles: Record<string, string> = {
   "/prestations": "Trouver une prestation",
   "/demande": "Déposer une demande",
   "/suivi": "Suivre ma demande",
+  "/paiements": "Mes paiements",
   "/professionnels": "Espace professionnel",
   "/artisan": "Espace artisan",
   "/confidentialite": "Confidentialité",
@@ -40,6 +42,7 @@ function Routes() {
     robots.content = [
       "/artisan",
       "/suivi",
+      "/paiements",
       "/demande",
       "/professionnels",
     ].includes(location)
@@ -60,6 +63,7 @@ function Routes() {
           <Route path="/" component={Home} />
           <Route path="/prestations" component={Catalog} />
           <Route path="/demande" component={Request} />
+          <Route path="/paiements" component={Payments} />
           <Route path="/suivi" component={Tracking} />
           <Route path="/professionnels" component={Professional} />
           <Route path="/artisan" component={Artisan} />

@@ -8,10 +8,12 @@ import { fail, finishedStates } from "./workflow";
 import { requestsRouter } from "./requests";
 import { organizationsRouter } from "./organizations";
 import { documentsRouter } from "./documents";
+import { catalogPricingSchema, normalizeService, pricingConfiguration, resolvePricing } from "./tariffs";
+import { paymentsRouter } from "./payments";
 const identifier = z.object({ id: z.number().int().positive() });
 const settingsSchema = z.object({ zone: z.string().trim().max(300), contactEmail: z.union([z.literal(""), z.email().max(320)]), contactPhone: z.string().trim().max(30), businessAddress: z.string().trim().max(500), legalName: z.string().trim().max(200), legalNotice: z.string().trim().max(10000), proposalExpiryHours: z.number().int().min(1).max(720) });
 function safeSettings(row: typeof s.settings.$inferSelect) { const { zone, contactEmail, contactPhone, businessAddress, legalName, legalNotice, proposalExpiryHours } = row; return { zone, contactEmail, contactPhone, businessAddress, legalName, legalNotice, proposalExpiryHours }; }
-function safeService(row: typeof s.services.$inferSelect) { const { seedKey, deletedAt, ...value } = row; return value; }
+function safeService(row: typeof s.services.$inferSelect) { const { seedKey, deletedAt, ...value } = normalizeService(row); return value; }
 async function notificationFilter(db: SqlDb, user: s.User) {
   const p = await principal(db); const ids = await orgIds(db, user.id);
   if (user.role === "admin" && p.artisanUserId === user.id) return or(and(eq(s.notifications.audience, "artisan"), or(isNull(s.notifications.userId), eq(s.notifications.userId, user.id))), and(eq(s.notifications.audience, "client"), eq(s.notifications.userId, user.id)))!;
@@ -40,9 +42,13 @@ export const mdsRouter = router({
       const rows = await db.select().from(s.services).where(and(isNull(s.services.deletedAt), input?.includeInactive ? sql`true` : eq(s.services.active, true))).orderBy(s.services.id);
       return rows.map(safeService);
     }),
+    pricing: procedure.input(catalogPricingSchema).query(async ({ input }) => {
+      const { snapshot, fingerprint } = await resolvePricing(await dbRequired(), input.serviceId, input.postcode);
+      return { snapshot, fingerprint };
+    }),
     save: artisan.input(serviceSchema).mutation(async ({ input, ctx }) => {
       if (input.photoUrl && !/^(https:\/\/[^\s]+|\/manus-storage\/[A-Za-z0-9_.\/-]+)$/.test(input.photoUrl)) fail("La photo de prestation doit utiliser une adresse HTTPS ou le stockage du projet.");
-      if (input.active && (!input.description.trim() || !input.zone.trim() || (input.priceCents === null && !input.pricingRule.trim()))) fail("Avant activation, renseignez description, zone et tarif ou règle de devis.");
+      if (input.active && (!input.description.trim() || !input.zone.trim() || (input.pricingMode === "quote" && !input.pricingRule.trim()) || (input.pricingMode === "fixed" && !input.conditions.trim()))) fail("Avant activation, renseignez description, zone, conditions et tarif ou règle de devis.");
       const db = await dbRequired();
       return db.transaction(async tx => {
         await principal(tx, true);
@@ -51,14 +57,17 @@ export const mdsRouter = router({
         if (id) {
           const [previous] = await tx.select().from(s.services).where(and(eq(s.services.id, id), isNull(s.services.deletedAt)));
           if (!previous) fail("Cette prestation est introuvable.", "NOT_FOUND");
-          await tx.update(s.services).set(values).where(eq(s.services.id, id));
-          if (previous.priceCents !== values.priceCents || previous.pricingRule !== values.pricingRule) {
-            await tx.update(s.tariffs).set({ validUntil: new Date() }).where(and(eq(s.tariffs.serviceId, id), isNull(s.tariffs.validUntil)));
-            await tx.insert(s.tariffs).values({ serviceId: id, priceCents: values.priceCents, rule: values.pricingRule });
+          const configuration = pricingConfiguration(values);
+          const changed = JSON.stringify(pricingConfiguration(normalizeService(previous))) !== JSON.stringify(configuration);
+          await tx.update(s.services).set({ ...values, pricingVersion: previous.pricingVersion + (changed ? 1 : 0) }).where(eq(s.services.id, id));
+          if (changed) {
+            const revisedAt = new Date();
+            await tx.update(s.tariffs).set({ validUntil: revisedAt }).where(and(eq(s.tariffs.serviceId, id), isNull(s.tariffs.validUntil)));
+            await tx.insert(s.tariffs).values({ serviceId: id, priceCents: values.priceCents, rule: values.pricingRule, configuration, validFrom: revisedAt });
           }
         } else {
-          const [created] = await tx.insert(s.services).values(values).$returningId(); serviceId = created.id;
-          await tx.insert(s.tariffs).values({ serviceId: created.id, priceCents: values.priceCents, rule: values.pricingRule });
+          const [created] = await tx.insert(s.services).values({ ...values, pricingVersion: 1 }).$returningId(); serviceId = created.id;
+          await tx.insert(s.tariffs).values({ serviceId: created.id, priceCents: values.priceCents, rule: values.pricingRule, configuration: pricingConfiguration(values) });
         }
         await recordAudit(tx, ctx.user.id, "catalog.save", "service", serviceId!);
         await tx.insert(s.notifications).values({ userId: ctx.user.id, audience: "artisan", title: "Catalogue mis à jour", message: `La prestation « ${input.name} » est ${input.active ? "active" : "inactive"}. Les dossiers existants restent inchangés.` });
@@ -95,6 +104,7 @@ export const mdsRouter = router({
   requests: requestsRouter,
   organizations: organizationsRouter,
   documents: documentsRouter,
+  payments: paymentsRouter,
   reviews: router({
     submit: authenticated.input(z.object({ requestId: z.number().int().positive(), rating: z.number().int().min(1).max(5), comment: z.string().trim().max(3000).optional() })).mutation(async ({ input, ctx }) => {
       const db = await dbRequired();

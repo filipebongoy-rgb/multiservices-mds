@@ -1,0 +1,283 @@
+MULTISERVICES MDS — PROMPT 1/3
+
+FONDATIONS, IDENTITÉ, SITE ET EXPÉRIENCE UTILISATEUR
+
+Agis comme une équipe senior composée d'un architecte logiciel, d'un développeur full-stack, d'un expert UX/UI et d'un spécialiste des plateformes de réservation.
+
+Ta mission est de construire une véritable plateforme professionnelle pour MULTISERVICES MDS.
+
+Ne crée pas une simple maquette ou un site vitrine.
+
+Le produit doit être fonctionnel, sécurisé, automatisable et extrêmement simple à utiliser.
+
+1. MODÈLE D'ENTREPRISE
+
+MULTISERVICES MDS fonctionne avec un seul artisan.
+
+Toutes les interventions sont destinées à cet artisan.
+
+Ne construis pas :
+
+- Une marketplace.
+- Un réseau de prestataires.
+- Un système de distribution des demandes entre artisans.
+- Une gestion d'équipe complexe.
+
+Créer trois expériences :
+
+1. Particulier.
+2. Professionnel.
+3. Artisan administrateur MDS.
+
+Prévoir plusieurs utilisateurs au sein d'une organisation professionnelle, mais un seul artisan intervenant.
+
+2. VISION DU PRODUIT
+
+Créer une plateforme inspirée de la simplicité de Doctolib pour les réservations et d'Uber Eats pour la gestion des demandes, acceptations et suivis.
+
+Le client doit pouvoir :
+
+- Choisir une prestation.
+- Décrire librement son problème.
+- Consulter un prix lorsqu'il est disponible.
+- Proposer un créneau.
+- Envoyer sa demande.
+- Recevoir une réponse de MDS.
+- Confirmer la proposition.
+- Suivre l'intervention.
+- Régler sa prestation.
+- Évaluer le service.
+
+L'artisan reçoit des demandes organisées et gère son activité depuis une interface centralisée.
+
+3. MODÈLE TARIFAIRE HYBRIDE
+
+Cette décision est définitive.
+
+Créer deux modes de tarification.
+
+MODE A : PRIX AFFICHÉ
+
+Pour les prestations standardisées et suffisamment définies.
+
+Le client voit :
+
+- Le prix applicable.
+- Ce qui est inclus.
+- Ce qui n'est pas inclus.
+- Les éventuels frais de déplacement.
+- La durée indicative.
+- Les conditions de réservation.
+
+Il envoie ensuite sa demande au tarif annoncé.
+
+Le prix doit être calculé à partir des règles tarifaires configurées par l'administrateur.
+
+MODE B : DEVIS PERSONNALISÉ
+
+Pour les prestations complexes, les travaux nécessitant un diagnostic ou les interventions dont le prix ne peut pas être déterminé à l'avance.
+
+Le client envoie sa demande.
+
+L'artisan examine les informations et prépare un devis.
+
+Le client accepte ou refuse le devis.
+
+Ne jamais inventer un prix, un supplément ou une estimation présentée comme ferme.
+
+Les prestations doivent pouvoir passer d'un mode tarifaire à l'autre depuis l'administration.
+
+4. IDENTITÉ VISUELLE
+
+Créer une identité originale et professionnelle.
+
+Direction artistique :
+
+- Anthracite.
+- Blanc.
+- Orange ou cuivre.
+- Typographie moderne et lisible.
+- Photographies réalistes.
+- Icônes professionnelles.
+- Design mobile-first.
+
+Ne pas copier Doctolib ou Uber Eats graphiquement.
+
+Éviter :
+
+- Apparence générique de site IA.
+- Emojis dans l'interface.
+- Animations inutiles.
+- Textes interminables.
+- Dégradés excessifs.
+- Boutons factices.
+- Cartes surdimensionnées.
+- Données fictives non signalées.
+
+5. ESPACE PARTICULIER
+
+Créer un parcours extrêmement court.
+
+Page d'accueil :
+
+- Recherche de prestation.
+- Métiers disponibles.
+- Prise de rendez-vous.
+- Demande libre.
+- Suivi de demande.
+
+Le client choisit une prestation, indique son problème et son adresse, puis propose un créneau.
+
+Ne pas imposer de création de compte pour une première demande simple.
+
+Permettre une description libre, la dictée vocale et l'ajout facultatif de photos.
+
+6. ESPACE PROFESSIONNEL
+
+Destiné aux :
+
+- Entreprises.
+- Syndics.
+- Bailleurs.
+- Gestionnaires immobiliers.
+- Associations.
+- Collectivités.
+
+Fonctions :
+
+- Organisation.
+- Bâtiments et sites.
+- Collaborateurs autorisés.
+- Demandes d'intervention.
+- Historique.
+- Devis.
+- Factures.
+- Contrats.
+
+Prévoir des permissions par rôle et une séparation stricte des données.
+
+7. ESPACE ARTISAN
+
+Créer un espace très simple avec :
+
+- Aujourd'hui.
+- Nouvelles demandes.
+- Planning.
+- Devis.
+- Clients.
+- Factures.
+- Paramètres.
+
+L'artisan doit voir immédiatement les demandes qui attendent son action.
+
+Éviter les statistiques décoratives et les tableaux de bord surchargés.
+
+8. CATALOGUE DE PRESTATIONS
+
+Créer une architecture :
+MÉTIER → PRESTATION → TYPE DE PROBLÈME.
+
+Familles initiales :
+
+- Plomberie.
+- Électricité.
+- Chauffage.
+- Peinture.
+- Petits travaux et maintenance.
+
+Prévoir les prestations détaillées dans chacune de ces familles.
+
+Chaque prestation doit comporter :
+
+- Nom.
+- Description.
+- Photo facultative.
+- Questions spécifiques.
+- Mode tarifaire.
+- Prix ou règles de devis.
+- Durée indicative.
+- Zone géographique.
+- Conditions.
+- Statut actif ou inactif.
+
+Les qualifications, capacités et prestations réellement proposées doivent être validées par MDS.
+
+9. DEMANDE NON RÉFÉRENCÉE
+
+Ajouter une option toujours accessible :
+
+« Je ne trouve pas mon problème ».
+
+Permettre :
+
+- Description libre.
+- Dictée vocale.
+- Photos facultatives.
+
+Créer une catégorie interne « À analyser ».
+
+Ne jamais bloquer une demande parce que la prestation n'existe pas dans le catalogue.
+
+L'IA peut suggérer une catégorie, mais ne doit pas inventer un diagnostic.
+
+10. SIMPLICITÉ UX
+
+Règles non négociables :
+
+- Une action principale par écran.
+- Une question à la fois.
+- Trois clics lorsque le parcours le permet.
+- Pas de longs formulaires.
+- Aucun compte imposé pour une première demande.
+- Texte lisible.
+- Boutons larges.
+- Navigation évidente.
+- Pas de jargon technique.
+
+Concevoir une interface utilisable par une personne de 80 ans.
+
+Cible : WCAG 2.2 AA.
+
+11. ARCHITECTURE TECHNIQUE
+
+Inspecter les possibilités réelles de l'environnement Manus avant de choisir la stack.
+
+Créer :
+
+- Frontend responsive.
+- Backend sécurisé.
+- Base de données relationnelle.
+- Authentification.
+- Permissions.
+- API.
+- Stockage privé.
+- Gestion des documents.
+- Journalisation.
+
+Créer une source unique de vérité pour :
+
+- Utilisateurs.
+- Clients.
+- Organisations.
+- Sites.
+- Prestations.
+- Tarifs.
+- Demandes.
+- Rendez-vous.
+- Interventions.
+- Devis.
+- Documents.
+- Notifications.
+- Paiements.
+
+12. LIVRABLE
+
+Développer réellement les fondations.
+
+Tester les trois espaces, le catalogue, la demande libre et les parcours mobiles.
+
+Ne pas simuler les fonctionnalités en les présentant comme opérationnelles.
+
+Préparer le projet pour le PROMPT 2/3 : moteur de demandes, doubles validations, planning, tarification et automatisation.
+
+Fournir un rapport précis des fonctionnalités réalisées et des éventuels problèmes.

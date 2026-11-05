@@ -1,5 +1,7 @@
 # MULTISERVICES MDS — Compte rendu des fondations
 
+> Rapport de la version initiale. La poursuite avec tarification hybride et paiements est décrite dans [le compte rendu hybride](/home/ubuntu/mdsservices/docs/COMPTE_RENDU_HYBRIDE.md).
+
 Version du 5 novembre 2026 · Prompt 1/3 et modification structurante de double validation.
 
 L’application est développée dans un projet unique, avec frontend React/TypeScript, serveur Express, API tRPC et base MySQL relationnelle gérée par Manus. La double validation est intégrée au moteur métier : **l’accord de MDS ne crée jamais, à lui seul, un rendez-vous définitif**. Cette version est consultable dans la Preview du projet. Elle ne constitue pas encore une ouverture commerciale et n’est pas publiée automatiquement.

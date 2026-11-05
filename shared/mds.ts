@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { pricingFields, MAX_CENTS, validatePricingRules } from "./pricing";
 
 export const trades = [
   {
@@ -99,29 +100,55 @@ export type RequestStatus = keyof typeof statusLabels;
 export const statusSchema = z.enum(
   Object.keys(statusLabels) as [RequestStatus, ...RequestStatus[]]
 );
-export const serviceSchema = z.object({
-  id: z.number().int().positive().optional(),
-  trade: z.enum([
-    "plomberie",
-    "electricite",
-    "chauffage",
-    "peinture",
-    "maintenance",
-  ]),
-  name: z.string().trim().min(2).max(120),
-  description: z.string().trim().max(600),
-  photoUrl: z.string().max(1000).default(""),
-  priceCents: z.number().int().min(0).nullable(),
-  pricingRule: z.string().trim().max(500).default("Sur devis après analyse"),
-  durationMinutes: z.number().int().min(15).max(1440),
-  questions: z.array(z.string().trim().min(1).max(200)).max(10),
-  problemTypes: z.array(z.string().trim().min(1).max(120)).max(20),
-  conditions: z.string().max(1000),
-  zone: z.string().max(300),
-  active: z.boolean(),
-});
+export const serviceSchema = z
+  .object({
+    id: z.number().int().positive().optional(),
+    trade: z.enum([
+      "plomberie",
+      "electricite",
+      "chauffage",
+      "peinture",
+      "maintenance",
+    ]),
+    name: z.string().trim().min(2).max(120),
+    description: z.string().trim().max(600),
+    photoUrl: z.string().max(1000).default(""),
+    ...pricingFields,
+    priceCents: z.number().int().min(0).max(MAX_CENTS).nullable(),
+    pricingRule: z.string().trim().max(500).default("Sur devis après analyse"),
+    durationMinutes: z.number().int().min(15).max(1440),
+    questions: z.array(z.string().trim().min(1).max(200)).max(10),
+    problemTypes: z.array(z.string().trim().min(1).max(120)).max(20),
+    conditions: z.string().trim().max(1000),
+    zone: z.string().trim().max(300),
+    active: z.boolean(),
+  })
+  .superRefine((value, ctx) => {
+    const issue = validatePricingRules(value);
+    if (issue)
+      ctx.addIssue({ code: "custom", message: issue, path: ["pricingMode"] });
+    if (
+      value.active &&
+      value.pricingMode === "fixed" &&
+      (!value.included ||
+        !value.excluded ||
+        !value.conditions ||
+        value.travelMode === "unconfigured")
+    )
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Avant activation du prix affiché, précisez inclusions, exclusions, conditions et frais de déplacement.",
+        path: ["active"],
+      });
+  });
 export const createRequestSchema = z.object({
   serviceId: z.number().int().positive().nullable(),
+  pricingFingerprint: z
+    .string()
+    .regex(/^[a-f0-9]{64}$/)
+    .nullable()
+    .default(null),
   problemType: z.string().max(120).default(""),
   description: z
     .string()
@@ -158,7 +185,7 @@ export const artisanActionSchema = z.object({
     "close",
   ]),
   proposedStart: z.string().datetime({ offset: true }).optional(),
-  priceCents: z.number().int().min(0).optional(),
+  priceCents: z.number().int().min(0).max(MAX_CENTS).optional(),
   durationMinutes: z.number().int().min(15).max(1440).optional(),
   message: z.string().trim().max(3000).optional(),
 });

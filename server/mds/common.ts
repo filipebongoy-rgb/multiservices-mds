@@ -85,5 +85,6 @@ export async function detailData(db: SqlDb, request: s.MdsRequest, authenticated
   const docs = await db.select(documentFields).from(s.documents).where(eq(s.documents.requestId, request.id)).orderBy(s.documents.id);
   const [appointment] = await db.select({ id: s.appointments.id, startAt: s.appointments.startAt, endAt: s.appointments.endAt, status: s.appointments.status }).from(s.appointments).where(eq(s.appointments.requestId, request.id));
   const reviews = authenticatedUser ? await db.select({ id: s.reviews.id, authorType: s.reviews.authorType, rating: s.reviews.rating, comment: s.reviews.comment, moderation: s.reviews.moderation, createdAt: s.reviews.createdAt }).from(s.reviews).where(eq(s.reviews.requestId, request.id)) : [];
-  return { request: publicRequest(request), events: history, documents: docs, appointment: appointment || null, reviews };
+  const [invoice] = await db.select({ id: s.invoices.id, amountCents: s.invoices.amountCents, currency: s.invoices.currency, issuedAt: s.invoices.issuedAt, paidAt: s.invoices.paidAt }).from(s.invoices).where(eq(s.invoices.requestId, request.id));
+  return { request: publicRequest(request), events: history, documents: docs, appointment: appointment || null, reviews, invoice: invoice || null };
 }

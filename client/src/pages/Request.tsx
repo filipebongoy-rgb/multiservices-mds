@@ -12,7 +12,9 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { createRequestSchema, money } from "@shared/mds";
+import { createRequestSchema } from "@shared/mds";
+import { calculatePricing } from "@shared/pricing";
+import { PriceDetails } from "@/components/mds/PriceDetails";
 import { ApiError, Loading } from "@/components/mds/Layout";
 
 type Draft = {
@@ -73,6 +75,16 @@ export default function Request() {
   const { user } = useAuth();
   const [draft, setDraft] = useState<Draft>(initialDraft);
   const [step, setStep] = useState(0);
+  const [known, setKnown] = useState({
+    address: false,
+    name: false,
+    email: false,
+    phone: false,
+  });
+  const organization = trpc.mds.organizations.detail.useQuery(
+    { id: organizationId || 0 },
+    { enabled: !!organizationId && !!user, retry: false }
+  );
   const [error, setError] = useState("");
   const [consent, setConsent] = useState(false);
   const [photo, setPhoto] = useState<File | null>(null);
@@ -96,15 +108,67 @@ export default function Request() {
   const steps = [
     { key: "description", title: "Que se passe-t-il ?" },
     ...questionSteps,
-    { key: "photo", title: "Une photo pour mieux comprendre ?" },
-    { key: "address", title: "Où faut-il intervenir ?" },
+    ...(!known.address
+      ? [{ key: "address", title: "Où faut-il intervenir ?" }]
+      : []),
     { key: "date", title: "Quand seriez-vous disponible ?" },
-    { key: "name", title: "Comment vous appelez-vous ?" },
-    { key: "email", title: "À quelle adresse vous contacter ?" },
-    { key: "phone", title: "Quel est votre numéro de téléphone ?" },
+    ...(!known.name
+      ? [{ key: "name", title: "Comment vous appelez-vous ?" }]
+      : []),
+    ...(!known.email
+      ? [{ key: "email", title: "À quelle adresse vous contacter ?" }]
+      : []),
+    ...(!known.phone
+      ? [{ key: "phone", title: "Quel est votre numéro de téléphone ?" }]
+      : []),
     { key: "review", title: "Tout est prêt pour envoyer votre demande." },
   ];
   const current = steps[Math.min(step, steps.length - 1)];
+  const pricing = trpc.mds.catalog.pricing.useQuery(
+    {
+      serviceId: service?.id ?? null,
+      postcode: /^\d{5}$/.test(draft.postcode) ? draft.postcode : undefined,
+    },
+    {
+      enabled: current.key === "review" && (!serviceId || !catalog.isLoading),
+      retry: false,
+      refetchOnWindowFocus: false,
+    }
+  );
+  const fingerprintSeen = useRef<string | null>(null);
+  useEffect(() => {
+    const fingerprint = pricing.data?.fingerprint;
+    if (fingerprint && fingerprint !== fingerprintSeen.current) {
+      fingerprintSeen.current = fingerprint;
+      setConsent(false);
+    }
+  }, [pricing.data?.fingerprint]);
+  useEffect(() => {
+    if (step !== 0 || !user) return;
+    setKnown(k => ({
+      ...k,
+      name: !!(user.name && user.name.trim().length >= 2),
+      email: !!user.email,
+    }));
+  }, [user?.id]);
+  useEffect(() => {
+    const site = organization.data?.sites.find(site => site.id === siteId);
+    if (!site || step !== 0) return;
+    setDraft(d => ({
+      ...d,
+      address: site.address,
+      postcode: site.postcode,
+      city: site.city,
+      name: site.contactName || d.name || user?.name || "",
+      phone: site.contactPhone || d.phone,
+    }));
+    setKnown(k => ({
+      ...k,
+      address: true,
+      name: site.contactName.trim().length >= 2 || k.name,
+      phone: site.contactPhone.replace(/\D/g, "").length >= 8,
+    }));
+  }, [organization.data, siteId]);
   const set = (key: keyof Draft, value: string) =>
     setDraft(d => ({ ...d, [key]: value }));
   useEffect(() => {
@@ -231,11 +295,18 @@ export default function Request() {
       );
       return;
     }
+    if (!pricing.data || pricing.isFetching || pricing.error) {
+      setError(
+        "Le tarif doit être vérifié avant l’envoi. Actualisez les conditions ci-dessous."
+      );
+      return;
+    }
     const desiredStart = draft.date
       ? new Date(draft.date + "T" + draft.time).toISOString()
       : null;
     const input = {
       serviceId: service?.id || null,
+      pricingFingerprint: pricing.data.fingerprint,
       problemType: draft.problemType,
       description: draft.description,
       name: draft.name,
@@ -266,6 +337,13 @@ export default function Request() {
       sessionStorage.setItem("mds-tracking:" + r.reference, r.trackingToken);
       await attach(r);
     } catch (e: any) {
+      if (
+        e.data?.code === "CONFLICT" &&
+        /tarif|conditions|règles/i.test(e.message)
+      ) {
+        setConsent(false);
+        await pricing.refetch();
+      }
       setError(
         e.message ||
           "Votre demande n’a pas pu être envoyée. Vos informations sont conservées."
@@ -410,6 +488,15 @@ export default function Request() {
                 Décrivez simplement ce qui ne fonctionne pas ou ce que vous
                 souhaitez réaliser.
               </p>
+              {service && (
+                <PriceDetails snapshot={calculatePricing(service)} compact />
+              )}
+              {organization.error && (
+                <ApiError
+                  message={organization.error.message}
+                  retry={() => organization.refetch()}
+                />
+              )}
               {serviceId && !service && !catalog.isLoading && (
                 <div className="notice">
                   Cette prestation n’est plus ouverte. Vous pouvez quand même
@@ -500,8 +587,9 @@ export default function Request() {
               </div>
             </>
           )}
-          {current.key === "photo" && (
-            <>
+          {current.key === "description" && (
+            <details className="optional-photo">
+              <summary>Joindre une photo (facultatif)</summary>
               <p className="wizard-subtitle">
                 C’est facultatif. Évitez de photographier des personnes ou des
                 documents personnels.
@@ -558,7 +646,7 @@ export default function Request() {
                   </button>
                 </>
               )}
-            </>
+            </details>
           )}
           {current.key === "address" && (
             <>
@@ -719,12 +807,6 @@ export default function Request() {
                   <dd>
                     {service?.name || "Demande libre"} — {draft.description}
                   </dd>
-                  {service && (
-                    <dd className="muted">
-                      {money(service.priceCents)} · {service.durationMinutes}{" "}
-                      min estimées
-                    </dd>
-                  )}
                 </div>
                 <div>
                   <dt>Adresse d’intervention</dt>
@@ -759,9 +841,34 @@ export default function Request() {
                   </div>
                 )}
               </dl>
-              {service?.conditions && (
-                <div className="notice">{service.conditions}</div>
+              {pricing.isLoading || pricing.isFetching ? (
+                <Loading />
+              ) : pricing.error ? (
+                <ApiError
+                  message={pricing.error.message}
+                  retry={() => pricing.refetch()}
+                />
+              ) : (
+                pricing.data && (
+                  <PriceDetails snapshot={pricing.data.snapshot} />
+                )
               )}
+              <button
+                type="button"
+                className="text-link"
+                onClick={() => {
+                  setKnown({
+                    address: false,
+                    name: false,
+                    email: false,
+                    phone: false,
+                  });
+                  setConsent(false);
+                  setStep(0);
+                }}
+              >
+                Modifier les informations avant envoi
+              </button>
               <label className="consent-label">
                 <input
                   type="checkbox"
@@ -791,12 +898,20 @@ export default function Request() {
           <button
             className="btn primary"
             type="submit"
-            disabled={create.isPending || upload.isPending}
+            disabled={
+              create.isPending ||
+              upload.isPending ||
+              (current.key === "review" &&
+                (!pricing.data || pricing.isFetching || !!pricing.error))
+            }
           >
             {create.isPending
               ? "Envoi de votre demande…"
               : current.key === "review"
-                ? "Envoyer ma demande"
+                ? pricing.data?.snapshot.totalCents !== null &&
+                  !pricing.data?.snapshot.requiresQuote
+                  ? "Envoyer au tarif annoncé"
+                  : "Envoyer ma demande de devis"
                 : current.key === "photo" && !photo
                   ? "Continuer sans photo"
                   : "Continuer"}

@@ -11,6 +11,11 @@ import {
   QueryState,
 } from "./private-common";
 import type { Service } from "./private-types";
+import {
+  initialPricingDraft,
+  parsePricingDraft,
+  PricingEditor,
+} from "./private-pricing";
 
 type Settings = {
   zone: string;
@@ -253,8 +258,9 @@ function CatalogEditor({
       </div>
       <p className="notice">
         Une prestation inactive est une configuration interne, pas une offre
-        disponible. Vérifiez son prix ou sa règle de devis, sa durée, ses
-        conditions et sa zone avant validation.
+        disponible. Mode A : prix affiché avec inclusions, exclusions et frais
+        de déplacement validés. Mode B : devis personnalisé après analyse.
+        Vérifiez aussi durée, conditions et zone avant activation.
       </p>
       <Field label="Métier">
         <select value={trade} onChange={e => setTrade(e.target.value)}>
@@ -296,7 +302,10 @@ function CatalogEditor({
                 </span>
                 <h4>{service.name}</h4>
                 <p className="muted">
-                  {money(service.priceCents)} · {service.durationMinutes} min ·{" "}
+                  {service.pricingMode === "fixed"
+                    ? `Mode A · Base ${money(service.priceCents)}`
+                    : "Mode B · Devis personnalisé"}{" "}
+                  · {service.durationMinutes} min ·{" "}
                   {service.problemTypes.length} type
                   {service.problemTypes.length !== 1 ? "s" : ""} de problème
                 </p>
@@ -370,24 +379,29 @@ function ServiceForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [values, setValues] = useState<z.infer<typeof serviceSchema>>(
-    initial ?? {
-      trade: "plomberie",
-      name: "",
-      description: "",
-      photoUrl: "",
-      priceCents: null,
-      pricingRule: "Sur devis après analyse",
-      durationMinutes: 15,
-      questions: [],
-      problemTypes: [],
-      conditions: "",
-      zone: "",
-      active: false,
-    }
-  );
-  const [price, setPrice] = useState(
-    initial?.priceCents == null ? "" : String(initial.priceCents / 100)
+  const [values, setValues] = useState<z.infer<typeof serviceSchema>>(() => ({
+    ...(initial ? { id: initial.id } : {}),
+    trade: initial?.trade ?? "plomberie",
+    name: initial?.name ?? "",
+    description: initial?.description ?? "",
+    photoUrl: initial?.photoUrl ?? "",
+    pricingMode: initial?.pricingMode ?? "quote",
+    priceCents: initial?.priceCents ?? null,
+    pricingRule: initial?.pricingRule ?? "",
+    included: initial?.included ?? "",
+    excluded: initial?.excluded ?? "",
+    travelMode: initial?.travelMode ?? "unconfigured",
+    travelFeeCents: initial?.travelFeeCents ?? null,
+    travelRules: initial?.travelRules ?? [],
+    durationMinutes: initial?.durationMinutes ?? 15,
+    questions: initial?.questions ?? [],
+    problemTypes: initial?.problemTypes ?? [],
+    conditions: initial?.conditions ?? "",
+    zone: initial?.zone ?? "",
+    active: initial?.active ?? false,
+  }));
+  const [pricingDraft, setPricingDraft] = useState(() =>
+    initialPricingDraft(initial)
   );
   const [questions, setQuestions] = useState(
     initial?.questions.join("\n") ?? ""
@@ -401,7 +415,10 @@ function ServiceForm({
   const update = <K extends keyof typeof values>(
     key: K,
     value: (typeof values)[K]
-  ) => setValues(previous => ({ ...previous, [key]: value }));
+  ) => {
+    setValidationConfirmed(false);
+    setValues(previous => ({ ...previous, [key]: value }));
+  };
   async function submit() {
     setError(null);
     try {
@@ -409,9 +426,20 @@ function ServiceForm({
         throw new Error(
           "Confirmez la validation de cette prestation avant de l’activer."
         );
-      const input = serviceSchema.parse({
+      if (
+        values.active &&
+        values.pricingMode === "fixed" &&
+        (!values.included.trim() ||
+          !values.excluded.trim() ||
+          !values.conditions.trim() ||
+          values.travelMode === "unconfigured")
+      )
+        throw new Error(
+          "Avant activation du mode A, précisez ce qui est inclus, non inclus, les conditions et validez les frais de déplacement."
+        );
+      const parsed = serviceSchema.safeParse({
         ...values,
-        priceCents: price === "" ? null : Math.round(Number(price) * 100),
+        ...parsePricingDraft(pricingDraft),
         questions: questions
           .split("\n")
           .map(value => value.trim())
@@ -421,15 +449,13 @@ function ServiceForm({
           .map(value => value.trim())
           .filter(Boolean),
       });
-      await save.mutateAsync(input);
+      if (!parsed.success)
+        throw new Error(
+          parsed.error.issues.map(issue => issue.message).join(" ")
+        );
+      await save.mutateAsync(parsed.data);
     } catch (cause) {
-      setError(
-        cause instanceof Error && "issues" in cause
-          ? new Error(
-              "Vérifiez les champs : nom, limites des textes, durée, questions et types de problème."
-            )
-          : cause
-      );
+      setError(cause);
     }
   }
   return (
@@ -489,75 +515,107 @@ function ServiceForm({
             onChange={e => update("photoUrl", e.target.value)}
           />
         </Field>
-        <div className="form-grid">
-          <Field
-            label="Prix fixe (€), facultatif"
-            hint="Laissez vide pour une prestation sur devis."
+        <PricingEditor
+          values={values}
+          draft={pricingDraft}
+          serviceId={initial?.id}
+          serviceName={values.name}
+          revision={initial?.pricingVersion}
+          onChange={changes => {
+            setValidationConfirmed(false);
+            setValues(previous => ({
+              ...previous,
+              ...changes,
+              travelRules: changes.travelRules ?? previous.travelRules,
+            }));
+          }}
+          onDraftChange={draft => {
+            setValidationConfirmed(false);
+            setPricingDraft(draft);
+          }}
+        />
+        <details open>
+          <summary
+            style={{
+              minHeight: 44,
+              cursor: "pointer",
+              padding: "12px 0",
+              fontWeight: 700,
+            }}
           >
-            <input
-              type="number"
-              inputMode="decimal"
-              min="0"
-              step="0.01"
-              value={price}
-              onChange={e => setPrice(e.target.value)}
-            />
-          </Field>
-          <Field label="Durée (minutes)">
-            <input
-              type="number"
-              required
-              min="15"
-              max="1440"
-              step="1"
-              value={values.durationMinutes}
-              onChange={e => update("durationMinutes", Number(e.target.value))}
-            />
-          </Field>
-        </div>
-        <Field label="Règle tarifaire ou de devis">
-          <textarea
-            rows={2}
-            maxLength={500}
-            value={values.pricingRule}
-            onChange={e => update("pricingRule", e.target.value)}
-          />
-        </Field>
-        <Field
-          label="Types de problème"
-          hint="Un type par ligne, 20 maximum, 120 caractères chacun."
-        >
-          <textarea
-            rows={4}
-            value={problems}
-            onChange={e => setProblems(e.target.value)}
-          />
-        </Field>
-        <Field
-          label="Questions au client"
-          hint="Une question par ligne, 10 maximum, 200 caractères chacune."
-        >
-          <textarea
-            rows={4}
-            value={questions}
-            onChange={e => setQuestions(e.target.value)}
-          />
-        </Field>
-        <Field label="Conditions d’intervention">
-          <textarea
-            rows={3}
-            maxLength={1000}
-            value={values.conditions}
-            onChange={e => update("conditions", e.target.value)}
-          />
-        </Field>
-        <Field label="Zone spécifique à la prestation">
-          <input
-            maxLength={300}
-            value={values.zone}
-            onChange={e => update("zone", e.target.value)}
-          />
-        </Field>
+            Durée, conditions et zone d’intervention
+          </summary>
+          <div className="stack">
+            <Field label="Durée indicative (minutes)">
+              <input
+                type="number"
+                required
+                min="15"
+                max="1440"
+                step="1"
+                value={values.durationMinutes}
+                onChange={e =>
+                  update("durationMinutes", Number(e.target.value))
+                }
+              />
+            </Field>
+            <Field label="Conditions d’intervention">
+              <textarea
+                rows={3}
+                maxLength={1000}
+                value={values.conditions}
+                onChange={e => update("conditions", e.target.value)}
+              />
+            </Field>
+            <Field label="Zone spécifique à la prestation">
+              <input
+                maxLength={300}
+                value={values.zone}
+                onChange={e => update("zone", e.target.value)}
+              />
+            </Field>
+          </div>
+        </details>
+        <details>
+          <summary
+            style={{
+              minHeight: 44,
+              cursor: "pointer",
+              padding: "12px 0",
+              fontWeight: 700,
+            }}
+          >
+            Types de problème et questions au client
+          </summary>
+          <div className="stack">
+            <Field
+              label="Types de problème"
+              hint="Un type par ligne, 20 maximum, 120 caractères chacun."
+            >
+              <textarea
+                rows={4}
+                value={problems}
+                onChange={e => {
+                  setValidationConfirmed(false);
+                  setProblems(e.target.value);
+                }}
+              />
+            </Field>
+            <Field
+              label="Questions au client"
+              hint="Une question par ligne, 10 maximum, 200 caractères chacune."
+            >
+              <textarea
+                rows={4}
+                value={questions}
+                onChange={e => {
+                  setValidationConfirmed(false);
+                  setQuestions(e.target.value);
+                }}
+              />
+            </Field>
+          </div>
+        </details>
         <div className="notice stack">
           <label className="row" style={{ minHeight: 44 }}>
             <input
@@ -579,8 +637,8 @@ function ServiceForm({
                 checked={validationConfirmed}
                 onChange={e => setValidationConfirmed(e.target.checked)}
               />
-              Je valide les informations, le tarif ou la règle de devis et les
-              conditions.
+              Je valide le mode tarifaire, les inclusions et exclusions, les
+              frais de déplacement, les informations et les conditions.
             </label>
           )}
         </div>

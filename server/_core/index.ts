@@ -7,10 +7,13 @@ import { publicPlatformScript } from "./publicConfig";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { registerPaymentWebhook } from "../mds/payment-webhook";
 
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  // Verify exact request bytes before the JSON body parser changes them.
+  registerPaymentWebhook(app);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "8mb" }));
   app.use(express.urlencoded({ limit: "8mb", extended: true }));

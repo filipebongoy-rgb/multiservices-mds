@@ -13,6 +13,8 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { statusLabels, dateTime, money } from "@shared/mds";
+import { PriceDetails } from "@/components/mds/PriceDetails";
+import { PaymentPanel } from "@/components/mds/PaymentPanel";
 import { ApiError, Loading } from "@/components/mds/Layout";
 
 function initialKey(reference: string) {
@@ -247,6 +249,9 @@ export default function Tracking() {
           </div>
           <div className="tracking-layout">
             <div className="stack">
+              {r.pricingSnapshot && (
+                <PriceDetails snapshot={r.pricingSnapshot} frozen />
+              )}
               {canConfirm && (
                 <section className="panel stack">
                   <div className="eyebrow">VOTRE ACCORD EST ATTENDU</div>
@@ -424,6 +429,14 @@ export default function Tracking() {
                     {r.address}, {r.postcode} {r.city}
                   </p>
                 </section>
+              )}
+              {details.data?.invoice && (
+                <PaymentPanel
+                  reference={r.reference}
+                  token={lookup?.token}
+                  status={r.status}
+                  invoice={details.data.invoice}
+                />
               )}
               {success && (
                 <p role="status" className="success-message">

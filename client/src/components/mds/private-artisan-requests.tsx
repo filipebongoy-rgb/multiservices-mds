@@ -38,6 +38,11 @@ import {
   type RequestRecord,
   type Service,
 } from "./private-types";
+import {
+  euroInput,
+  parseEuroCents,
+  PricingSnapshotSummary,
+} from "./private-pricing";
 
 type ArtisanAction = z.infer<typeof artisanActionSchema>["action"];
 const actionLabels: Record<ArtisanAction, string> = {
@@ -53,6 +58,21 @@ const actionLabels: Record<ArtisanAction, string> = {
   paid: "Confirmer le paiement",
   close: "Clôturer le dossier",
 };
+
+function proposalPrice(request: RequestRecord, service?: Service) {
+  if (request.quoteStatus === "accepted") return request.proposedPriceCents;
+  if (request.pricingSnapshot) return request.pricingSnapshot.totalCents;
+  return request.proposedPriceCents ?? service?.priceCents ?? null;
+}
+
+function quoteRequired(request: RequestRecord) {
+  return (
+    request.quoteStatus === "pending" ||
+    request.quoteStatus === "refused" ||
+    (request.pricingSnapshot?.requiresQuote === true &&
+      request.quoteStatus !== "accepted")
+  );
+}
 
 export function ArtisanRequests({
   requests,
@@ -251,13 +271,13 @@ export function RequestDetail({
     );
   const editable = editableRequestStatuses.includes(request.status);
   const quickStart = request.proposedStart ?? request.desiredStart;
-  const quickPrice = request.proposedPriceCents ?? service?.priceCents;
+  const quickPrice = proposalPrice(request, service);
+  const needsAcceptedQuote = quoteRequired(request);
   const quickAccept =
     !!quickStart &&
     new Date(quickStart).getTime() > Date.now() &&
     quickPrice != null &&
-    request.quoteStatus !== "pending" &&
-    request.quoteStatus !== "refused";
+    !needsAcceptedQuote;
   const canCancel =
     editable || ["confirmed", "planned"].includes(request.status);
   const documents = detail.data?.documents ?? [];
@@ -338,6 +358,16 @@ export function RequestDetail({
           </p>
         )}
       </section>
+      {request.pricingSnapshot ? (
+        <PricingSnapshotSummary snapshot={request.pricingSnapshot} />
+      ) : (
+        <p className="notice">
+          Ancien dossier : aucun instantané des conditions et des frais au dépôt
+          n’a été conservé. Le tarif du catalogue actuel ne prouve pas les
+          anciennes conditions. Le parcours historique reste disponible ; faites
+          accepter un vrai devis pour clarifier ou modifier le périmètre.
+        </p>
+      )}
       <section className="notice stack">
         <h4>Créneau et proposition</h4>
         <p className="row">
@@ -385,16 +415,20 @@ export function RequestDetail({
       </section>
       <section className="stack">
         <h4>Actions sur le dossier</h4>
+        {editable && needsAcceptedQuote && (
+          <p className="notice">
+            Un devis réel doit être accepté par le client avant l’acceptation ou
+            une autre proposition de créneau. Utilisez « Devis » pour déposer un
+            nouveau PDF et soumettre son montant ; attendez ensuite l’accord
+            client.
+          </p>
+        )}
         <div className="row" style={{ flexWrap: "wrap", gap: 8 }}>
           {editable && (
             <>
               <ActionButton
                 className="primary"
-                disabled={
-                  mutation.isPending ||
-                  request.quoteStatus === "pending" ||
-                  request.quoteStatus === "refused"
-                }
+                disabled={mutation.isPending || needsAcceptedQuote}
                 onClick={() => {
                   if (quickAccept)
                     void perform({
@@ -404,7 +438,9 @@ export function RequestDetail({
                       proposedStart: new Date(quickStart!).toISOString(),
                       priceCents: quickPrice!,
                       durationMinutes:
-                        request.durationMinutes || service?.durationMinutes,
+                        request.durationMinutes ||
+                        request.pricingSnapshot?.durationMinutes ||
+                        service?.durationMinutes,
                     });
                   else setAction("accept");
                 }}
@@ -412,10 +448,13 @@ export function RequestDetail({
                 <Check size={17} aria-hidden="true" />
                 {quickAccept
                   ? "Accepter en un clic"
-                  : "Proposer prix et créneau"}
+                  : request.pricingSnapshot ||
+                      request.quoteStatus === "accepted"
+                    ? "Accepter et proposer le créneau"
+                    : "Proposer prix et créneau"}
               </ActionButton>
               <ActionButton
-                disabled={mutation.isPending}
+                disabled={mutation.isPending || needsAcceptedQuote}
                 onClick={() => setAction("propose")}
               >
                 <CalendarDays size={17} aria-hidden="true" />
@@ -501,7 +540,10 @@ export function RequestDetail({
         </div>
         <p className="muted">
           Les changements d’état et la version du dossier sont vérifiés par le
-          serveur. Aucun paiement n’est déclenché ici.
+          serveur. Le montant de la facture est calculé côté serveur depuis le
+          prix applicable au dossier. Une confirmation manuelle exige la
+          vérification d’un paiement réellement reçu ; un essai de paiement ne
+          suffit pas.
         </p>
       </section>
       <details className="stack">
@@ -618,20 +660,46 @@ function ActionForm({
   const [start, setStart] = useState(
     dateInput(request.proposedStart ?? request.desiredStart)
   );
-  const [price, setPrice] = useState(
-    (request.proposedPriceCents ?? service?.priceCents) == null
-      ? ""
-      : String((request.proposedPriceCents ?? service?.priceCents)! / 100)
+  const [price, setPrice] = useState(() =>
+    euroInput(
+      action === "quote"
+        ? request.proposedPriceCents
+        : proposalPrice(request, service)
+    )
   );
   const [duration, setDuration] = useState(
-    String(request.durationMinutes || service?.durationMinutes || 15)
+    String(
+      request.durationMinutes ||
+        request.pricingSnapshot?.durationMinutes ||
+        service?.durationMinutes ||
+        15
+    )
   );
   const [message, setMessage] = useState("");
   const proposal = ["accept", "propose", "quote"].includes(action);
+  const priceLocked =
+    action !== "quote" &&
+    (request.pricingSnapshot != null || request.quoteStatus === "accepted");
+  const authoritativePrice = proposalPrice(request, service);
+  const directProposalBlocked =
+    ["accept", "propose"].includes(action) && quoteRequired(request);
   const [localError, setLocalError] = useState<unknown>(null);
   async function submit() {
     setLocalError(null);
     try {
+      if (directProposalBlocked)
+        throw new Error(
+          "Un devis accepté est nécessaire avant cette action. Utilisez l’action Devis."
+        );
+      const proposedPrice = proposal
+        ? priceLocked
+          ? authoritativePrice
+          : parseEuroCents(price, "Prix proposé")
+        : null;
+      if (proposal && proposedPrice == null)
+        throw new Error(
+          "Un prix défini est nécessaire. Déposez un devis si le total ne peut pas être calculé."
+        );
       await onSubmit({
         id: request.id,
         version: request.version,
@@ -642,9 +710,7 @@ function ActionForm({
               ...(start
                 ? { proposedStart: new Date(start).toISOString() }
                 : {}),
-              ...(price !== ""
-                ? { priceCents: Math.round(Number(price) * 100) }
-                : {}),
+              ...(proposedPrice != null ? { priceCents: proposedPrice } : {}),
               durationMinutes: Number(duration),
             }
           : {}),
@@ -704,14 +770,27 @@ function ActionForm({
               />
             </Field>
             <div className="form-grid">
-              <Field label="Prix proposé (€)">
+              <Field
+                label={
+                  priceLocked
+                    ? "Prix conservé du dossier (€)"
+                    : action === "quote"
+                      ? "Montant total du devis PDF (€)"
+                      : "Prix proposé (€)"
+                }
+                hint={
+                  priceLocked
+                    ? "Non modifiable : toute nouvelle portée ou montant nécessite un nouveau devis PDF accepté."
+                    : "Virgule ou point, deux décimales maximum. Le montant du devis doit correspondre au PDF."
+                }
+              >
                 <input
-                  type="number"
+                  type="text"
                   inputMode="decimal"
-                  min="0"
-                  step="0.01"
+                  maxLength={20}
                   required
-                  value={price}
+                  readOnly={priceLocked}
+                  value={priceLocked ? euroInput(authoritativePrice) : price}
                   onChange={e => setPrice(e.target.value)}
                 />
               </Field>
@@ -728,6 +807,19 @@ function ActionForm({
               </Field>
             </div>
           </>
+        )}
+        {action === "paid" && (
+          <p className="notice">
+            Confirmation manuelle d’un paiement réellement reçu, pas d’une
+            tentative ou d’une simulation en mode test. Vérifiez le relevé ou le
+            justificatif et renseignez le mode, la date ou la référence.
+          </p>
+        )}
+        {action === "invoice" && (
+          <p className="notice">
+            Le serveur reprend le montant applicable au dossier. Cette action ne
+            permet pas de saisir un supplément.
+          </p>
         )}
         <Field
           label={
@@ -755,7 +847,11 @@ function ActionForm({
             className={
               action === "cancel" || action === "refuse" ? "dark" : "primary"
             }
-            disabled={pending || (action === "quote" && !hasQuote)}
+            disabled={
+              pending ||
+              directProposalBlocked ||
+              (action === "quote" && !hasQuote)
+            }
           >
             {pending ? "Enregistrement…" : "Confirmer"}
           </ActionButton>

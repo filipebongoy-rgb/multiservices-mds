@@ -1,5 +1,5 @@
 // In-memory Drizzle boundary used ONLY by unit tests; never imported by production.
-import { getTableName, type SQL } from "drizzle-orm";
+import { getTableColumns, getTableName, type AnyColumn, type SQL } from "drizzle-orm";
 import { MySqlDialect } from "drizzle-orm/mysql-core";
 type Row = Record<string, any>;
 type Store = Record<string, Row[]>;
@@ -72,10 +72,17 @@ export class MockDatabase {
       const matches = rows.filter(r => condition(where, r)).slice(0, maximum);
       if (operation === "select") return matches.map(r => fields ? Object.fromEntries(Object.entries(fields).map(([key, col]) => [key, r[col.name]])) : structuredClone(r));
       if (operation === "insert") {
+        const columns = getTableColumns(table) as Record<string, AnyColumn>;
+        const defaults: Row = {};
+        for (const [key, column] of Object.entries(columns)) {
+          if (column.default !== undefined && ["string", "boolean", "number"].includes(typeof column.default)) defaults[key] = column.default;
+          else if (!column.notNull) defaults[key] = null;
+        }
+        for (const key of Object.keys(data)) if (!(key in columns)) throw new Error(`Unknown SQL column ${name}.${key}`);
         const existing = name === "mds_notification_reads" ? rows.find(r => r.notificationId === data.notificationId && r.userId === data.userId) : undefined;
         if (duplicate && existing) { Object.assign(existing, duplicate); return [{ insertId: existing.id, affectedRows: 1 }]; }
         const newId = Math.max(0, ...rows.map(r => Number(r.id) || 0)) + 1;
-        rows.push({ id: newId, createdAt: new Date(), updatedAt: new Date(), readAt: null, ...structuredClone(data) });
+        rows.push({ ...defaults, id: newId, createdAt: new Date(), updatedAt: new Date(), ...structuredClone(data) });
         return [{ insertId: newId, affectedRows: 1 }];
       }
       if (operation === "update") { for (const row of matches) Object.assign(row, structuredClone(data)); return [{ affectedRows: matches.length }]; }

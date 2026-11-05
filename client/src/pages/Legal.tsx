@@ -53,6 +53,20 @@ export function Privacy() {
         l’application ; aucun envoi automatique d’e-mail ou de SMS n’est
         annoncé.
       </p>
+      <h2>Les paiements</h2>
+      <p>
+        Lorsque vous ouvrez le paiement Stripe, les références de votre dossier
+        et de facture, le montant ainsi que votre nom et votre adresse e-mail
+        sont transmis au prestataire pour préparer le paiement et le rapprocher
+        de votre facture. Les informations de carte sont saisies chez Stripe ;
+        MDS ne conserve ni numéro de carte, ni code de sécurité.
+      </p>
+      <p>
+        Le registre MDS conserve les références, dates, modes et statuts de
+        paiement ainsi que le montant contractuel réservé. Une divergence avec
+        le montant reçu nécessite un rapprochement avec les données Stripe. Les
+        essais de paiement sont signalés et ne règlent pas une facture réelle.
+      </p>
       <h2>Cookies et services du site</h2>
       <p>
         La connexion utilise une session technique nécessaire à l’accès aux

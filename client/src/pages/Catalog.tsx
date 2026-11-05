@@ -12,7 +12,9 @@ import {
   Wrench,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { trades, money } from "@shared/mds";
+import { trades } from "@shared/mds";
+import { calculatePricing } from "@shared/pricing";
+import { PriceDetails } from "@/components/mds/PriceDetails";
 import { FreeRequest, Loading, ApiError, Empty } from "@/components/mds/Layout";
 const icons = [Droplets, Zap, Flame, Paintbrush, Wrench];
 export default function Catalog() {
@@ -81,6 +83,15 @@ export default function Catalog() {
               </div>
               <h2>{s.name}</h2>
               <p>{s.description}</p>
+              {s.photoUrl && (
+                <img
+                  className="service-photo"
+                  src={s.photoUrl}
+                  alt={`Illustration de la prestation ${s.name}`}
+                  loading="lazy"
+                />
+              )}
+              <PriceDetails snapshot={calculatePricing(s)} compact />
               {s.problemTypes.length > 0 && (
                 <div className="problem-tags">
                   {s.problemTypes.map(p => (
@@ -93,7 +104,7 @@ export default function Catalog() {
                   <Clock3 size={15} />
                   {s.durationMinutes} min estimées
                 </span>
-                <span>{money(s.priceCents)}</span>
+
                 {s.zone && (
                   <span>
                     <MapPin size={15} />
@@ -101,9 +112,7 @@ export default function Catalog() {
                   </span>
                 )}
               </div>
-              {s.conditions && (
-                <p className="muted small-text">{s.conditions}</p>
-              )}
+
               <Link href={"/demande?service=" + s.id} className="btn primary">
                 Demander cette prestation
                 <ArrowRight size={18} />

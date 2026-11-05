@@ -1197,3 +1197,200 @@
     min-height: 430px;
   }
 }
+
+/* Système visuel commun MDS — référence mobile appliquée à tous les écrans. */
+:root {
+  --mds-orange: #e95712;
+  --mds-orange-dark: #c9470b;
+  --mds-ink: #122b3e;
+  --mds-night: #071725;
+  --mds-paper: #f7f7f4;
+  --mds-border: #dfe3e1;
+  --mds-green: #23ad73;
+  --mds-blue: #2f86de;
+}
+body {
+  background: var(--mds-paper);
+  color: var(--mds-ink);
+  font-family: Inter, Arial, sans-serif;
+}
+.page-shell,
+.standard-page,
+.simple-home,
+.simple-pro {
+  width: min(100%, 520px);
+  margin-right: auto;
+  margin-left: auto;
+  padding-right: 20px;
+  padding-left: 20px;
+}
+.page-shell h1,
+.page-shell h2,
+.page-shell h3,
+.simple-home h1,
+.simple-home h2,
+.simple-pro h1,
+.simple-pro h2 {
+  color: var(--mds-ink);
+  letter-spacing: -0.025em;
+}
+.panel,
+.notice,
+.tracking-start-panel,
+.documents-start-panel,
+.profile-first-actions,
+.home-next-steps,
+.home-professional-link,
+.home-access-card,
+.simple-trade,
+.choice-list .btn,
+.request-summary,
+.tracking-live-card,
+.tracking-proof-card {
+  border: 1px solid var(--mds-border);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgb(18 43 62 / 5%);
+}
+.btn,
+button.btn,
+.action-button,
+button.primary,
+.btn.primary {
+  min-height: 50px;
+  border-radius: 9px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.btn.primary,
+button.primary,
+.request-simple .btn.primary,
+.home-hero-action {
+  border-color: var(--mds-orange);
+  background: var(--mds-orange);
+  color: #fff;
+}
+.btn.primary:hover,
+button.primary:hover,
+.request-simple .btn.primary:hover,
+.home-hero-action:hover {
+  background: var(--mds-orange-dark);
+}
+.btn.secondary {
+  border-color: var(--mds-border);
+  background: #fff;
+  color: var(--mds-ink);
+}
+.field input,
+.field select,
+.field textarea,
+input,
+select,
+textarea {
+  min-height: 50px;
+  border: 1px solid #cfd7d8;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--mds-ink);
+  font-size: 16px;
+}
+.field textarea,
+textarea {
+  min-height: 112px;
+}
+.choice-list .btn.selected,
+.choice-list .btn[aria-pressed="true"] {
+  border-color: var(--mds-orange);
+  background: #fff4ec;
+  box-shadow: inset 0 0 0 1px var(--mds-orange);
+}
+.simple-header .header-inner {
+  width: min(100%, 520px);
+  min-height: 70px;
+  margin: auto;
+  padding: 10px 20px;
+}
+.simple-header .brand-logo {
+  width: 156px;
+}
+.simple-header .simple-nav-link {
+  min-height: 42px;
+  border-radius: 9px;
+  font-size: 14px;
+}
+.site-footer.simple-footer {
+  width: min(100%, 520px);
+  margin: auto;
+  border-radius: 0;
+}
+.home-access-card,
+.simple-trade {
+  transition:
+    border-color 120ms ease,
+    background 120ms ease;
+}
+.home-access-card.active,
+.home-access-card:hover,
+.simple-trade:hover,
+.simple-trade:focus-visible {
+  border-color: var(--mds-orange);
+  background: #fff4ec;
+}
+.tracking-progress li.done span,
+.progress-step.done,
+.step.done {
+  border-color: var(--mds-green);
+  background: var(--mds-green);
+}
+.status-success,
+.success-message {
+  color: #13784d;
+}
+.mobile-bottom-nav {
+  width: min(100%, 520px);
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 16px 16px 0 0;
+}
+.mobile-bottom-nav a {
+  min-height: 68px;
+  color: var(--mds-ink);
+}
+.mobile-bottom-nav a.active {
+  color: var(--mds-orange);
+}
+@media (min-width: 761px) {
+  .page-shell,
+  .standard-page,
+  .simple-home,
+  .simple-pro,
+  .simple-header .header-inner,
+  .site-footer.simple-footer {
+    width: min(100% - 48px, 1120px);
+  }
+  .mobile-bottom-nav {
+    width: auto;
+    right: 0;
+    left: 0;
+    transform: none;
+    border-radius: 0;
+  }
+}
+
+.tracking-gps-page,
+.tracking-gps-page .tracking-live-card,
+.tracking-gps-page .trip-map-card {
+  background: var(--mds-night);
+  color: #fff;
+}
+.tracking-gps-page .tracking-live-card {
+  border-color: #17354a;
+}
+.tracking-gps-page .tracking-live-card h2,
+.tracking-gps-page .tracking-live-card p,
+.tracking-gps-page .tracking-live-card .tracking-live-topline,
+.tracking-gps-page .tracking-live-card .tracking-live-updated,
+.tracking-gps-page .tracking-live-card .tracking-live-next {
+  color: #fff;
+}

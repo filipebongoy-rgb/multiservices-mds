@@ -49,6 +49,14 @@ export default function Profile() {
             particuliers ou professionnels.
           </p>
           <LoginButton />
+          <div className="profile-first-actions">
+            <Link className="btn secondary" href="/demande">
+              Faire une demande sans compte
+            </Link>
+            <Link className="text-link" href="/suivi">
+              J’ai déjà une demande à suivre
+            </Link>
+          </div>
         </section>
       </main>
     );

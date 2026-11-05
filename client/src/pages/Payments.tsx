@@ -39,11 +39,11 @@ export default function Payments() {
   }, [reference, fragment]);
   return (
     <main id="main-content" className="page-shell standard-page">
-      <div className="eyebrow">FACTURES ET RÈGLEMENTS</div>
-      <h1 className="page-title">Vos paiements, au clair.</h1>
+      <div className="eyebrow">MES DOCUMENTS</div>
+      <h1 className="page-title">Mes documents et paiements</h1>
       <p className="lead muted">
-        Consultez les montants et confirmations liés à vos vraies factures. Les
-        essais de paiement sont identifiés séparément.
+        Retrouvez ici vos factures, vos confirmations de paiement et les
+        documents liés à vos interventions MDS.
       </p>
       <p className="action-example">
         Exemple : ouvrez le lien de suivi d’une demande, puis vérifiez la
@@ -62,6 +62,24 @@ export default function Payments() {
             vérification ; la page s’actualise automatiquement.
           </p>
         </div>
+      )}
+      {!reference && (
+        <section className="panel stack documents-start-panel">
+          <h2>Comment accéder à un document ?</h2>
+          <p>
+            Ouvrez une demande dans <strong>Mes demandes</strong>, puis
+            choisissez la facture ou le document associé. Les photos et pièces
+            privées restent accessibles uniquement aux personnes autorisées.
+          </p>
+          <div className="row" style={{ flexWrap: "wrap" }}>
+            <Link className="btn primary" href="/suivi">
+              Ouvrir Mes demandes
+            </Link>
+            <Link className="btn secondary" href="/demande">
+              Faire une demande
+            </Link>
+          </div>
+        </section>
       )}
       {reference ? (
         <div className="stack" style={{ maxWidth: 760, marginTop: 24 }}>

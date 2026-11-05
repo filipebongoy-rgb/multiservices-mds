@@ -176,6 +176,27 @@ export default function Tracking() {
             Exemple : copiez la référence reçue par e-mail, puis la clé privée
             si elle est demandée.
           </p>
+          <section className="panel stack tracking-start-panel">
+            <h2>Que voulez-vous faire ?</h2>
+            <div className="tracking-start-actions">
+              <Link className="btn primary" href="/demande">
+                Faire une nouvelle demande <ArrowRight size={17} />
+              </Link>
+              {user ? (
+                <a className="btn secondary" href="#mes-demandes">
+                  Voir mes demandes enregistrées
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  className="btn secondary"
+                  onClick={() => startLogin()}
+                >
+                  Me connecter pour retrouver mes demandes
+                </button>
+              )}
+            </div>
+          </section>
           <form
             className="panel stack"
             style={{ maxWidth: 560, marginTop: 28 }}
@@ -238,13 +259,15 @@ export default function Tracking() {
               retry={() => details.refetch()}
             />
           )}
-          <MyRequests
-            onSelect={ref => {
-              setReference(ref);
-              setToken("");
-              setLookup({ reference: ref });
-            }}
-          />
+          <div id="mes-demandes">
+            <MyRequests
+              onSelect={ref => {
+                setReference(ref);
+                setToken("");
+                setLookup({ reference: ref });
+              }}
+            />
+          </div>
         </>
       ) : (
         <>

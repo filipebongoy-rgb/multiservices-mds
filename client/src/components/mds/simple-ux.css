@@ -131,6 +131,34 @@
 .request-simple .btn.primary:hover {
   background: #b8490f;
 }
+.tracking-start-panel,
+.documents-start-panel {
+  max-width: 760px;
+  margin-top: 24px;
+  border-left: 4px solid #bc4c23;
+  background: #fffaf5;
+}
+.tracking-start-panel h2,
+.documents-start-panel h2 {
+  margin: 0;
+  font-size: 21px;
+}
+.tracking-start-actions,
+.profile-first-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.tracking-start-actions .btn,
+.documents-start-panel .btn {
+  min-height: 48px;
+}
+.profile-first-actions {
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid #e7e5e2;
+}
 .simple-home-intro {
   max-width: 800px;
 }

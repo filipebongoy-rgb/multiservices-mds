@@ -27,18 +27,17 @@ export function Brand({ inverse = false }: { inverse?: boolean }) {
       <span className="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 40 40" fill="none">
           <path
-            d="M7 29V13l8 7 5-9 5 9 8-7v16M7 29h26"
+            d="M5 18 20 6l15 12M9 16v18h22V16M16 34V24h8v10"
             stroke="currentColor"
-            strokeWidth="3"
+            strokeWidth="2.5"
+            strokeLinecap="square"
             strokeLinejoin="miter"
           />
         </svg>
       </span>
       <span>
-        <strong>
-          MDS<span className="brand-dot">.</span>
-        </strong>
-        <small>MULTISERVICES</small>
+        <strong>MDS</strong>
+        <small>ARTISAN DE PROXIMITÉ</small>
       </span>
     </Link>
   );

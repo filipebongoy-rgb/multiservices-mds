@@ -22,10 +22,10 @@
   --radius-md: 8px;
 }
 :root {
-  --background: #fff;
+  --background: #fbfaf7;
   --foreground: #262a27;
   --primary: #bc4c23;
-  --radius: 8px;
+  --radius: 2px;
   font-synthesis: none;
 }
 * {
@@ -33,9 +33,9 @@
 }
 body {
   margin: 0;
-  background: #fff;
+  background: #fbfaf7;
   color: #262a27;
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: "Trebuchet MS", Arial, sans-serif;
   font-size: 15px;
   line-height: 1.6;
 }
@@ -44,7 +44,7 @@ h2,
 h3,
 h4,
 .brand {
-  font-family: "Manrope", system-ui, sans-serif;
+  font-family: Georgia, "Times New Roman", serif;
 }
 h1,
 h2,
@@ -142,7 +142,7 @@ select:focus-visible {
 .site-header {
   height: 97px;
   border-bottom: 1px solid #efefeb;
-  background: #fff;
+  background: #fbfaf7;
   position: relative;
   z-index: 20;
 }
@@ -164,7 +164,8 @@ select:focus-visible {
 }
 .brand-mark {
   color: #bc4c23;
-  border: 1.5px solid #bc4c23;
+  border: 0;
+  background: #f4ede4;
   width: 43px;
   height: 43px;
   display: flex;
@@ -180,12 +181,12 @@ select:focus-visible {
   font-size: 31px;
   line-height: 1;
   letter-spacing: 1px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .brand small {
   display: block;
   font-size: 8px;
-  letter-spacing: 2.7px;
+  letter-spacing: 1.8px;
   line-height: 1.8;
   font-weight: 700;
 }
@@ -773,7 +774,8 @@ select:focus-visible {
 }
 .service-card {
   border: 1px solid #dedfd9;
-  border-radius: 8px;
+  border-radius: 2px;
+  background: #fffefa;
   padding: 25px;
   display: flex;
   flex-direction: column;
@@ -813,9 +815,9 @@ select:focus-visible {
   border-radius: 4px;
 }
 .panel {
-  background: #fff;
+  background: #fffefa;
   border: 1px solid #dedfd9;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 25px;
 }
 .stack {

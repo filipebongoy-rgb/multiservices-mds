@@ -2853,3 +2853,29 @@ input[type="checkbox"] {
   color: #8b97a5;
   margin: 0;
 }
+
+/* Espace artisan — master-detail responsive :
+   sur desktop deux colonnes restent visibles ; sur mobile la liste ou le
+   détail s'affiche seul pour que l'ouverture d'un dossier soit immédiatement visible. */
+@media (max-width: 700px) {
+  .artisan-list-panel--hidden-mobile,
+  .artisan-detail-panel--hidden-mobile {
+    display: none !important;
+  }
+  .artisan-detail-panel {
+    width: 100%;
+  }
+  .artisan-detail-panel > section {
+    animation: artisanPanelIn 0.18s ease-out;
+  }
+}
+@keyframes artisanPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

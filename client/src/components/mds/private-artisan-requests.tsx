@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Check,
   ChevronLeft,
+  ChevronRight,
   Clock,
   FileText,
   Mail,
@@ -159,6 +160,14 @@ export function ArtisanRequests({
 }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const select = (id: number | null) => {
+    onSelect(id);
+    if (id !== null) {
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch {}
+    }
+  };
   const filtered = requests
     .filter(
       request =>
@@ -204,8 +213,16 @@ export function ArtisanRequests({
       </div>
       <QueryState loading={loading} error={error} retry={retry} />
       {!loading && !error && (
-        <div className="split-view" style={{ alignItems: "start" }}>
-          <div className="panel stack" style={{ minWidth: 0 }}>
+        <div
+          className="split-view artisan-split"
+          style={{ alignItems: "start" }}
+        >
+          <div
+            className={`panel stack artisan-list-panel${
+              selectedId ? " artisan-list-panel--hidden-mobile" : ""
+            }`}
+            style={{ minWidth: 0 }}
+          >
             <p className="muted">
               {filtered.length} dossier{filtered.length !== 1 ? "s" : ""} ·
               actions urgentes en premier
@@ -226,7 +243,7 @@ export function ArtisanRequests({
                     <button
                       className="data-row"
                       type="button"
-                      onClick={() => onSelect(request.id)}
+                      onClick={() => select(request.id)}
                       aria-pressed={selectedId === request.id}
                       style={{
                         width: "100%",
@@ -239,51 +256,88 @@ export function ArtisanRequests({
                         borderBottom: "1px solid #e7e5e2",
                         borderRadius: 6,
                         cursor: "pointer",
+                        borderLeft:
+                          selectedId === request.id
+                            ? "4px solid #bc4c23"
+                            : "4px solid transparent",
                       }}
                     >
                       <div
-                        className="row"
                         style={{
+                          display: "flex",
+                          alignItems: "center",
                           justifyContent: "space-between",
-                          flexWrap: "wrap",
+                          gap: 12,
                         }}
                       >
-                        <strong>{request.name}</strong>
-                        <span className="eyebrow">{request.reference}</span>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div
+                            className="row"
+                            style={{
+                              justifyContent: "space-between",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <strong>{request.name}</strong>
+                            <span className="eyebrow">{request.reference}</span>
+                          </div>
+                          <p>
+                            {request.serviceName || "Demande libre"} ·{" "}
+                            {request.city}
+                          </p>
+                          <StatusBadge status={request.status} />
+                          {requestPriority(request) < 2 && (
+                            <span className="badge" style={{ marginLeft: 6 }}>
+                              Action requise
+                            </span>
+                          )}
+                          <p className="muted" style={{ marginTop: 8 }}>
+                            {dateTime(request.createdAt)}
+                          </p>
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            color: "#bc4c23",
+                            fontSize: 13,
+                            fontWeight: 600,
+                            flexShrink: 0,
+                          }}
+                          aria-hidden="true"
+                        >
+                          <span>Ouvrir</span>
+                          <ChevronRight size={18} />
+                        </div>
                       </div>
-                      <p>
-                        {request.serviceName || "Demande libre"} ·{" "}
-                        {request.city}
-                      </p>
-                      <StatusBadge status={request.status} />
-                      {requestPriority(request) < 2 && (
-                        <span className="badge" style={{ marginLeft: 6 }}>
-                          Action requise
-                        </span>
-                      )}
-                      <p className="muted" style={{ marginTop: 8 }}>
-                        {dateTime(request.createdAt)}
-                      </p>
                     </button>
                   </li>
                 ))}
               </ul>
             )}
           </div>
-          {selectedId ? (
-            <RequestDetail
-              key={selectedId}
-              id={selectedId}
-              services={services}
-              onBack={() => onSelect(null)}
-              onChanged={onChanged}
-            />
-          ) : (
-            <div className="panel empty">
-              <FileText size={30} aria-hidden="true" />
-              <p>Sélectionnez une demande pour ouvrir son dossier.</p>
-            </div>
-          )}
+          <div
+            className={`artisan-detail-panel${
+              !selectedId ? " artisan-detail-panel--hidden-mobile" : ""
+            }`}
+            style={{ minWidth: 0 }}
+          >
+            {selectedId ? (
+              <RequestDetail
+                key={selectedId}
+                id={selectedId}
+                services={services}
+                onBack={() => onSelect(null)}
+                onChanged={onChanged}
+              />
+            ) : (
+              <div className="panel empty">
+                <FileText size={30} aria-hidden="true" />
+                <p>Sélectionnez une demande pour ouvrir son dossier.</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -472,8 +526,22 @@ export function RequestDetail({
       style={{ minWidth: 0 }}
       aria-label={`Dossier ${request.reference}`}
     >
-      <ActionButton onClick={onBack} style={{ alignSelf: "start" }}>
-        <ChevronLeft size={17} aria-hidden="true" /> Fermer le dossier
+      <ActionButton
+        onClick={() => {
+          onBack();
+          try {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          } catch {}
+        }}
+        style={{
+          alignSelf: "start",
+          fontWeight: 600,
+          fontSize: 14,
+          padding: "10px 14px",
+        }}
+      >
+        <ChevronLeft size={17} aria-hidden="true" /> Retour à la liste des
+        demandes
       </ActionButton>
       <header className="stack">
         <div

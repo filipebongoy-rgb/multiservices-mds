@@ -57,3 +57,33 @@ describe("accès artisan et cohérence du pied de page", () => {
     expect(layout).toContain("Catalogue prestations");
   });
 });
+
+describe("espace artisan mobile : l'ouverture d'un dossier masque la liste pour rendre le détail immédiatement visible", () => {
+  const artisanCss = readFileSync(
+    new URL("../../client/src/components/mds/simple-ux.css", import.meta.url),
+    "utf8"
+  );
+  it("les demandes artisan adoptent le master-detail avec masquage conditionnel de la liste sur mobile", () => {
+    expect(source).toContain("artisan-list-panel");
+    expect(source).toContain("artisan-list-panel--hidden-mobile");
+    expect(source).toContain("artisan-detail-panel--hidden-mobile");
+    expect(source).toContain("artisan-detail-panel");
+  });
+  it("l'onglet interventions reprend le même comportement", () => {
+    const artisan = readFileSync(
+      new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(artisan).toContain("artisan-list-panel--hidden-mobile");
+    expect(artisan).toContain("artisan-detail-panel--hidden-mobile");
+  });
+  it("les règles CSS responsive masquent le panneau inactif sous le breakpoint split-view", () => {
+    expect(artisanCss).toContain("artisan-list-panel--hidden-mobile");
+    expect(artisanCss).toContain("artisan-detail-panel--hidden-mobile");
+    expect(artisanCss).toContain("display: none !important");
+  });
+  it("chaque dossier porte une invite explicite d'ouverture et un retour visible vers la liste", () => {
+    expect(source).toContain("<span>Ouvrir</span>");
+    expect(source).toMatch(/Retour\s+à\s+la\s+liste\s+des\s+demandes/);
+  });
+});

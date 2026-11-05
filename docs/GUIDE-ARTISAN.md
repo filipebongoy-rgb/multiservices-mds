@@ -6,9 +6,9 @@ Ce document répond aux questions concrètes de l’artisan sur le fonctionnemen
 
 ## 1. Comment l’artisan se connecte
 
-- Rendez-vous sur le site MDS, cliquez sur **Mon espace** (en haut à droite sur ordinateur, dernier onglet en bas sur mobile).
-- Le compte artisan a été préconfiguré pour **ife369243@gmail.com** (profil : Ngoyone, rôle admin).
-- Lors de la première connexion, utilisez ce même e-mail : le système vous reconnaît automatiquement et ouvre votre espace artisan avec tous les outils.
+- **Rendez-vous sur le site MDS** (`https://mdsservices-73dc9ex8.manus.space`) et cliquez sur **Mon espace** (en haut à droite sur ordinateur, dernier onglet en bas sur mobile).
+- **Le compte artisan est déjà activé** pour **ife369243@gmail.com** (Ngoyone, administrateur MDS). Il n’y a plus de code à saisir : connectez-vous avec ce même e-mail et vous atterrissez directement dans votre espace artisan avec tous les outils.
+- La redirection après connexion vous amène automatiquement sur l’espace artisan ; vous pouvez ensuite naviguer librement vers le site public grâce au lien « Voir le site public → ».
 
 ---
 
@@ -42,8 +42,9 @@ Depuis l’espace artisan, deux vues :
 
 ### Vue « Demandes » (votre tableau de bord)
 
-- **Colonne de gauche** : la liste des demandes reçues, triées par urgence, avec le nom du client, la prestation demandée, la ville et la date.
-- **Cliquez sur une demande** : la colonne de droite ouvre le **dossier complet**.
+- **Sur ordinateur** : deux colonnes — à gauche la liste des demandes reçues (triées par urgence), à droite le dossier sélectionné.
+- **Sur mobile** : affichage en pleine page. Cliquez sur un dossier (ou son indicateur orange « Ouvrir ») pour voir la fiche complète, puis sur le bouton **« Retour à la liste des demandes »** en haut pour revenir à la liste.
+- **Badge orange « Action requise »** sur les nouvelles demandes (« À analyser », « À préciser ») pour ne rien rater.
 - Le dossier contient :
   - le problème décrit par le client et ses réponses aux questions,
   - ses photos (s’il en a jointes),
@@ -141,13 +142,35 @@ Demande confirmée → Démarrer le trajet → Je suis arrivé → Commencer l�
 
 ## 9. Contacts utiles
 
-- Téléphone MDS : **07 53 82 49 51**
-- E-mail MDS : **ife369243@gmail.com**
+- Téléphone officiel MDS (affiché aux clients) : **06 04 15 99 16**
+- Téléphone propriétaire MDS : **07 53 82 49 51**
+- E-mail officiel : **contact@multiservices-mds.fr**
+- E-mail de connexion artisan : **ife369243@gmail.com**
 - Adresse de l’application : `https://mdsservices-73dc9ex8.manus.space` (publiée automatiquement)
 
 ---
 
-## 10. Checklist quotidienne
+## 10. Comment donner l’accès aux futurs collaborateurs
+
+### Situation actuelle
+
+Aujourd’hui, MDS est conçu autour d’**un seul artisan** : toutes les demandes lui arrivent et lui seul dispose d’un accès privé. Il n’existe pas encore de console d’équipe.
+
+### Évolution prévue (sur demande)
+
+Un système d’**invitation par e-mail** est planifié :
+
+1. Depuis votre espace, un panneau **« Équipe »** permettra d’inviter un collaborateur en saisissant son e-mail.
+2. Le collaborateur reçoit un lien/code d’accès personnel et se connecte avec son propre compte.
+3. Il dispose d’un **rôle opérationnel** : il voit *uniquement* les interventions qui lui sont assignées et peut exécuter les actions terrain (démarrer le trajet, photos avant/après obligatoires, fin d’intervention, signature du client).
+4. Il **n’a pas accès** à l’onglet Activité, aux paiements, aux réglages MDS ni aux dossiers qui ne lui sont pas assignés.
+5. Vous pouvez retirer un accès à tout moment depuis le même panneau.
+
+> **Remarque importante** : tant que ce module n’est pas développé, ne communiquez pas vos identifiants à des tiers. Les collaborateurs doivent avoir chacun leur propre compte pour que la traçabilité (qui a fait quoi et quand) reste juridiquement fiable.
+
+---
+
+## 11. Checklist quotidienne
 
 - [ ] Matin : ouvrir l’onglet **Demandes**, traiter les « Action requise » en premier.
 - [ ] Consulter l’onglet **Aujourd’hui** pour la tournée du jour.

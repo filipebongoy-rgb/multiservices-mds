@@ -199,6 +199,9 @@ function ArtisanWorkspace() {
   const openRequest = (id: number) => {
     setSelectedId(id);
     setTab("requests");
+    try {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {}
   };
   const refreshRequests = () => {
     void requestsQuery.refetch();
@@ -478,6 +481,14 @@ function Interventions({
   onChanged: () => void;
 }) {
   const [showCompleted, setShowCompleted] = useState(false);
+  const select = (id: number | null) => {
+    onSelect(id);
+    if (id !== null) {
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch {}
+    }
+  };
   const visible = requests
     .filter(r =>
       (showCompleted ? completedStates : runningStates).includes(r.status)
@@ -510,8 +521,16 @@ function Interventions({
       </div>
       <QueryState loading={loading} error={error} retry={retry} />
       {!loading && !error && (
-        <div className="split-view" style={{ alignItems: "start" }}>
-          <div className="panel stack">
+        <div
+          className="split-view artisan-split"
+          style={{ alignItems: "start" }}
+        >
+          <div
+            className={`panel stack artisan-list-panel${
+              selectedId ? " artisan-list-panel--hidden-mobile" : ""
+            }`}
+            style={{ minWidth: 0 }}
+          >
             {!visible.length && (
               <p className="muted">
                 Aucune intervention {showCompleted ? "terminée" : "à réaliser"}.
@@ -522,7 +541,7 @@ function Interventions({
                 type="button"
                 key={request.id}
                 className="data-row"
-                onClick={() => onSelect(request.id)}
+                onClick={() => select(request.id)}
                 aria-pressed={selectedId === request.id}
                 style={{
                   width: "100%",
@@ -533,30 +552,67 @@ function Interventions({
                     selectedId === request.id ? "#fff3ed" : "transparent",
                   padding: 12,
                   cursor: "pointer",
+                  borderLeft:
+                    selectedId === request.id
+                      ? "4px solid #bc4c23"
+                      : "4px solid transparent",
                 }}
               >
-                <strong>{request.name}</strong>
-                <p>
-                  {request.serviceName || "Demande libre"} · {request.city}
-                </p>
-                <StatusBadge status={request.status} />
-                {request.proposedStart && (
-                  <p className="muted">{dateTime(request.proposedStart)}</p>
-                )}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <strong>{request.name}</strong>
+                    <p>
+                      {request.serviceName || "Demande libre"} · {request.city}
+                    </p>
+                    <StatusBadge status={request.status} />
+                    {request.proposedStart && (
+                      <p className="muted">{dateTime(request.proposedStart)}</p>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      color: "#bc4c23",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                    aria-hidden="true"
+                  >
+                    <span>Ouvrir</span>
+                    <ChevronRight size={18} />
+                  </div>
+                </div>
               </button>
             ))}
           </div>
-          {selectedId ? (
-            <RequestDetail
-              key={selectedId}
-              id={selectedId}
-              services={services}
-              onBack={() => onSelect(null)}
-              onChanged={onChanged}
-            />
-          ) : (
-            <div className="panel empty">Choisissez une intervention.</div>
-          )}
+          <div
+            className={`artisan-detail-panel${
+              !selectedId ? " artisan-detail-panel--hidden-mobile" : ""
+            }`}
+            style={{ minWidth: 0 }}
+          >
+            {selectedId ? (
+              <RequestDetail
+                key={selectedId}
+                id={selectedId}
+                services={services}
+                onBack={() => onSelect(null)}
+                onChanged={onChanged}
+              />
+            ) : (
+              <div className="panel empty">Choisissez une intervention.</div>
+            )}
+          </div>
         </div>
       )}
     </section>

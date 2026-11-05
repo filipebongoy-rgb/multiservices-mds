@@ -1,0 +1,204 @@
+Très bien. Cela change un point essentiel du fonctionnement de MDS : la réservation doit fonctionner avec un système de demandes et de doubles validations, inspiré d'Uber Eats.
+
+Le client ne réserve pas automatiquement une intervention définitive. Il envoie une demande. L'artisan l'accepte ou la refuse. Ensuite, le client confirme à son tour les conditions proposées.
+
+### 1\. Le parcours de réservation
+
+* Le client envoie sa demande
+
+    Il choisit le service, décrit son problème, ajoute éventuellement une photo et propose un créneau.
+
+* L'artisan reçoit une notification
+
+    Il consulte la demande, le problème, l'adresse, les photos et le créneau.
+
+* L'artisan accepte ou refuse
+
+    Il peut également proposer un autre créneau ou demander des précisions.
+
+* Le client confirme
+
+    Il accepte ou refuse la proposition de MDS.
+
+* Intervention confirmée
+
+    Le rendez-vous apparaît dans les deux espaces et les notifications sont envoyées.
+
+Double validation
+
+### 2\. Les deux interfaces
+
+Côté artisan
+
+* Accepter la demande.
+
+* Refuser la demande.
+
+* Proposer un autre créneau.
+
+* Demander des informations.
+
+* Envoyer un devis.
+
+Côté client
+
+* Accepter la proposition.
+
+* Refuser la proposition.
+
+* Choisir un autre créneau proposé.
+
+* Accepter ou refuser le devis.
+
+Chaque action met automatiquement à jour le dossier.
+
+### 3\. Le suivi comme Uber Eats
+
+Suivi de votre intervention
+
+* Terminé
+
+    Demande envoyée.
+
+* Terminé
+
+    Demande acceptée par MDS.
+
+* Terminé
+
+    Rendez-vous confirmé par le client.
+
+* À venir
+
+    Intervention planifiée.
+
+* Intervention en cours
+
+* Intervention terminée
+
+* Paiement et évaluation
+
+Exemple de suivi visuel, avec états illustratifs.
+
+### 4\. Après l'intervention : les deux parties évaluent
+
+C'est également une bonne idée de reprendre le principe d'Uber :
+
+* Le client évalue l'intervention et l'expérience.
+
+* L'artisan évalue le déroulement de la mission et la coopération du client.
+
+Les évaluations doivent être authentifiées et liées à une véritable intervention terminée. Elles ne doivent pas être publiques automatiquement sans règles de modération.
+
+### 5\. Modification à intégrer dans les trois prompts Manus
+
+# MODIFICATION STRUCTURANTE — SYSTÈME DE DOUBLE VALIDATION INSPIRÉ D'UBER EATS
+
+Cette règle doit être intégrée dans l'ensemble de MULTISERVICES MDS.
+
+La réservation ne doit pas fonctionner comme une confirmation automatique définitive.
+
+Elle doit fonctionner avec un système de demandes, d'acceptation et de confirmation par les deux parties.
+
+### 1. PARCOURS CLIENT
+
+Le client :
+1. Sélectionne une prestation.
+2. Décrit son problème.
+3. Ajoute éventuellement des photos.
+4. Indique son adresse.
+5. Choisit un créneau souhaité.
+6. Envoie sa demande.
+
+Le dossier passe au statut « En attente de validation MDS ».
+
+### 2. PARCOURS ARTISAN
+
+L'artisan reçoit immédiatement la demande dans son espace.
+
+Il peut :
+- Accepter.
+- Refuser.
+- Proposer un autre créneau.
+- Demander des informations supplémentaires.
+- Demander un diagnostic ou un devis.
+
+L'artisan doit pouvoir effectuer ces actions en quelques secondes.
+
+### 3. SECONDE VALIDATION CLIENT
+
+Après acceptation ou proposition de l'artisan, le client reçoit une notification.
+
+Il peut :
+- Accepter la proposition.
+- Refuser.
+- Demander un autre créneau.
+- Accepter ou refuser le devis correspondant.
+
+Le rendez-vous ne devient définitivement confirmé qu'après les validations nécessaires des deux parties.
+
+### 4. GESTION DES STATUTS
+
+Créer des statuts précis :
+
+- Brouillon.
+- Demande envoyée.
+- En attente de MDS.
+- Demande acceptée par MDS.
+- Proposition de nouveau créneau.
+- Informations complémentaires demandées.
+- En attente de confirmation client.
+- Confirmée.
+- Refusée.
+- Annulée.
+- Intervention planifiée.
+- Intervention en cours.
+- Intervention terminée.
+- Facture émise.
+- Paiement confirmé.
+- Clôturée.
+
+Prévoir des délais d'expiration configurables et des notifications automatiques.
+
+### 5. SUIVI EN TEMPS RÉEL
+
+Créer un suivi visuel similaire dans son principe à Uber Eats.
+
+Le client voit l'avancement de sa demande et de son intervention.
+
+L'artisan voit les validations attendues et les prochaines actions.
+
+Ne jamais afficher une progression qui ne correspond pas à un événement réellement enregistré.
+
+### 6. DOUBLE ÉVALUATION
+
+Après une intervention terminée :
+
+Le client peut évaluer la prestation.
+
+L'artisan peut évaluer le déroulement de la mission.
+
+Prévoir une note, un commentaire facultatif, des règles de modération et une protection contre les faux avis.
+
+### 7. RÈGLES TECHNIQUES
+
+Chaque changement de statut doit être enregistré dans un historique horodaté.
+
+Prévoir :
+- Notifications.
+- Gestion des refus.
+- Gestion des annulations.
+- Gestion des délais.
+- Protection contre les doubles confirmations.
+- Synchronisation des deux espaces.
+- Historique des actions.
+
+Ne jamais créer une réservation définitive sans les validations requises.
+
+Appliquer ce fonctionnement aux particuliers et aux professionnels.
+
+Conserver un seul artisan MDS comme intervenant.
+
+Cette double validation devient une règle centrale du moteur de réservation.
+
+Une précision importante : pour éviter de faire perdre du temps au client, l'artisan doit pouvoir accepter une demande en un clic lorsque le tarif et le créneau sont déjà définis. Le client reçoit alors une proposition prête à confirmer. Pour un travail complexe, le devis reste une étape distincte.

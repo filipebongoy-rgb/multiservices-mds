@@ -1,0 +1,1 @@
+ALTER TABLE `mds_settings` ADD `trackingSecret` varchar(64);

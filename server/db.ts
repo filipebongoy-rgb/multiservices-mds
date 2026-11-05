@@ -1,21 +1,29 @@
 import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import { InsertUser, users } from "../drizzle/schema";
-import { ENV } from './_core/env';
+import { createPool, type Pool } from "mysql2/promise";
 
-let _db: ReturnType<typeof drizzle> | null = null;
+let _db: MySql2Database<Record<string, unknown>> | null = null;
+let _pool: Pool | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      _pool = createPool(process.env.DATABASE_URL);
+      _db = drizzle(_pool);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
     }
   }
   return _db;
+}
+
+export async function closeDatabase() {
+  if (_pool) await _pool.end();
+  _pool = null;
+  _db = null;
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
@@ -51,13 +59,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.lastSignedIn = user.lastSignedIn;
       updateSet.lastSignedIn = user.lastSignedIn;
     }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
-    }
+    // OAuth synchronization never grants a business role. Only claimArtisan does.
 
     if (!values.lastSignedIn) {
       values.lastSignedIn = new Date();

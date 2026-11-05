@@ -8,6 +8,20 @@
       "when": 1788785580464,
       "tag": "0000_initial_users",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1793872053882,
+      "tag": "0001_brief_quasar",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1793872503829,
+      "tag": "0002_cool_morgan_stark",
+      "breakpoints": true
     }
   ]
 }

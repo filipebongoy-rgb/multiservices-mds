@@ -1,0 +1,86 @@
+.private-workspace .section-heading {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.private-workspace .workspace {
+  padding-top: 8px;
+}
+.private-workspace .workspace-nav button.active {
+  color: #a94320;
+  background: #f7eee8;
+}
+.private-workspace .tabs button[aria-pressed="true"] {
+  color: white;
+  background: #262a27;
+  border-color: #262a27;
+}
+.private-workspace .field > span,
+.private-modal .field > span {
+  font-size: 13px;
+  font-weight: 600;
+}
+.private-workspace .metric-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.private-workspace .metric {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.private-workspace .data-row.stack {
+  align-items: stretch;
+}
+.private-workspace details.data-row {
+  display: block;
+}
+.private-workspace .data-row > div,
+.private-workspace .data-row strong,
+.private-modal .data-row > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.private-workspace details > summary:focus-visible,
+.private-modal details > summary:focus-visible {
+  outline: 3px solid #bc4c23;
+  outline-offset: 4px;
+}
+.private-workspace input[type="checkbox"],
+.private-modal input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  flex: 0 0 20px;
+  accent-color: #bc4c23;
+}
+.private-workspace .error-message,
+.private-modal .error-message {
+  padding: 12px;
+  border: 1px solid #f2cfca;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+.private-workspace .notice,
+.private-modal .notice {
+  margin-top: 0;
+}
+.private-workspace .stack > .empty {
+  margin: 0;
+}
+.private-workspace .data-row h4 {
+  font-size: 16px;
+}
+@media (max-width: 600px) {
+  .private-workspace .page-title {
+    font-size: 30px;
+  }
+  .private-workspace .workspace-nav {
+    padding-bottom: 6px;
+  }
+  .private-workspace .panel {
+    padding: 18px;
+  }
+  .private-workspace .row > .badge {
+    flex: 0 0 auto;
+  }
+}

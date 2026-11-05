@@ -66,6 +66,9 @@ export default function Tracking() {
   const [alternativeId, setAlternativeId] = useState<string>("");
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
+  const publicSettings = trpc.mds.settings.public.useQuery(undefined, {
+    staleTime: 600000,
+  });
   const details = trpc.mds.requests.track.useQuery(
     lookup || { reference: "" },
     {
@@ -217,6 +220,10 @@ export default function Tracking() {
             : liveTracking?.awaiting
               ? "MDS analyse votre demande et vous répondra dans ce même suivi."
               : "Consultez les actions disponibles plus bas dans votre dossier.";
+  const mdsPhone = (publicSettings.data?.contactPhone || "").replace(
+    /[^\d+]/g,
+    ""
+  );
   const beforePhotos =
     details.data?.documents.filter(
       document => document.kind === "photo" && document.photoStage === "before"
@@ -391,10 +398,10 @@ export default function Tracking() {
               </p>
             )}
             <p>{liveDescription}</p>
-            {r.status === "en_route" && (
+            {r.status === "en_route" && mdsPhone && (
               <a
                 className="btn secondary tracking-call-button"
-                href={`tel:${r.phone}`}
+                href={`tel:${mdsPhone}`}
               >
                 <Phone size={17} /> Appeler MDS
               </a>
@@ -680,14 +687,14 @@ export default function Tracking() {
                   </p>
                 </section>
               )}
-              {r.status === "en_route" && (
+              {r.status === "en_route" && mdsPhone && (
                 <section className="notice tracking-contact-card">
                   <strong>Besoin de joindre MDS ?</strong>
                   <p className="small-text">
                     Appelez directement l’artisan pendant son trajet ou à son
                     arrivée.
                   </p>
-                  <a className="btn secondary" href={`tel:${r.phone}`}>
+                  <a className="btn secondary" href={`tel:${mdsPhone}`}>
                     <Phone size={17} /> Appeler MDS
                   </a>
                 </section>

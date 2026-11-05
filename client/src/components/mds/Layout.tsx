@@ -6,12 +6,12 @@ import {
   ChevronDown,
   CircleHelp,
   LogOut,
-  Phone,
   CalendarDays,
   FileText,
   House,
   UserRound,
 } from "lucide-react";
+import { HeaderCallButton, NotificationBell } from "./HeaderActions";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import {
@@ -112,14 +112,11 @@ export function Header() {
               Demande d’intervention
             </strong>
           )}
-          {!privateWorkspace && !requestPage && (
-            <Link
-              href="/demande"
-              className="simple-phone-action"
-              aria-label="Prendre rendez-vous"
-            >
-              <Phone size={21} aria-hidden="true" />
-            </Link>
+          {!requestPage && (
+            <div className="header-quick-actions">
+              <NotificationBell />
+              {!privateWorkspace && <HeaderCallButton />}
+            </div>
           )}
           <nav
             className="simple-primary-nav"
@@ -185,7 +182,7 @@ export function MobileBottomNav() {
     { href: "/", label: "Accueil", Icon: House },
     { href: "/suivi", label: "Mes demandes", Icon: CalendarDays },
     { href: "/paiements", label: "Mes documents", Icon: FileText },
-    { href: "/profil", label: "Mon profil", Icon: UserRound },
+    { href: "/profil", label: "Mon espace", Icon: UserRound },
   ];
   return (
     <nav className="mobile-bottom-nav" aria-label="Navigation mobile">

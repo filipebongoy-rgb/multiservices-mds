@@ -2143,3 +2143,76 @@ input[type="checkbox"] {
   background: #17384f;
   color: #fff;
 }
+
+/* En-tête : cloche de notifications et appel MDS (maquette écran 1). */
+.header-quick-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.header-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--mds-ink);
+  cursor: pointer;
+}
+.header-bell:hover,
+.header-bell:focus-visible {
+  background: #f1f2f1;
+}
+.header-bell-count {
+  position: absolute;
+  top: 5px;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--mds-orange);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+.header-bell-menu {
+  width: min(340px, calc(100vw - 24px));
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.header-bell-menu a {
+  display: grid !important;
+  gap: 2px;
+  padding: 10px 12px !important;
+  white-space: normal;
+}
+.header-bell-menu a strong {
+  color: var(--mds-ink);
+  font-size: 14px;
+}
+.header-bell-menu a span {
+  color: #4d5553;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.header-bell-menu a small {
+  color: #7a8381;
+  font-size: 12px;
+}
+.header-bell-menu a.is-unread {
+  background: #fff5ee;
+}
+.header-bell-empty {
+  margin: 0;
+  padding: 14px;
+  color: #5b6462;
+  font-size: 14px;
+}

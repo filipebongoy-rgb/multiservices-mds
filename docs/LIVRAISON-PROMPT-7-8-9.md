@@ -33,7 +33,7 @@ L'écran de sélection de la demande affiche de vraies vignettes photo locales p
 
 ## 3. Chiffres clés
 
-La suite complète compte 290 tests automatisés passants (13 suites), le parcours de demande illustré comporte 6 étapes avec plus de 30 photos réalistes locales, et aucune régression n'a été détectée sur les parcours particuliers et professionnels.
+La suite complète compte 265 tests automatisés passants (13 suites), le parcours de demande illustré comporte 6 étapes avec plus de 30 photos réalistes locales, et aucune régression n'a été détectée sur les parcours particuliers et professionnels.
 
 ## 4. Documentation disponible
 

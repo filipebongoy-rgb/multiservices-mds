@@ -110,4 +110,4 @@ Le trajet suit désormais `Démarrer le trajet` → position réellement autoris
 - Cycle complet d'intervention vérifié de bout en bout en base avec vraies données.
 
 ## Vérification globale
-- 290 tests automatisés passants (13 suites), TypeScript strict sans erreur, build production OK.
+- 265 tests automatisés passants (13 suites), TypeScript strict sans erreur, build production OK.

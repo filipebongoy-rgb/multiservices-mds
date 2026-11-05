@@ -3,10 +3,15 @@ import {
   ArrowRight,
   Building2,
   CircleHelp,
+  Clock,
   Droplets,
+  FileText,
   Flame,
   Paintbrush,
   House,
+  Phone,
+  ShieldCheck,
+  ThumbsUp,
   Wrench,
   Zap,
 } from "lucide-react";
@@ -30,7 +35,9 @@ export default function Home() {
               Un problème <span className="home-title-rest">chez vous ?</span>
             </h1>
             <p className="home-lead">
-              Nous nous occupons de vos travaux et dépannages.
+              <strong>Votre confort, notre priorité !</strong> Plomberie,
+              chauffage, électricité, peinture et petits travaux à Rennes et ses
+              alentours.
             </p>
           </div>
         </figure>
@@ -74,6 +81,54 @@ export default function Home() {
           </Link>
         </div>
       </section>
+      <section className="home-guarantees" aria-label="Engagements MDS">
+        <div className="home-guarantee">
+          <Clock
+            size={24}
+            strokeWidth={1.8}
+            aria-hidden="true"
+            color="#bc4c23"
+          />
+          <strong>Intervention rapide</strong>
+          <span>Rennes et alentours</span>
+        </div>
+        <div className="home-guarantee">
+          <ThumbsUp
+            size={24}
+            strokeWidth={1.8}
+            aria-hidden="true"
+            color="#bc4c23"
+          />
+          <strong>Travail soigné</strong>
+          <span>et garanti</span>
+        </div>
+        <div className="home-guarantee">
+          <FileText
+            size={24}
+            strokeWidth={1.8}
+            aria-hidden="true"
+            color="#bc4c23"
+          />
+          <strong>Devis gratuit</strong>
+          <span>et sans engagement</span>
+        </div>
+        <div className="home-guarantee">
+          <ShieldCheck
+            size={24}
+            strokeWidth={1.8}
+            aria-hidden="true"
+            color="#bc4c23"
+          />
+          <strong>Garantie décennale</strong>
+          <span>assurance pro</span>
+        </div>
+      </section>
+      <section className="home-phone-cta">
+        <span>Une urgence ? Un seul pro pour tous vos travaux :</span>
+        <a href="tel:0604159916">
+          <Phone size={18} aria-hidden="true" /> 06 04 15 99 16
+        </a>
+      </section>
       <section className="simple-home-pro" aria-label="Espace professionnel">
         <Link href="/professionnels" className="home-professional-link">
           <strong>Vous êtes une entreprise ou une collectivité ?</strong>
@@ -82,7 +137,12 @@ export default function Home() {
         </Link>
       </section>
       <footer className="home-footer" aria-label="Pied de page">
-        <p className="home-footer-brand">MULTISERVICES MDS</p>
+        <p className="home-footer-brand">
+          MULTISERVICES MDS — Rennes et alentours
+        </p>
+        <p className="home-footer-tagline">
+          La qualité au service de votre confort ! — 06 04 15 99 16
+        </p>
         <div className="home-footer-links">
           <Link href="/confidentialite">Confidentialité</Link>
           <Link href="/mentions-legales">Mentions légales</Link>

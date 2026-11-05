@@ -2386,3 +2386,64 @@ input[type="checkbox"] {
 .home-footer-links a:hover {
   text-decoration: underline;
 }
+/* Engagements MDS tirés des flyers officiels */
+.home-guarantees {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin: 32px 0 0;
+  padding: 18px 14px;
+  border: 1px solid var(--mds-border);
+  border-radius: 12px;
+  background: #fff;
+}
+.home-guarantee {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 4px;
+  font-size: 13px;
+}
+.home-guarantee strong {
+  font-size: 14px;
+  line-height: 1.25;
+}
+.home-guarantee span {
+  color: #6a6f69;
+  font-size: 12px;
+}
+/* Bandeau téléphone direct */
+.home-phone-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0 0;
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: #fbf5ee;
+  color: #3b3026;
+  font-size: 15px;
+  text-align: center;
+}
+.home-phone-cta a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #a33f1d;
+  text-decoration: none;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.home-phone-cta a:hover {
+  text-decoration: underline;
+}
+.home-footer-tagline {
+  margin: 0 0 14px;
+  color: #a8b1ab;
+  font-size: 13px;
+  font-style: italic;
+}

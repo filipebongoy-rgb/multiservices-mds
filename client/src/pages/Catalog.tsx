@@ -38,13 +38,16 @@ export default function Catalog() {
   return (
     <main id="main-content" className="page-shell catalog-page">
       <h1 className="page-title">De quoi avez-vous besoin ?</h1>
-      <p className="muted">
-        Choisissez une prestation ou décrivez votre problème.
-      </p>
-      <p className="action-example">
-        Exemple : recherchez « fuite » ou choisissez Plomberie, puis cliquez sur
-        « Demander cette prestation ».
-      </p>
+      <div className="catalog-hero-grid">
+        <p className="catalog-tagline">
+          <strong>Votre confort, notre priorité !</strong> Tarifs transparents «
+          à partir de » issus de nos grilles officielles — devis gratuit et sans
+          engagement, intervention rapide à Rennes et alentours.
+        </p>
+        <a className="catalog-phone" href="tel:0604159916">
+          ☎ 06 04 15 99 16
+        </a>
+      </div>
       <div className="catalog-search">
         <Search size={20} />
         <label className="sr-only" htmlFor="catalog-search">
@@ -78,6 +81,22 @@ export default function Catalog() {
           );
         })}
       </div>
+      <aside className="catalog-pack" aria-label="Offre groupée">
+        <div className="catalog-pack-badge">Pack économie</div>
+        <div className="catalog-pack-body">
+          <strong>
+            Remplacement robinet machine à laver + évacuation + douchette WC
+          </strong>
+          <span>Offre groupée spéciale : les 3 prestations pour</span>
+          <p className="catalog-pack-price">
+            <span className="catalog-pack-now">280 € TTC</span>{" "}
+            <span className="catalog-pack-old">au lieu de 300 €</span>
+          </p>
+        </div>
+        <Link className="btn dark" href="/demande?libre=1&metier=plomberie">
+          Demander le pack
+        </Link>
+      </aside>
       {query.isLoading ? (
         <Loading />
       ) : query.error ? (

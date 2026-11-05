@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Link } from "wouter";
 import {
   ArrowRight,
@@ -17,6 +17,11 @@ import { PriceDetails } from "@/components/mds/PriceDetails";
 import { ClientOperations } from "@/components/mds/ClientOperations";
 import { UploadDocument } from "@/components/mds/private-common";
 import { PaymentPanel } from "@/components/mds/PaymentPanel";
+const TripMap = lazy(() =>
+  import("@/components/mds/TripMap").then(module => ({
+    default: module.TripMap,
+  }))
+);
 import { ApiError, Loading } from "@/components/mds/Layout";
 
 function initialKey(reference: string) {
@@ -388,6 +393,22 @@ export default function Tracking() {
               </p>
             )}
           </section>
+          {r.status === "en_route" && (
+            <Suspense
+              fallback={
+                <div className="trip-map-state">Chargement de la carte…</div>
+              }
+            >
+              <TripMap
+                reference={r.reference}
+                token={lookup?.token}
+                status={r.status}
+                address={r.address}
+                postcode={r.postcode}
+                city={r.city}
+              />
+            </Suspense>
+          )}
           {isFinished && (
             <section
               className="tracking-proof-card"

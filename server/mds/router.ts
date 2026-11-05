@@ -33,6 +33,7 @@ import {
   resolvePricing,
 } from "./tariffs";
 import { paymentsRouter } from "./payments";
+import { locationRouter } from "./location";
 import { clientsRouter } from "./clients";
 const identifier = z.object({ id: z.number().int().positive() });
 const settingsSchema = z.object({
@@ -374,6 +375,7 @@ export const mdsRouter = router({
   organizations: organizationsRouter,
   documents: documentsRouter,
   payments: paymentsRouter,
+  location: locationRouter,
   clients: clientsRouter,
   reviews: router({
     submit: authenticated

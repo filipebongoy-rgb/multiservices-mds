@@ -328,6 +328,55 @@
   color: #5e625a;
   line-height: 1.45;
 }
+.trip-map-card {
+  margin: 24px 0;
+  overflow: hidden;
+  border: 1px solid #dedbd6;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 5px 16px rgb(38 42 39 / 6%);
+}
+.trip-map-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+  padding: 17px 18px 13px;
+}
+.trip-map-heading strong {
+  font-size: 20px;
+}
+.trip-map-heading p {
+  margin: 4px 0 0;
+  color: #656860;
+  font-size: 14px;
+}
+.trip-map-heading .text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.trip-map-canvas {
+  min-height: 280px;
+  background: #e8eee9;
+}
+.trip-map-meta,
+.trip-map-error,
+.trip-map-state {
+  display: block;
+  padding: 10px 18px 14px;
+  color: #656860;
+  font-size: 13px;
+}
+.trip-map-error {
+  color: #9a3b1e;
+}
+.trip-map-state {
+  margin: 24px 0;
+  border-left: 3px solid #d85b16;
+  background: #fff5eb;
+}
 .simple-home-intro {
   max-width: 800px;
 }

@@ -435,6 +435,23 @@ export const notifications = mysqlTable("mds_notifications", {
   readAt: timestamp("readAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+export const locationUpdates = mysqlTable(
+  "mds_location_updates",
+  {
+    id: id(),
+    requestId: int("requestId")
+      .notNull()
+      .references(() => requests.id),
+    artisanUserId: int("artisanUserId")
+      .notNull()
+      .references(() => users.id),
+    latitudeE6: int("latitudeE6").notNull(),
+    longitudeE6: int("longitudeE6").notNull(),
+    accuracyM: int("accuracyM"),
+    recordedAt: timestamp("recordedAt").defaultNow().notNull(),
+  },
+  t => [index("location_request_time").on(t.requestId, t.recordedAt)]
+);
 export const notificationReads = mysqlTable(
   "mds_notification_reads",
   {

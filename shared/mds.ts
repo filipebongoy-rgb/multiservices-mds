@@ -201,6 +201,12 @@ export const trackSchema = z.object({
   reference: z.string().min(4).max(40),
   token: z.string().min(16).max(100).optional(),
 });
+export const trackingLocationSchema = z.object({
+  requestId: z.number().int().positive(),
+  latitude: z.number().finite().min(-90).max(90),
+  longitude: z.number().finite().min(-180).max(180),
+  accuracyM: z.number().finite().min(0).max(10000).nullable().optional(),
+});
 export const clientActionSchema = trackSchema.extend({
   version: z.number().int().min(0),
   action: z.enum([

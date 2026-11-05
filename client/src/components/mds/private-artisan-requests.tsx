@@ -1,5 +1,5 @@
 import { PaymentTools } from "./private-payment-tools";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PrivateOperations } from "./private-operations";
 import { PrivateQuoteBuilder } from "./private-quote-builder";
 import {
@@ -270,6 +270,11 @@ export function RequestDetail({
   const [success, setSuccess] = useState("");
   const [error, setError] = useState<unknown>(null);
   const mutation = trpc.mds.requests.artisanAction.useMutation();
+  const locationPush = trpc.mds.location.push.useMutation();
+  const [gpsRequested, setGpsRequested] = useState(false);
+  const [gpsMessage, setGpsMessage] = useState("");
+  const gpsWatch = useRef<number | null>(null);
+  const lastGpsSent = useRef(0);
   const request = detail.data?.request;
   const service = services.find(item => item.id === request?.serviceId);
   async function refresh() {
@@ -287,6 +292,7 @@ export function RequestDetail({
       const parsed = artisanActionSchema.parse(input);
       await mutation.mutateAsync(parsed);
       setAction(null);
+      if (input.action === "depart") setGpsRequested(true);
       setSuccess("Dossier mis à jour. Le suivi client est synchronisé.");
       await refresh();
     } catch (cause) {
@@ -295,6 +301,58 @@ export function RequestDetail({
       await refresh();
     }
   }
+  useEffect(() => {
+    if (!gpsRequested || request?.status !== "en_route") {
+      if (gpsWatch.current != null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(gpsWatch.current);
+        gpsWatch.current = null;
+      }
+      return;
+    }
+    if (!navigator.geolocation) {
+      setGpsMessage(
+        "La géolocalisation n’est pas disponible sur cet appareil."
+      );
+      return;
+    }
+    setGpsMessage("Autorisation de localisation en attente…");
+    gpsWatch.current = navigator.geolocation.watchPosition(
+      position => {
+        setGpsMessage("Position GPS partagée pendant le trajet.");
+        const now = Date.now();
+        if (now - lastGpsSent.current < 10000) return;
+        lastGpsSent.current = now;
+        void locationPush
+          .mutateAsync({
+            requestId: request.id,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracyM: Number.isFinite(position.coords.accuracy)
+              ? position.coords.accuracy
+              : null,
+          })
+          .catch(() =>
+            setGpsMessage(
+              "Réseau indisponible : nouvelle tentative automatique."
+            )
+          );
+      },
+      error => {
+        setGpsMessage(
+          error.code === error.PERMISSION_DENIED
+            ? "Localisation refusée : le suivi continue par statuts."
+            : "Position momentanément indisponible : le suivi continue par statuts."
+        );
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    );
+    return () => {
+      if (gpsWatch.current != null) {
+        navigator.geolocation.clearWatch(gpsWatch.current);
+        gpsWatch.current = null;
+      }
+    };
+  }, [gpsRequested, request?.id, request?.status]);
   if (!request)
     return (
       <section className="panel">
@@ -495,13 +553,16 @@ export function RequestDetail({
             </strong>
             <p>
               {request.status === "en_route"
-                ? "Le client voit le statut de votre trajet. La carte Mapbox sera activée dès que le jeton cartographique sera configuré. Aucune position n’est inventée."
+                ? gpsMessage ||
+                  "Le partage GPS va démarrer après votre autorisation."
                 : "Au démarrage du trajet, l’autorisation de localisation sera demandée. Le partage sera limité à cette intervention et s’arrêtera à l’arrivée."}
             </p>
           </div>
           <small>
             {request.status === "en_route"
-              ? "Dernière position : non disponible"
+              ? locationPush.isPending
+                ? "Envoi de la position…"
+                : "La carte client se met à jour pendant le trajet."
               : "La carte reste inactive avant votre départ réel."}
           </small>
         </section>

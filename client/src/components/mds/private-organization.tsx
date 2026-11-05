@@ -430,6 +430,13 @@ export function OrganizationDetail({
                         )}
                         emptyText="Le document rattaché n’est pas accessible dans cet index."
                       />
+                      {canManage && (
+                        <ContractEditor
+                          organizationId={summary.id}
+                          contract={contract}
+                          onSaved={() => void detail.refetch()}
+                        />
+                      )}
                     </article>
                   ))
                 )}
@@ -803,5 +810,103 @@ function InviteMember({
         </form>
       )}
     </PrivateModal>
+  );
+}
+
+function ContractEditor({
+  organizationId,
+  contract,
+  onSaved,
+}: {
+  organizationId: number;
+  contract: {
+    id: number;
+    name: string;
+    status: "indexed" | "active" | "ended";
+    startAt: Date | string | null;
+    endAt: Date | string | null;
+  };
+  onSaved: () => void;
+}) {
+  const update = trpc.mds.organizations.updateContract.useMutation({
+    onSuccess: onSaved,
+  });
+  const [name, setName] = useState(contract.name);
+  const [status, setStatus] = useState(contract.status);
+  const [startAt, setStartAt] = useState(
+    contract.startAt
+      ? new Date(contract.startAt).toISOString().slice(0, 10)
+      : ""
+  );
+  const [endAt, setEndAt] = useState(
+    contract.endAt ? new Date(contract.endAt).toISOString().slice(0, 10) : ""
+  );
+  return (
+    <details>
+      <summary style={{ cursor: "pointer", minHeight: 44, padding: "10px 0" }}>
+        Modifier le contrat
+      </summary>
+      <form
+        className="stack"
+        style={{ paddingTop: 10 }}
+        onSubmit={event => {
+          event.preventDefault();
+          update.mutate({
+            organizationId,
+            contractId: contract.id,
+            name: name.trim(),
+            status,
+            startAt: startAt
+              ? new Date(`${startAt}T00:00:00`).toISOString()
+              : null,
+            endAt: endAt ? new Date(`${endAt}T23:59:59`).toISOString() : null,
+          });
+        }}
+      >
+        <Field label="Nom">
+          <input
+            value={name}
+            onChange={event => setName(event.target.value)}
+            minLength={2}
+            maxLength={200}
+            required
+          />
+        </Field>
+        <Field label="État">
+          <select
+            value={status}
+            onChange={event => setStatus(event.target.value as typeof status)}
+          >
+            <option value="indexed">Indexé</option>
+            <option value="active">Actif</option>
+            <option value="ended">Terminé</option>
+          </select>
+        </Field>
+        <div className="form-grid">
+          <Field label="Début">
+            <input
+              type="date"
+              value={startAt}
+              onChange={event => setStartAt(event.target.value)}
+            />
+          </Field>
+          <Field label="Fin">
+            <input
+              type="date"
+              value={endAt}
+              onChange={event => setEndAt(event.target.value)}
+            />
+          </Field>
+        </div>
+        {update.error && <ErrorNotice error={update.error} />}
+        <ActionButton
+          type="submit"
+          className="secondary"
+          disabled={update.isPending}
+        >
+          {update.isPending ? "Enregistrement…" : "Enregistrer le contrat"}
+        </ActionButton>
+      </form>
+    </details>
   );
 }

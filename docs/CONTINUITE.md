@@ -47,3 +47,11 @@ Les tests métier n’injectent aucun dossier de démonstration dans MySQL. Avan
 ## Préparer le PROMPT 3/3
 
 Continuer ce même dépôt pour gestion professionnelle avancée, contrats, administration et audit final selon le nouveau brief à recevoir. Préserver les trois rubriques principales ; exposer les fonctions avancées par contexte plutôt que recréer une multitude de menus. Restent à approfondir les cycles contractuels/renouvellements/échéances, la politique de conservation et suppression physique, la modération des avis, la recette avec les comptes/dossiers réels et l’audit juridique/accessibilité avant ouverture. Ne pas activer automatiquement l’encaissement commercial, un fournisseur ou un planificateur sans le choix/les paramètres et la publication nécessaires.
+
+## PROMPT 3/3 — première tranche intégrée
+
+Les revues de cadrage du prompt 3 ont été faites en niveau lite uniquement. La demande réutilise désormais une fiche client existante par identité authentifiée ou par correspondance exacte e-mail+téléphone au sein d’une organisation ; elle ne fusionne pas sur le seul nom. `server/mds/clients.ts` expose au seul artisan la recherche et le détail avec l’historique de demandes, et `private-clients.tsx` l’affiche dans les paramètres contextuels sans nouveau menu principal.
+
+`organizations.updateContract` permet au propriétaire/gestionnaire d’une organisation de modifier nom, statut et bornes de dates avec appartenance serveur, verrou, validation et audit. L’espace professionnel conserve Déclarer/Suivre/Bâtiments ; les contrats restent dans Bâtiments mais sont maintenant administrables. Le PDF lié n’est pas remplacé ni rendu public.
+
+Bilan détaillé : `docs/COMPTE_RENDU_PROMPT3.md`. Les priorités suivantes sont contrats structurés avec échéances/renouvellement, gouvernance RGPD conservation/export/effacement, audit enrichi/paginé, modération des avis, invitations révocables et audit final avec intégrations réelles. Ne pas activer e-mail/SMS, Stripe live, publication ou tâche native autonome sans configuration et autorisation explicites.

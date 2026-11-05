@@ -50,6 +50,7 @@ import {
 import { quoteValidityEnd, validateQuoteContent } from "./quote-builder";
 import { commercialPaidCents } from "./payments";
 import { checkCalendar } from "./calendar";
+import { findOrCreateClient } from "./clients";
 
 export async function expireRequest(tx: Tx, request: s.MdsRequest) {
   if (!isExpired(request)) return false;
@@ -242,16 +243,13 @@ export const requestsRouter = router({
           !service.problemTypes.includes(input.problemType)
         )
           fail("Le type de problème ne correspond pas à cette prestation.");
-        const [client] = await tx
-          .insert(s.clients)
-          .values({
-            userId: identity?.id || null,
-            organizationId: input.organizationId,
-            name: input.name,
-            email: input.email,
-            phone: input.phone,
-          })
-          .$returningId();
+        const client = await findOrCreateClient(tx, {
+          userId: identity?.id || null,
+          organizationId: input.organizationId,
+          name: input.name,
+          email: input.email,
+          phone: input.phone,
+        });
         const reference = `MDS-${randomBytes(8).toString("hex").toUpperCase()}`;
         const trackingToken = secretHash(
           `tracking:${reference}:${idem}`,

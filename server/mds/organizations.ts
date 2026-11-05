@@ -207,6 +207,54 @@ export const organizationsRouter = router({
         return created;
       });
     }),
+  updateContract: authenticated
+    .input(
+      z.object({
+        organizationId: orgId,
+        contractId: orgId,
+        name: z.string().trim().min(2).max(200),
+        status: z.enum(["indexed", "active", "ended"]),
+        startAt: z.coerce.date().nullable(),
+        endAt: z.coerce.date().nullable(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const db = await dbRequired();
+      return db.transaction(async tx => {
+        await principal(tx, true);
+        await membership(tx, input.organizationId, ctx.user, true);
+        if (input.startAt && input.endAt && input.endAt < input.startAt)
+          fail("La fin du contrat doit être postérieure au début.");
+        const [contract] = await tx
+          .select()
+          .from(s.contracts)
+          .where(
+            and(
+              eq(s.contracts.id, input.contractId),
+              eq(s.contracts.organizationId, input.organizationId)
+            )
+          )
+          .for("update");
+        if (!contract) fail("Ce contrat est introuvable.", "NOT_FOUND");
+        await tx
+          .update(s.contracts)
+          .set({
+            name: input.name,
+            status: input.status,
+            startAt: input.startAt,
+            endAt: input.endAt,
+          })
+          .where(eq(s.contracts.id, input.contractId));
+        await recordAudit(
+          tx,
+          ctx.user.id,
+          "contract.update",
+          "contract",
+          input.contractId
+        );
+        return { success: true as const };
+      });
+    }),
   invite: authenticated
     .input(
       z.object({

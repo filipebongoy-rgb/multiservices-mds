@@ -1,0 +1,5 @@
+MULTISERVICES MDS — PROMPT 3/3
+
+Périmètre : espace professionnel pour entreprises, syndics, bailleurs, associations et collectivités ; fiches clients sans doublons ; devis/factures PDF privés avec mentions légales configurables sans invention ; paiements confirmés uniquement par le prestataire ; administration unique de l’artisan ; notifications e-mail/SMS honnêtes ; sécurité, RGPD, permissions, liens privés temporaires, journal et sauvegardes ; fiabilité et audit final des trois parcours particulier, professionnel et artisan.
+
+Contraintes : même projet, même base et mêmes fonctionnalités des parties précédentes ; un seul artisan ; aucune marketplace ; navigation simplifiée et mobile-first ; aucun faux avis, faux indicateur, faux dossier ou service externe présenté comme actif ; ne pas stocker de carte bancaire ; ne pas activer publication, paiement live, notifications externes ou tâche autonome sans configuration/autorisation réelle.

@@ -34,6 +34,7 @@ import {
   resolvePricing,
 } from "./tariffs";
 import { paymentsRouter } from "./payments";
+import { clientsRouter } from "./clients";
 const identifier = z.object({ id: z.number().int().positive() });
 const settingsSchema = z.object({
   zone: z.string().trim().max(300),
@@ -349,6 +350,7 @@ export const mdsRouter = router({
   organizations: organizationsRouter,
   documents: documentsRouter,
   payments: paymentsRouter,
+  clients: clientsRouter,
   reviews: router({
     submit: authenticated
       .input(

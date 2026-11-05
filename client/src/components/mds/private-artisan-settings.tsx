@@ -16,6 +16,7 @@ import {
   parsePricingDraft,
   PricingEditor,
 } from "./private-pricing";
+import { ClientsPanel } from "./private-clients";
 
 type Settings = {
   zone: string;
@@ -41,9 +42,9 @@ export function ArtisanSettings({
   onCatalogChanged: () => void;
 }) {
   const settings = trpc.mds.settings.get.useQuery(undefined, { retry: false });
-  const [section, setSection] = useState<"business" | "catalog" | "audit">(
-    "business"
-  );
+  const [section, setSection] = useState<
+    "business" | "catalog" | "clients" | "audit"
+  >("business");
   return (
     <div className="stack">
       <div className="section-heading">
@@ -62,6 +63,7 @@ export function ArtisanSettings({
           [
             ["business", "Entreprise et propositions"],
             ["catalog", "Catalogue des prestations"],
+            ["clients", "Clients"],
             ["audit", "Journal sensible"],
           ] as const
         ).map(([key, label]) => (
@@ -99,6 +101,7 @@ export function ArtisanSettings({
           onChanged={onCatalogChanged}
         />
       )}
+      {section === "clients" && <ClientsPanel />}
       {section === "audit" && <AuditLog />}
     </div>
   );

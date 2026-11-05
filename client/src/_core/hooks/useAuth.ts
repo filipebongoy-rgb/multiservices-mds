@@ -17,7 +17,11 @@ export function useAuth(options?: UseAuthOptions) {
   const utils = trpc.useUtils();
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
-    retry: false,
+    retry: (failureCount, error) =>
+      error instanceof TRPCClientError &&
+      error.message === "Failed to fetch" &&
+      failureCount < 2,
+    retryDelay: attempt => Math.min(400 * 2 ** attempt, 1200),
     refetchOnWindowFocus: false,
   });
 

@@ -7,14 +7,39 @@ import {
   Check,
   Copy,
   Home,
-  ImagePlus,
+  Camera,
+  CalendarDays,
+  ChevronRight,
+  Droplets,
+  Flame,
+  MapPin,
+  Paintbrush,
+  Wrench,
+  Zap,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { rememberGuestRequest } from "@/lib/requestProgress";
+import { problemImage } from "@/lib/problemImages";
 import { createRequestSchema, dateTime, trades } from "@shared/mds";
 import { PriceDetails } from "@/components/mds/PriceDetails";
 import { ApiError } from "@/components/mds/Layout";
+
+const tradeIcons: Record<string, typeof Wrench> = {
+  plomberie: Droplets,
+  electricite: Zap,
+  chauffage: Flame,
+  peinture: Paintbrush,
+  maintenance: Wrench,
+};
+
+function hourLabel(iso: string) {
+  return new Date(iso).toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Paris",
+  });
+}
 
 type Draft = {
   description: string;
@@ -122,15 +147,41 @@ export default function Request() {
     selectedTrade?.slug === "plomberie"
       ? [
           { label: "Fuite d’eau", value: "Fuite" },
-          { label: "Robinetterie", value: "Robinetterie" },
+          {
+            label: "Robinetterie",
+            value: "Robinetterie",
+            hint: "robinet, mitigeur…",
+          },
           { label: "WC et chasse d’eau", value: "WC" },
           { label: "Évier et lavabo", value: "Lavabo et évier" },
-          { label: "Débouchage", value: "Débouchage" },
+          {
+            label: "Débouchage",
+            value: "Débouchage",
+            hint: "évier, douche, WC…",
+          },
+          { label: "Douche et baignoire", value: "Douche et baignoire" },
         ]
       : (selectedTrade?.services ?? []).map(problem => ({
           label: problem,
           value: problem,
+          hint: undefined as string | undefined,
         }));
+  const today = new Date().toLocaleDateString("en-CA");
+  const upcomingDays = Array.from({ length: 7 }, (_, index) => {
+    const day = new Date();
+    day.setDate(day.getDate() + index);
+    const short = day.toLocaleDateString("fr-FR", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    });
+    return {
+      value: day.toLocaleDateString("en-CA"),
+      title: index === 0 ? "Aujourd’hui" : index === 1 ? "Demain" : short,
+      subtitle:
+        index < 2 ? short : day.toLocaleDateString("fr-FR", { month: "long" }),
+    };
+  });
   useEffect(() => {
     if (service && !tradeChoice) setTradeChoice(service.trade);
   }, [service?.id, tradeChoice]);
@@ -233,7 +284,7 @@ export default function Request() {
       return "Choisissez le type de problème qui correspond le mieux.";
     if (step === 2 && draft.description.trim().length < 10)
       return "Décrivez votre problème en quelques mots (10 caractères minimum).";
-    if (step === 3) {
+    if (step === 2) {
       if (
         draft.address.trim().length < 5 ||
         !/^\d{5}$/.test(draft.postcode) ||
@@ -445,22 +496,19 @@ export default function Request() {
               : [
                   "Quel type de logement ou bâtiment ?",
                   "Quel est votre problème ?",
-                  "Décrivez votre problème",
-                  "Quand souhaitez-vous intervenir ?",
+                  "Détails de votre demande",
+                  "Vos disponibilités",
                   "Vérifiez votre demande",
                 ][step]}
           </h1>
-          <p className="request-next-action">
-            {step === 0 && "Commencez par indiquer le lieu de l’intervention."}
-            {step === 1 &&
-              "Choisissez le métier puis le problème qui correspond le mieux."}
-            {step === 2 &&
-              "Décrivez simplement ce qui se passe. Vous pouvez ajouter plusieurs photos."}
-            {step === 3 &&
-              "Choisissez une date puis un horaire parmi les disponibilités MDS."}
-            {step === 4 &&
-              "Relisez les informations, acceptez les conditions, puis envoyez la demande."}
-          </p>
+          {(step === 0 || step === 2 || step === 4) && (
+            <p className="request-subtitle">
+              {step === 0 && "Pour adapter l’intervention à votre lieu."}
+              {step === 2 &&
+                "Quelques mots suffisent. Les photos aident l’artisan à préparer son matériel."}
+              {step === 4 && "Relisez, puis envoyez votre demande."}
+            </p>
+          )}
           {catalog.error && selected && (
             <ApiError
               message={catalog.error.message}
@@ -559,37 +607,77 @@ export default function Request() {
                 </div>
               )}
               {selectedTrade ? (
-                <div className="choice-list" aria-label="Choisir un problème">
-                  {problemOptions.map(problem => (
+                <>
+                  <div
+                    className="problem-list"
+                    role="radiogroup"
+                    aria-label="Quel est votre problème ?"
+                  >
+                    {problemOptions.map(problem => {
+                      const active = catalog.data?.find(
+                        item =>
+                          item.trade === selectedTrade.slug &&
+                          item.name.toLocaleLowerCase("fr") ===
+                            problem.value.toLocaleLowerCase("fr")
+                      );
+                      const checked = draft.problemType === problem.value;
+                      const photo = problemImage(
+                        problem.value,
+                        active?.photoUrl
+                      );
+                      return (
+                        <button
+                          key={problem.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={checked}
+                          className={`problem-choice${checked ? " is-checked" : ""}`}
+                          onClick={() => {
+                            setDraft(d => ({
+                              ...d,
+                              problemType: problem.value,
+                            }));
+                            setSelected(active?.id ?? null);
+                          }}
+                        >
+                          <span className="problem-radio" aria-hidden="true" />
+                          <span className="problem-text">
+                            <strong>{problem.label}</strong>
+                            {problem.hint && <small>({problem.hint})</small>}
+                          </span>
+                          {photo && (
+                            <img
+                              className="problem-thumb"
+                              src={photo}
+                              alt=""
+                              loading="lazy"
+                              width={112}
+                              height={64}
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
                     <button
-                      key={problem.value}
                       type="button"
-                      className={`btn secondary ${draft.problemType === problem.value ? "selected" : ""}`}
+                      role="radio"
+                      aria-checked={draft.problemType === "Autre problème"}
+                      className={`problem-choice${draft.problemType === "Autre problème" ? " is-checked" : ""}`}
                       onClick={() => {
-                        setDraft(d => ({ ...d, problemType: problem.value }));
-                        const active = catalog.data?.find(
-                          item =>
-                            item.trade === selectedTrade.slug &&
-                            item.name.toLocaleLowerCase("fr") ===
-                              problem.value.toLocaleLowerCase("fr")
-                        );
-                        setSelected(active?.id ?? null);
+                        setDraft(d => ({
+                          ...d,
+                          problemType: "Autre problème",
+                        }));
+                        setSelected(null);
                       }}
                     >
-                      {problem.label}
+                      <span className="problem-radio" aria-hidden="true" />
+                      <span className="problem-text">
+                        <strong>Autre problème</strong>
+                      </span>
                     </button>
-                  ))}
-                  <button
-                    type="button"
-                    className={`btn secondary ${draft.problemType === "Autre problème" ? "selected" : ""}`}
-                    onClick={() => {
-                      setDraft(d => ({ ...d, problemType: "Autre problème" }));
-                      setSelected(null);
-                    }}
-                  >
-                    Autre problème
-                  </button>
-                </div>
+                  </div>
+                </>
               ) : isFreeRequest ? (
                 <p className="notice">
                   Décrivez votre besoin librement ; MDS vous orientera ensuite.
@@ -599,56 +687,119 @@ export default function Request() {
           )}
           {step === 2 && (
             <>
+              {selectedTrade && (
+                <div className="details-service-card">
+                  {(() => {
+                    const TradeIcon = tradeIcons[selectedTrade.slug] || Wrench;
+                    return (
+                      <TradeIcon
+                        size={30}
+                        strokeWidth={1.6}
+                        aria-hidden="true"
+                      />
+                    );
+                  })()}
+                  <span>
+                    <strong>{selectedTrade.name}</strong>
+                    <small>
+                      {problemOptions.find(o => o.value === draft.problemType)
+                        ?.label || draft.problemType}
+                    </small>
+                  </span>
+                </div>
+              )}
               <div className="field">
-                <label htmlFor="description">Décrivez votre problème</label>
-                <p className="action-example">
-                  Exemple : « Le robinet fuit sous l’évier depuis ce matin. »
-                </p>
+                <label htmlFor="description">Description du problème *</label>
                 <textarea
                   id="description"
                   rows={4}
                   value={draft.description}
-                  maxLength={5000}
-                  placeholder="Mon robinet fuit…"
+                  maxLength={500}
+                  placeholder="Exemple : la fuite vient du robinet de la cuisine."
                   onChange={e => set("description", e.target.value)}
                 />
+                <small className="field-counter" aria-live="polite">
+                  {draft.description.length}/500
+                </small>
               </div>
-              <div className="row" style={{ flexWrap: "wrap" }}>
-                <label className="btn secondary" htmlFor="photo">
-                  <ImagePlus size={17} />
-                  {photos.length
-                    ? `${photos.length} photo(s) sélectionnée(s)`
-                    : "Ajouter des photos"}
-                </label>
-                <input
-                  id="photo"
-                  type="file"
-                  multiple
-                  accept="image/jpeg,image/png,image/webp"
-                  className="visually-hidden"
-                  onChange={e => {
-                    const selected = Array.from(e.target.files || []);
-                    if (
-                      selected.length > 10 ||
-                      selected.some(
-                        f =>
-                          f.size > 5 * 1024 * 1024 ||
-                          !["image/jpeg", "image/png", "image/webp"].includes(
-                            f.type
-                          )
-                      )
-                    ) {
-                      setError(
-                        "Jusqu’à 10 photos JPG, PNG ou WebP de 5 Mo maximum chacune."
-                      );
-                      e.target.value = "";
-                      return;
+              <div className="field">
+                <label htmlFor="address">Adresse d’intervention *</label>
+                <div className="input-with-icon">
+                  <MapPin size={20} aria-hidden="true" />
+                  <input
+                    id="address"
+                    autoComplete="street-address"
+                    value={draft.address}
+                    maxLength={250}
+                    placeholder="12 rue de la Paix"
+                    onChange={e => set("address", e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="form-grid">
+                <div className="field">
+                  <label htmlFor="postcode">Code postal *</label>
+                  <input
+                    id="postcode"
+                    autoComplete="postal-code"
+                    inputMode="numeric"
+                    value={draft.postcode}
+                    maxLength={5}
+                    placeholder="35000"
+                    onChange={e =>
+                      set("postcode", e.target.value.replace(/\D/g, ""))
                     }
-                    setPhotos(selected);
-                    setError("");
-                  }}
-                />
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="city">Ville *</label>
+                  <input
+                    id="city"
+                    autoComplete="address-level2"
+                    value={draft.city}
+                    maxLength={100}
+                    placeholder="Rennes"
+                    onChange={e => set("city", e.target.value)}
+                  />
+                </div>
               </div>
+              <label className="photo-row" htmlFor="photo">
+                <Camera size={21} aria-hidden="true" />
+                <span>
+                  {photos.length
+                    ? `${photos.length} photo${photos.length > 1 ? "s" : ""} ajoutée${photos.length > 1 ? "s" : ""}`
+                    : "Ajouter des photos (facultatif)"}
+                </span>
+                <ChevronRight size={20} aria-hidden="true" />
+              </label>
+              <input
+                id="photo"
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp"
+                className="visually-hidden"
+                onChange={e => {
+                  const selected = Array.from(e.target.files || []);
+                  if (
+                    selected.length > 10 ||
+                    selected.some(
+                      f =>
+                        f.size > 5 * 1024 * 1024 ||
+                        !["image/jpeg", "image/png", "image/webp"].includes(
+                          f.type
+                        )
+                    )
+                  ) {
+                    setError(
+                      "Jusqu’à 10 photos JPG, PNG ou WebP de 5 Mo maximum chacune."
+                    );
+                    e.target.value = "";
+                    return;
+                  }
+                  setPhotos(selected);
+                  setError("");
+                }}
+              />
               {photoPreviews.length > 0 && (
                 <div className="photo-preview-grid">
                   {photoPreviews.map((preview, index) => (
@@ -676,79 +827,75 @@ export default function Request() {
           )}
           {step === 3 && (
             <>
-              <div className="field">
-                <label htmlFor="address">Adresse de l’intervention</label>
-                <p className="action-example">
-                  Exemple : 12 rue des Lilas, bâtiment B, 2e étage.
-                </p>
-                <input
-                  id="address"
-                  autoComplete="street-address"
-                  value={draft.address}
-                  maxLength={250}
-                  onChange={e => set("address", e.target.value)}
-                />
-              </div>
-              <div className="form-grid">
-                <div className="field">
-                  <label htmlFor="postcode">Code postal</label>
-                  <input
-                    id="postcode"
-                    autoComplete="postal-code"
-                    inputMode="numeric"
-                    value={draft.postcode}
-                    maxLength={5}
-                    onChange={e =>
-                      set("postcode", e.target.value.replace(/\D/g, ""))
-                    }
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="city">Ville</label>
-                  <input
-                    id="city"
-                    autoComplete="address-level2"
-                    value={draft.city}
-                    maxLength={100}
-                    onChange={e => set("city", e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="field">
-                <label htmlFor="date">
+              <div className="availability-intro">
+                <CalendarDays size={30} strokeWidth={1.6} aria-hidden="true" />
+                <p>
                   {slots.data?.configured
-                    ? "Choisir une date"
-                    : "Date souhaitée (facultative)"}
-                </label>
-                <p className="action-example">
-                  {slots.data?.configured
-                    ? "Les horaires affichés correspondent aux disponibilités configurées par MDS."
-                    : "Exemple : choisissez une date si vous avez une préférence ; MDS vous proposera ensuite un créneau."}
+                    ? "Choisissez le créneau qui vous convient. Seuls les horaires réellement disponibles sont affichés."
+                    : "Choisissez un jour et une heure si vous avez une préférence. MDS vous proposera le meilleur horaire disponible."}
                 </p>
-                <input
-                  id="date"
-                  type="date"
-                  value={draft.date}
-                  min={new Date().toLocaleDateString("en-CA")}
-                  onChange={e => {
-                    set("date", e.target.value);
-                    setSelectedSlot("");
-                    setDraft(d => ({ ...d, time: "" }));
-                  }}
-                />
               </div>
-              {draft.date && (
-                <>
-                  {slots.data?.slots.length ? (
-                    <div
-                      className="slot-list"
-                      aria-label="Créneaux actuellement possibles"
+              <div
+                className="day-tabs"
+                role="radiogroup"
+                aria-label="Choisir un jour"
+              >
+                {!slots.data?.configured && (
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={!draft.date}
+                    className={!draft.date ? "selected" : ""}
+                    onClick={() => {
+                      setDraft(d => ({ ...d, date: "", time: "" }));
+                      setSelectedSlot("");
+                    }}
+                  >
+                    <strong>À convenir</strong>
+                    <small>avec MDS</small>
+                  </button>
+                )}
+                {upcomingDays.map(day => {
+                  const checked =
+                    (draft.date || (slots.data?.configured ? today : "")) ===
+                    day.value;
+                  return (
+                    <button
+                      key={day.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={checked}
+                      className={checked ? "selected" : ""}
+                      onClick={() => {
+                        setDraft(d => ({ ...d, date: day.value, time: "" }));
+                        setSelectedSlot("");
+                      }}
                     >
-                      {slots.data.slots.map(slot => (
+                      <strong>{day.title}</strong>
+                      <small>{day.subtitle}</small>
+                    </button>
+                  );
+                })}
+              </div>
+              {slots.isLoading && slots.fetchStatus !== "idle" && (
+                <p className="muted">Recherche des créneaux disponibles…</p>
+              )}
+              {slots.data?.configured ? (
+                slots.data.slots.length ? (
+                  <div
+                    className="slot-radio-list"
+                    role="radiogroup"
+                    aria-label="Créneaux disponibles"
+                  >
+                    {slots.data.slots.map(slot => {
+                      const checked = selectedSlot === slot.startAt;
+                      return (
                         <button
                           key={slot.startAt}
                           type="button"
-                          className={`btn secondary ${selectedSlot === slot.startAt ? "selected" : ""}`}
+                          role="radio"
+                          aria-checked={checked}
+                          className={`slot-radio${checked ? " is-checked" : ""}`}
                           onClick={() => {
                             const date = new Date(slot.startAt);
                             const local = new Date(
@@ -766,41 +913,46 @@ export default function Request() {
                             setConsent(false);
                           }}
                         >
-                          {dateTime(slot.startAt)}
+                          <span className="problem-radio" aria-hidden="true" />
+                          <strong>
+                            {hourLabel(slot.startAt)} – {hourLabel(slot.endAt)}
+                          </strong>
                         </button>
-                      ))}
-                    </div>
-                  ) : (
-                    slots.data?.reason && (
-                      <p className="muted small-text">{slots.data.reason}</p>
-                    )
-                  )}
-                  {!slots.data?.configured && (
-                    <div className="field">
-                      <label htmlFor="time">Heure souhaitée</label>
-                      <input
-                        id="time"
-                        type="time"
-                        value={draft.time}
-                        onChange={e => {
-                          set("time", e.target.value);
-                          setSelectedSlot("");
-                        }}
-                      />
-                    </div>
-                  )}
-                  {slots.error && (
-                    <p className="muted">
-                      Créneaux indisponibles. Vous pouvez proposer une heure à
-                      MDS.
-                    </p>
-                  )}
-                </>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="notice">
+                    {slots.data.reason ||
+                      "Aucun créneau libre ce jour-là. Choisissez un autre jour."}
+                  </p>
+                )
+              ) : (
+                draft.date && (
+                  <div className="field">
+                    <label htmlFor="time">Heure souhaitée</label>
+                    <input
+                      id="time"
+                      type="time"
+                      value={draft.time}
+                      onChange={e => {
+                        set("time", e.target.value);
+                        setSelectedSlot("");
+                      }}
+                    />
+                  </div>
+                )
+              )}
+              {slots.error && (
+                <p className="muted">
+                  Créneaux momentanément indisponibles. Choisissez « À convenir
+                  » et MDS vous proposera un horaire.
+                </p>
               )}
               <p className="muted small-text">
                 {slots.data?.configured
-                  ? "Le créneau choisi sera contrôlé une dernière fois par MDS avant confirmation du rendez-vous."
-                  : "MDS vous proposera un créneau après analyse de la demande."}
+                  ? "Le créneau choisi est contrôlé une dernière fois par MDS avant confirmation."
+                  : "MDS confirme l’horaire après lecture de votre demande."}
               </p>
             </>
           )}
@@ -919,12 +1071,6 @@ export default function Request() {
                 type="button"
                 className="btn primary"
                 disabled={
-                  (step === 2 && draft.description.trim().length < 10) ||
-                  (step === 3 &&
-                    (draft.address.trim().length < 5 ||
-                      !/^\d{5}$/.test(draft.postcode) ||
-                      draft.city.trim().length < 2 ||
-                      (!!slots.data?.configured && !selectedSlot))) ||
                   (!!selected && catalog.isLoading) ||
                   (!!organizationId && organization.isLoading)
                 }

@@ -156,12 +156,12 @@ export function SignaturePad({ onSign, disabled, error }: SignaturePadProps) {
       </div>
       <canvas
         ref={canvasRef}
-        width={420}
-        height={170}
+        width={520}
+        height={190}
         style={{
           width: "100%",
-          maxWidth: 420,
-          height: 170,
+          maxWidth: 520,
+          height: 190,
           background: "#fff",
           border: "2px dashed #bc4c23",
           borderRadius: 8,
@@ -170,10 +170,20 @@ export function SignaturePad({ onSign, disabled, error }: SignaturePadProps) {
         }}
         aria-label="Zone de signature : dessinez votre signature ici"
       />
-      <p className="small-text muted" style={{ margin: 0 }}>
-        Signez avec votre doigt (ou la souris) pour attester la conformité des
-        travaux. Votre signature est chiffrée et conservée dans le dossier MDS.
-      </p>
+      <div
+        className="row"
+        style={{
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 6,
+          fontSize: 13,
+          color: "#5e625b",
+        }}
+      >
+        <span>👆 Signez avec votre doigt dans le cadre ci-dessus</span>
+        <span className="muted">Signature chiffrée · preuve conservée</span>
+      </div>
       <ErrorNotice error={error} />
       <ActionButton
         className="primary"

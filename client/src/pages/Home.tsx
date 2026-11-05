@@ -74,6 +74,20 @@ export default function Home() {
           </Link>
         </div>
       </section>
+      <section className="simple-home-pro" aria-label="Espace professionnel">
+        <Link href="/professionnels" className="home-professional-link">
+          <strong>Vous êtes une entreprise ou une collectivité ?</strong>
+          <span>Gérer vos bâtiments et vos interventions avec MDS.</span>
+          <ArrowRight size={18} aria-hidden="true" />
+        </Link>
+      </section>
+      <footer className="home-footer" aria-label="Pied de page">
+        <p className="home-footer-brand">MULTISERVICES MDS</p>
+        <div className="home-footer-links">
+          <Link href="/confidentialite">Confidentialité</Link>
+          <Link href="/mentions-legales">Mentions légales</Link>
+        </div>
+      </footer>
     </main>
   );
 }

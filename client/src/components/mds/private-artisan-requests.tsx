@@ -318,6 +318,7 @@ export function RequestDetail({
   const confirmCompletion = trpc.mds.requests.clientAction.useMutation();
   const [gpsRequested, setGpsRequested] = useState(false);
   const [gpsMessage, setGpsMessage] = useState("");
+  const [signingClient, setSigningClient] = useState(false);
   const gpsWatch = useRef<number | null>(null);
   const lastGpsSent = useRef(0);
   const request = detail.data?.request;
@@ -641,6 +642,7 @@ export function RequestDetail({
       {request.status === "completed" &&
         !detail.data?.intervention?.clientConfirmedAt && (
           <details
+            open
             className="panel stack"
             style={{ background: "#fffaf7", borderColor: "#e4cbbd" }}
           >
@@ -852,6 +854,17 @@ export function RequestDetail({
               )}
             </div>
           )}
+          {request.status === "completed" &&
+            !detail.data?.intervention?.clientConfirmedAt && (
+              <ActionButton
+                className="trip-btn trip-sign"
+                disabled={confirmCompletion.isPending}
+                onClick={() => setSigningClient(true)}
+              >
+                <Pen size={17} aria-hidden="true" />
+                Faire signer le client sur cet écran
+              </ActionButton>
+            )}
           {request.status === "completed" && hasInvoice && (
             <ActionButton
               disabled={mutation.isPending}
@@ -1038,6 +1051,44 @@ export function RequestDetail({
           }}
           onSubmit={perform}
         />
+      )}
+      {signingClient && request && (
+        <PrivateModal
+          title="Réception de fin de chantier"
+          description="Tendez cet écran au client pour qu’il confirme et signe la fin des travaux."
+          onClose={() => setSigningClient(false)}
+        >
+          <div className="stack" style={{ gap: 14 }}>
+            <div
+              className="stack"
+              style={{
+                padding: 12,
+                background: "#f8f7f5",
+                borderRadius: 8,
+                fontSize: 14,
+              }}
+            >
+              <strong>
+                {request.serviceName || "Demande libre"} — {request.reference}
+              </strong>
+              <span>
+                {request.name} · {request.address}, {request.city}
+              </span>
+              <span className="muted">
+                « Je certifie que les travaux ont été réalisés conformément à ma
+                demande. »
+              </span>
+            </div>
+            <SignaturePad
+              disabled={confirmCompletion.isPending}
+              error={confirmCompletion.error}
+              onSign={async dataUrl => {
+                await handleClientSign(dataUrl);
+                setSigningClient(false);
+              }}
+            />
+          </div>
+        </PrivateModal>
       )}
     </section>
   );

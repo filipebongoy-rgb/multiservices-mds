@@ -73,6 +73,9 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 - [x] Raisons d’échec Stripe capturées et stockées sur chaque paiement ; audit des connexions utilisateurs.
 - [x] Routeur admin MDS avec KPI, dernières connexions, demandes complètes, paiements et échecs détaillés.
 - [x] Notification push propriétaire (Manus notifyOwner) pour chaque nouvelle demande et action client.
-- [ ] Onglet Activité / Admin dans l’espace artisan avec tableau de bord complet (connexions, demandes, paiements, échecs).
-- [ ] Bannière d’alerte demandes en attente et guide de réponse rapide dans l’espace artisan.
-- [ ] Signature du client sur l’écran en fin de chantier (canvas tactile, stockage chiffré, affichage preuves et dossier artisan).
+- [x] Onglet Activité / Admin dans l’espace artisan avec tableau de bord complet (connexions, demandes, paiements, échecs) — 2 tests dans `router.test.ts`.
+- [x] Bannière d’alerte demandes en attente et guide de réponse rapide dans l’espace artisan.
+- [x] Signature du client sur l’écran en fin de chantier (canvas tactile, stockage chiffré, affichage preuves et dossier artisan) — tests `confirmCompletion` avec `signatureDataUrl` dans `router.test.ts`.
+- [x] Signature tactile artisan en accès direct (bouton « Faire signer le client sur cet écran », modal dédié, guide tactile, cibles 48 px minimum) — composant `SignaturePad` avec `touchAction: "none"`, touch events réels et aperçu chiffré.
+- [x] Bannière pro (« Vous êtes une entreprise ou une collectivité ? ») et footer restaurés sur l’accueil pour compléter la fidélité à la maquette MDS — `Home.tsx` + `simple-ux.css`.
+- [x] Audit comparatif de l’expérience client vs la maquette MDS (8 écrans) et les principes Uber Eats officiels — rapport : `docs/AUDIT-EXPERIENCE-CLIENT.md`.

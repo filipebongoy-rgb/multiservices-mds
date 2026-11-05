@@ -85,3 +85,12 @@ Le trajet suit désormais `Démarrer le trajet` → position réellement autoris
 - En-tête : cloche des notifications réelles du compte (non lues, marquage comme lu) et icône téléphone qui appelle réellement MDS (elle ouvrait auparavant le formulaire).
 - Barre du bas : dernier onglet renommé « Mon espace ».
 - Dossier artisan : frise Arrivé → Travaux → Photos → Validation, compteurs de photos avant/après (photo après obligatoire), boutons de trajet bleu nuit, bleu et vert comme sur la maquette.
+
+## Supervision admin, signature tactile du client et alignement Uber Eats — 5 novembre 2026 (fin de journée)
+
+- Accueil corrigé : le titre « Un problème chez vous ? » est désormais blanc et lisible sur gradient sombre doux ; la bannière entreprise (« Vous êtes une entreprise ou une collectivité ? ») et le footer sombre ont été restaurés pour compléter la fidélité à la maquette.
+- Administration opérationnelle : nouvel onglet « Activité » dans l’espace artisan avec KPI (demandes, clients uniques, chiffre d’affaires encaissé), dernières connexions tracées (audit `user.login`), dernières demandes complètes, et paiements avec **motif exact de chaque échec Stripe** stocké sur l’entité paiement.
+- Alertes artisan : les nouvelles demandes déclenchent une notification push propriétaire instantanée, remontent en tête de liste avec l’étiquette « Action requise », et un bandeau d’alerte reste affiché tant qu’une réponse attend.
+- Zone d’intervention : l’artisan est basé à Rennes (35000), la zone configurée couvre l’agglomération et jusqu’à 30 km aux alentours.
+- Signature tactile du client : pad sur canvas HTML5 avec `touchAction: "none"`, utilisable sur téléphone par le client dans son suivi et par l’artisan avec le bouton « Faire signer le client sur cet écran » ouvrant un modal dédié. La signature est chiffrée, horodatée, et conservée comme preuve ; elle vaut validation des travaux et conditionne le règlement de l’artisan.
+- Documents livrés : `docs/GUIDE-ARTISAN.md` (guide d’utilisation répondant aux questions concrètes de l’artisan), `docs/ANALYSE-UBER-EATS.md` (analyse sourcée du système Uber Eats) et `docs/AUDIT-EXPERIENCE-CLIENT.md` (audit comparatif écran par écran).

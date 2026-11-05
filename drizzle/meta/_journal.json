@@ -57,6 +57,13 @@
       "when": 1793889669641,
       "tag": "0007_mysterious_domino",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1793899407148,
+      "tag": "0008_sturdy_mockingbird",
+      "breakpoints": true
     }
   ]
 }

@@ -47,3 +47,10 @@ La suite complète compte 268 tests automatisés passants (13 suites), le parcou
 ## 5. Correctifs complémentaires (5 novembre 2026, fin de passe)
 
 Le pied de page dupliqué sur la page d'accueil a été retiré (suppression du footer redondant propre à la page d'accueil) et le pied de page global a été enrichi avec la signature de marque MDS, le numéro officiel 06 04 15 99 16 et un lien « Accès artisan ». L'accès artisan est désormais visible et unifié : lien direct sur l'accueil, dans le menu des espaces, dans la navigation de tête (visible pour l'administrateur), dans la barre mobile (onglet « Artisan » pour l'artisan), et au sommet du profil sous forme de panneau d'accès avec raccourcis vers les demandes. Les utilisateurs déconnectés sont guidés vers ce même point d'entrée pour se connecter avec le compte propriétaire.
+
+## 6. Passe de simplification de l’expérience (5 novembre 2026)
+
+- Raccourcissement des titres d’étapes de demande : « Votre logement », « Votre problème », « Détails », « Votre disponibilité », « Vérification ».
+- Grands boutons-cartes pour le type de bien avec descriptions contextualisées.
+- Sous-titres descriptifs sous chaque métier de la page d’accueil et indices sous chaque problème du formulaire.
+- Écran vide du suivi épuré : une seule action principale mise en valeur (saisie de référence) avec accès direct aux demandes enregistrées et à la connexion.

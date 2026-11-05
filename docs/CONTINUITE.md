@@ -118,3 +118,10 @@ Le trajet suit désormais `Démarrer le trajet` → position réellement autoris
 - Dédoublonnage du pied de page : suppression du footer redondant de `Home.tsx`, enrichissement du `Footer` global de `Layout.tsx` (signature MDS, numéro officiel, accès artisan) appliqué à toutes les pages de façon unique.
 - Accès artisan rendu visible : lien direct sur la page d'accueil, dans le menu des espaces, dans la navigation desktop (pour l'admin) et dans la barre mobile (onglet « Artisan » pour l'artisan) ; panneau « Espace artisan » au sommet de `/profil` avec raccourcis demandes, et aide à la connexion pour les utilisateurs déconnectés.
 - 268 tests automatisés passants (3 tests de non-régression ajoutés).
+
+## Passe de simplification — 5 novembre 2026
+
+- **Parcours de demande** : titres d’étapes courts et percutants (« Votre logement », « Votre problème », « Détails », « Votre disponibilité », « Vérification ») ; indices d’aide au choix sur chaque problème de chaque métier ; choix du type de bien transformé en grandes cartes visuelles avec description.
+- **Suivi client** : écran vide épuré, centré sur une seule action principale (saisie de référence) avec raccourci de connexion et accès aux demandes enregistrées.
+- **Catalogue & accueil** : sous-titres descriptifs sous chaque métier de l’accueil (« Fuites, robinetterie… ») et placeholder de recherche simplifié.
+- Suite de tests : 268 passants, build production OK.

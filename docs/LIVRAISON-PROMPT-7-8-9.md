@@ -72,3 +72,10 @@ Le pied de page dupliqué sur la page d'accueil a été retiré (suppression du 
 - Menu « Mon compte » sans « Professionnel » ni doublon « Espace artisan ».
 - Profil artisan épuré : sections client masquées, bouton unique « Retour à l’atelier ».
 - Écran d’activation artisan sans lien vers l’espace professionnel.
+
+## 9. Finalisation : navigation artisan 1-clic et mentions légales officielles (5-6 novembre 2026)
+
+- Liberté de navigation de l’artisan (suppression du redirect forcé, lien « Voir le site public » depuis l’atelier).
+- Données d’immatriculation officielles vérifiées dans le registre Siren : SASU MULTISERVICES MDS, SIREN 130 201 502, SIRET 130 201 502 00015, TVA FR 68 130 201 502, RCS Rennes, 43.22G, Mamoudou DEMBELE président, 10 Rue Monsieur Vincent 35200 Rennes.
+- Scénario E2E de 15 étapes entièrement exécuté : création → acceptation → confirmation → départ → GPS → arrivée → début → photos avant/après (garde serveur prouvée bloquante sans photo après) → validation client avec signature → règlements → aperçu admin.
+- 269 tests métier, 0 échec.

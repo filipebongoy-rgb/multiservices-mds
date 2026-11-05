@@ -144,3 +144,10 @@ Le trajet suit désormais `Démarrer le trajet` → position réellement autoris
 - **Menu « Espaces » adapté** : pour l’artisan, suppression des entrées « Espace artisan » (redondante) et « Professionnel » ; seul « Mon profil » + « Se déconnecter » subsiste.
 - **Profil artisan épuré** : masquage des sections client « Mes espaces » et « Paiements et suivi » pour l’administrateur, bouton unique « Retour à l’atelier », masquage du footer sur `/profil` pour l’artisan.
 - **Écran d’activation** : retrait du lien « Accéder à mon espace professionnel ».
+
+## Navigation artisan 1-clic et mentions légales officielles — 5-6 novembre 2026
+
+- **Accès artisan 1-clic** : suppression de la redirection forcée de l’artisan sur les pages publiques (liberté de navigation), redirection par défaut vers l’atelier à la connexion OAuth, liens directs « Voir le site public » depuis l’atelier et dans le menu des espaces.
+- **Mentions légales officielles** intégrées depuis le registre Siren (Ouest France WEB n°99884, entreprises.lefigaro.fr) : MULTISERVICES MDS, SASU au capital de 500 €, SIREN 130 201 502, SIRET 130 201 502 00015, TVA FR 68 130 201 502, RCS Rennes, code NAF 43.22G, président Mamoudou DEMBELE, 10 Rue Monsieur Vincent, 35200 Rennes.
+- **Vérification de bout en bout** : scénario complet de 15 étapes exécuté avec succès (création → acceptation → confirmation → départ → GPS → arrivée → début → photos avant/après avec garde serveur → signature client → règlements → aperçu admin).
+- **Tests** : 269 tests (13 fichiers), 0 échec.

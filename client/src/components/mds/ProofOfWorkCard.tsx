@@ -18,7 +18,9 @@ function PrivatePhotoThumb({
   token?: string;
   label: string;
 }) {
-  const download = trpc.mds.documents.download.useMutation();
+  const download = trpc.mds.documents.download.useMutation({
+    meta: { silent: true },
+  });
   const [url, setUrl] = useState("");
   const [failed, setFailed] = useState(false);
   useEffect(() => {

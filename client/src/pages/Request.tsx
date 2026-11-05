@@ -88,8 +88,8 @@ export default function Request() {
   );
   const [error, setError] = useState(""),
     [consent, setConsent] = useState(false),
-    [photo, setPhoto] = useState<File | null>(null),
-    [photoPreview, setPhotoPreview] = useState("");
+    [photos, setPhotos] = useState<File[]>([]),
+    [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [receipt, setReceipt] = useState<{
       id: number;
       reference: string;
@@ -134,14 +134,10 @@ export default function Request() {
       }));
   }, [organization.data, siteId]);
   useEffect(() => {
-    if (!photo) {
-      setPhotoPreview("");
-      return;
-    }
-    const url = URL.createObjectURL(photo);
-    setPhotoPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [photo]);
+    const urls = photos.map(file => URL.createObjectURL(file));
+    setPhotoPreviews(urls);
+    return () => urls.forEach(url => URL.revokeObjectURL(url));
+  }, [photos]);
   useEffect(() => {
     headingRef.current?.focus();
     setError("");
@@ -209,19 +205,21 @@ export default function Request() {
     setStep(s => Math.min(s + 1, 2));
   }
   async function uploadPhoto(key = receipt) {
-    if (!key || !photo) return;
+    if (!key || !photos.length) return;
     setUploadError("");
     try {
-      await upload.mutateAsync({
-        reference: key.reference,
-        token: key.trackingToken,
-        name: photo.name,
-        mimeType: photo.type,
-        kind: "photo",
-        photoStage: "before",
-        base64: await readFile(photo),
-      });
-      setPhoto(null);
+      for (const photo of photos) {
+        await upload.mutateAsync({
+          reference: key.reference,
+          token: key.trackingToken,
+          name: photo.name,
+          mimeType: photo.type,
+          kind: "photo",
+          photoStage: "before",
+          base64: await readFile(photo),
+        });
+      }
+      setPhotos([]);
     } catch (e: any) {
       setUploadError(
         e.message ||
@@ -432,50 +430,60 @@ export default function Request() {
               <div className="row" style={{ flexWrap: "wrap" }}>
                 <label className="btn secondary" htmlFor="photo">
                   <ImagePlus size={17} />
-                  {photo ? "Changer la photo" : "Ajouter une photo"}
+                  {photos.length
+                    ? `${photos.length} photo(s) sélectionnée(s)`
+                    : "Ajouter des photos"}
                 </label>
                 <input
                   id="photo"
                   type="file"
+                  multiple
                   accept="image/jpeg,image/png,image/webp"
                   className="visually-hidden"
                   onChange={e => {
-                    const f = e.target.files?.[0] || null;
+                    const selected = Array.from(e.target.files || []);
                     if (
-                      f &&
-                      (f.size > 5 * 1024 * 1024 ||
-                        !["image/jpeg", "image/png", "image/webp"].includes(
-                          f.type
-                        ))
+                      selected.length > 10 ||
+                      selected.some(
+                        f =>
+                          f.size > 5 * 1024 * 1024 ||
+                          !["image/jpeg", "image/png", "image/webp"].includes(
+                            f.type
+                          )
+                      )
                     ) {
-                      setError("Photo JPG, PNG ou WebP de 5 Mo maximum.");
+                      setError(
+                        "Jusqu’à 10 photos JPG, PNG ou WebP de 5 Mo maximum chacune."
+                      );
                       e.target.value = "";
                       return;
                     }
-                    setPhoto(f);
+                    setPhotos(selected);
                     setError("");
                   }}
                 />
               </div>
-              {photoPreview && (
-                <div className="row">
-                  <img
-                    src={photoPreview}
-                    alt="Photo que vous allez joindre"
-                    style={{
-                      width: 110,
-                      height: 90,
-                      objectFit: "cover",
-                      borderRadius: 6,
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="text-link"
-                    onClick={() => setPhoto(null)}
-                  >
-                    Retirer
-                  </button>
+              {photoPreviews.length > 0 && (
+                <div className="photo-preview-grid">
+                  {photoPreviews.map((preview, index) => (
+                    <figure key={preview}>
+                      <img
+                        src={preview}
+                        alt={`Photo ${index + 1} sélectionnée`}
+                      />
+                      <button
+                        type="button"
+                        className="text-link"
+                        onClick={() =>
+                          setPhotos(current =>
+                            current.filter((_, i) => i !== index)
+                          )
+                        }
+                      >
+                        Retirer
+                      </button>
+                    </figure>
+                  ))}
                 </div>
               )}
             </>

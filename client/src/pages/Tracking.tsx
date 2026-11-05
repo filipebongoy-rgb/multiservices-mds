@@ -66,6 +66,15 @@ export default function Tracking() {
   const claim = trpc.mds.requests.claim.useMutation();
   const download = trpc.mds.documents.download.useMutation();
   const r = details.data?.request;
+  const progressIndex = !r
+    ? 0
+    : ["completed", "invoiced", "paid", "closed"].includes(r.status)
+      ? 3
+      : ["in_progress", "en_route"].includes(r.status)
+        ? 2
+        : ["confirmed", "planned"].includes(r.status)
+          ? 1
+          : 0;
   useEffect(() => {
     if (lookup?.token)
       try {
@@ -248,6 +257,23 @@ export default function Tracking() {
               {statusLabels[r.status as keyof typeof statusLabels] || r.status}
             </span>
           </div>
+          <ol
+            className="tracking-progress"
+            aria-label="Progression de la demande"
+          >
+            {["Demande reçue", "Confirmée", "En intervention", "Terminée"].map(
+              (label, index) => (
+                <li
+                  key={label}
+                  className={index <= progressIndex ? "done" : ""}
+                  aria-current={index === progressIndex ? "step" : undefined}
+                >
+                  <span>{index + 1}</span>
+                  <strong>{label}</strong>
+                </li>
+              )
+            )}
+          </ol>
           <div className="tracking-layout">
             <div className="stack">
               {r.pricingSnapshot && (

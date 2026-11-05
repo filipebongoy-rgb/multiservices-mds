@@ -31,11 +31,9 @@ export default function Catalog() {
   );
   return (
     <main id="main-content" className="page-shell catalog-page">
-      <div className="eyebrow">RÉPARATIONS, TRAVAUX & MAINTENANCE</div>
       <h1 className="page-title">De quoi avez-vous besoin ?</h1>
-      <p className="lead muted">
-        Choisissez une prestation validée par MDS, ou décrivez simplement votre
-        problème.
+      <p className="muted">
+        Choisissez une prestation ou décrivez votre problème.
       </p>
       <div className="catalog-search">
         <Search size={20} />
@@ -124,33 +122,28 @@ export default function Catalog() {
         <Empty
           title={
             q
-              ? "Aucune prestation ne correspond à cette recherche."
-              : "Aucune prestation ouverte dans ce catalogue pour le moment."
+              ? "Aucune prestation trouvée."
+              : "Aucune prestation ouverte pour le moment."
           }
         >
-          <p>
-            Vous pouvez toujours envoyer une demande libre. MDS étudiera votre
-            besoin avant de vous proposer une intervention.
-          </p>
-          <button
-            className="text-link"
-            onClick={() => {
-              setQ("");
-              setTrade("");
-            }}
-          >
-            Réinitialiser les filtres
-          </button>
+          <p>Décrivez votre besoin à MDS.</p>
+          {!!(q || trade) && (
+            <button
+              className="text-link"
+              onClick={() => {
+                setQ("");
+                setTrade("");
+              }}
+            >
+              Réinitialiser les filtres
+            </button>
+          )}
         </Empty>
       )}
       <FreeRequest />
-      <div className="notice">
-        <strong>Votre demande ne vous engage pas à une intervention.</strong>
-        <p>
-          MDS valide d’abord votre besoin. Vous confirmez ensuite le tarif et le
-          créneau proposés.
-        </p>
-      </div>
+      <p className="muted small-text">
+        Confirmation après accord de MDS et du client.
+      </p>
     </main>
   );
 }

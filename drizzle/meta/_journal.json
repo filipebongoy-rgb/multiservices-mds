@@ -29,6 +29,13 @@
       "when": 1793873717762,
       "tag": "0003_colossal_power_man",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1793883182116,
+      "tag": "0004_lumpy_daimon_hellstrom",
+      "breakpoints": true
     }
   ]
 }

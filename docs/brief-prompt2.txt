@@ -1,0 +1,242 @@
+MULTISERVICES MDS — PROMPT 2/3
+
+MOTEUR DE DEMANDES, DOUBLE VALIDATION ET AUTOMATISATION
+
+Continue le projet existant.
+
+Ne reconstruis pas les fondations de la première partie.
+
+Réutilise les mêmes utilisateurs, la même base de données et les mêmes composants.
+
+L'objectif est de construire le moteur opérationnel de MULTISERVICES MDS.
+
+1. FONCTIONNEMENT INSPIRÉ D'UBER EATS
+
+Créer un système de demande et d'acceptation par les deux parties.
+
+PARCOURS :
+
+1. Le client choisit une prestation.
+2. Il décrit son besoin.
+3. Il indique son adresse.
+4. Il propose un créneau.
+5. Il envoie sa demande.
+6. L'artisan reçoit une notification.
+7. L'artisan accepte, refuse ou propose une alternative.
+8. Le client accepte ou refuse la proposition.
+9. Le rendez-vous est confirmé après les validations requises.
+
+Ne pas confondre demande envoyée et réservation confirmée.
+
+2. RÉPONSES DE L'ARTISAN
+
+L'artisan doit disposer de boutons rapides :
+
+- Accepter.
+- Refuser.
+- Proposer un autre créneau.
+- Demander une photo.
+- Demander une précision.
+- Proposer un diagnostic.
+- Préparer un devis.
+
+Une réponse doit pouvoir être effectuée en quelques secondes.
+
+3. VALIDATION CLIENT
+
+Le client reçoit une notification et peut :
+
+- Accepter.
+- Refuser.
+- Choisir un autre créneau proposé.
+- Consulter le devis.
+- Accepter ou refuser le devis.
+
+Prévoir une expiration configurable des propositions et des rappels.
+
+4. TARIFICATION HYBRIDE
+
+Appliquer obligatoirement les deux modes.
+
+PRIX FIXE :
+
+Pour les prestations standardisées :
+
+- Afficher le prix avant la demande.
+- Afficher les conditions.
+- Détailler les inclusions et exclusions.
+- Ajouter les frais applicables.
+- Calculer le montant final selon les paramètres.
+- Demander l'acceptation du client.
+
+L'artisan doit toujours pouvoir valider la demande avant la confirmation définitive.
+
+DEVIS :
+
+Pour les prestations complexes :
+
+- Collecter les informations.
+- Recevoir les photos.
+- Préparer le dossier.
+- Permettre à l'artisan de rédiger son devis.
+- Transmettre le devis au client.
+- Enregistrer son acceptation ou son refus.
+
+Le devis doit comporter les informations nécessaires à sa compréhension et sa validité.
+
+Aucun supplément ou travail supplémentaire ne peut être facturé sans information et accord préalable du client.
+
+5. CALENDRIER INTELLIGENT
+
+Créer un calendrier centralisé pour l'artisan unique.
+
+Prendre en compte :
+
+- Horaires.
+- Congés.
+- Indisponibilités.
+- Durée des prestations.
+- Temps de déplacement.
+- Zones d'intervention.
+- Rendez-vous confirmés.
+- Temps de sécurité entre les rendez-vous.
+
+Le créneau proposé par le client n'est pas réservé définitivement tant que les validations nécessaires ne sont pas terminées.
+
+Éviter les doubles réservations grâce à une vérification transactionnelle côté serveur.
+
+6. QUALIFICATION INTELLIGENTE
+
+Intégrer une IA capable de comprendre le langage naturel.
+
+Exemple :
+« Mon robinet fuit et je n'arrive plus à le fermer. »
+
+Le système identifie la prestation probable, les informations manquantes et les questions utiles.
+
+Ne poser qu'une question à la fois.
+
+Si la situation est incertaine, transmettre à l'artisan sans inventer de diagnostic.
+
+7. SUIVI COMME UBER EATS
+
+Créer une chronologie de suivi :
+
+- Demande envoyée.
+- En attente de MDS.
+- Acceptée par MDS.
+- Proposition envoyée.
+- En attente du client.
+- Rendez-vous confirmé.
+- Intervention planifiée.
+- Artisan en route, si le départ est réellement déclaré.
+- Intervention en cours.
+- Intervention terminée.
+- Facture disponible.
+- Paiement confirmé.
+- Mission clôturée.
+
+Les états doivent être synchronisés dans les deux espaces.
+
+Ne jamais afficher un état non confirmé.
+
+Prévoir un lien sécurisé de suivi accessible sans installer d'application.
+
+8. DÉROULEMENT DE L'INTERVENTION
+
+L'artisan accède à :
+
+- Adresse.
+- Coordonnées.
+- Description.
+- Photos.
+- Prestation.
+- Devis accepté.
+- Conditions convenues.
+
+Actions principales :
+
+- Démarrer.
+- Signaler un problème.
+- Proposer des travaux supplémentaires.
+- Terminer.
+
+Tout travail supplémentaire doit recevoir l'accord du client avant exécution, sauf situation exceptionnelle légalement justifiée.
+
+9. PAIEMENTS
+
+Prévoir une intégration réelle avec un prestataire de paiement.
+
+Gérer :
+
+- Paiement intégral.
+- Acompte.
+- Solde.
+- Paiement par lien.
+- Confirmation.
+- Refus.
+- Remboursement lorsque applicable.
+- Historique.
+
+Le paiement ne doit jamais être considéré comme réussi sans confirmation réelle du prestataire.
+
+Ne pas développer de portefeuille interne ni conserver directement des données de cartes bancaires.
+
+10. NOTIFICATIONS
+
+Prévoir e-mail et SMS.
+
+Notifications :
+
+- Demande reçue.
+- Demande acceptée.
+- Proposition envoyée.
+- Nouveau créneau.
+- Devis disponible.
+- Devis accepté ou refusé.
+- Rendez-vous confirmé.
+- Rappel.
+- Départ de l'artisan.
+- Fin d'intervention.
+- Facture.
+- Paiement.
+
+Les messages doivent être courts et utiles.
+
+11. GESTION DES INCIDENTS
+
+Gérer :
+
+- Demande refusée.
+- Demande expirée.
+- Absence de créneau.
+- Annulation.
+- Client absent.
+- Artisan indisponible.
+- Paiement échoué.
+- Devis refusé.
+- Travaux supplémentaires.
+- Réclamation.
+
+Chaque événement doit être horodaté.
+
+Prévoir un historique complet et un mécanisme de reprise manuelle.
+
+12. TESTS OBLIGATOIRES
+
+Tester les deux modes tarifaires :
+
+- Réservation à prix fixe.
+- Demande de devis.
+- Refus de demande.
+- Proposition d'un nouveau créneau.
+- Acceptation client.
+- Refus client.
+- Expiration.
+- Annulation.
+- Paiement.
+- Intervention terminée.
+
+Vérifier que toutes les validations fonctionnent et que les données sont cohérentes.
+
+Préparer le PROMPT 3/3 : gestion professionnelle, contrats, administration et audit final.

@@ -12,6 +12,10 @@ const boundary = vi.hoisted(() => ({
   create: vi.fn(),
   retrieve: vi.fn(),
   verify: vi.fn(),
+  intentRetrieve: vi.fn(),
+  refundList: vi.fn(),
+  refundCreate: vi.fn(),
+  refundRetrieve: vi.fn(),
 }));
 vi.mock("../db", () => ({ getDb: async () => boundary.db }));
 vi.mock("stripe", () => ({
@@ -20,9 +24,16 @@ vi.mock("stripe", () => ({
       sessions: { create: boundary.create, retrieve: boundary.retrieve },
     };
     webhooks = { constructEvent: boundary.verify };
+    paymentIntents = { retrieve: boundary.intentRetrieve };
+    refunds = {
+      list: boundary.refundList,
+      create: boundary.refundCreate,
+      retrieve: boundary.refundRetrieve,
+    };
   },
 }));
 import {
+  commercialPaidCents,
   paymentConfig,
   paymentsRouter,
   validateCheckoutOrigin,
@@ -273,6 +284,8 @@ class PaymentTestDatabase {
           "checkoutKey",
           "checkoutSessionId",
           "paymentIntentId",
+          "providerRefundId",
+          "idempotencyKey",
         ])
           if (data[key] != null && rows.some(r => r[key] === data[key]))
             throw new Error(`Unique ${key}`);
@@ -286,6 +299,11 @@ class PaymentTestDatabase {
                 verificationNote: null,
                 confirmedAt: null,
                 expiresAt: null,
+                receivedAmountCents: null,
+                creditedAt: null,
+                purpose: "full",
+                planId: null,
+                invoiceId: null,
               }
             : {};
         rows.push({
@@ -369,6 +387,10 @@ function payment(patch: Row = {}) {
     reference: "MDS-P-test",
     expiresAt: new Date(Date.now() + 3600000),
     confirmedAt: null,
+    receivedAmountCents: null,
+    creditedAt: null,
+    purpose: "full",
+    planId: null,
     ...patch,
   };
 }
@@ -446,6 +468,23 @@ beforeEach(() => {
   boundary.create.mockReset();
   boundary.retrieve.mockReset();
   boundary.verify.mockReset();
+  boundary.intentRetrieve.mockReset();
+  boundary.refundList.mockReset();
+  boundary.refundCreate.mockReset();
+  boundary.refundRetrieve.mockReset();
+  boundary.intentRetrieve.mockResolvedValue({
+    object: "payment_intent",
+    id: "pi_mock",
+    status: "succeeded",
+    livemode: false,
+    currency: "eur",
+    amount_received: 12000,
+  });
+  boundary.refundList.mockResolvedValue({
+    object: "list",
+    data: [],
+    has_more: false,
+  });
   boundary.create.mockImplementation(async params => session(params));
   db.put(s.settings, [{ id: 1, artisanUserId: 1 }])
     .put(s.requests, [request()])
@@ -1037,5 +1076,748 @@ describe("webhook signé, exact et dédupliqué", () => {
     expect(db.rows(s.payments)[0].status).toBe("succeeded");
     expect(Buffer.isBuffer(boundary.verify.mock.calls.at(-1)![0])).toBe(true);
     expect(db.rows(s.paymentEvents)).toHaveLength(1);
+  });
+});
+
+function fixedContract(patch: Row = {}) {
+  return request(1, {
+    status: "awaiting_client",
+    quoteStatus: "none",
+    proposedPriceCents: 12000,
+    expiresAt: new Date(Date.now() + 3600000),
+    pricingSnapshot: { pricingMode: "fixed", totalCents: 12000 },
+    ...patch,
+  });
+}
+function paymentPlan(patch: Row = {}) {
+  return {
+    id: 1,
+    requestId: 1,
+    version: 0,
+    totalCents: 12000,
+    depositCents: 3000,
+    conditions: "Acompte avant intervention, solde sur facture.",
+    status: "accepted",
+    acceptedAt: new Date(),
+    ...patch,
+  };
+}
+function creditedPayment(patch: Row = {}) {
+  return payment({
+    mode: "live",
+    status: "succeeded",
+    receivedAmountCents: 12000,
+    creditedAt: new Date(),
+    confirmedAt: new Date(),
+    paymentIntentId: "pi_mock",
+    ...patch,
+  });
+}
+function refundProof(patch: Row = {}) {
+  return {
+    object: "refund",
+    id: "re_mock",
+    payment_intent: "pi_mock",
+    amount: 2000,
+    currency: "eur",
+    status: "succeeded",
+    ...patch,
+  };
+}
+function refundInput(patch: Row = {}) {
+  return {
+    paymentId: 1,
+    amountCents: 2000,
+    mode: "test" as const,
+    reference: "MDS-P-test",
+    reason: "Annulation validée par le client",
+    confirm: true as const,
+    idempotencyKey: "refund-unit-confirmation-123",
+    ...patch,
+  };
+}
+function refundRow(patch: Row = {}) {
+  return {
+    id: 1,
+    paymentId: 1,
+    amountCents: 2000,
+    currency: "EUR",
+    mode: "live",
+    status: "succeeded",
+    providerRefundId: "re_mock",
+    idempotencyKey: "refund-history-key",
+    reason: "Annulation client",
+    requestedBy: 1,
+    confirmedAt: new Date(),
+    createdAt: new Date(),
+    ...patch,
+  };
+}
+function mockRefunds(live = false) {
+  boundary.intentRetrieve.mockResolvedValue({
+    object: "payment_intent",
+    id: "pi_mock",
+    status: "succeeded",
+    livemode: live,
+    currency: "eur",
+    amount_received: 12000,
+  });
+  boundary.refundCreate.mockResolvedValue(refundProof());
+  boundary.refundRetrieve.mockResolvedValue(refundProof());
+}
+describe("échéanciers et comptabilité commerciale vérifiée", () => {
+  it("ne compte jamais les montants réservés, legacy, test, retenus ou devise invalide", async () => {
+    db.put(s.payments, [
+      creditedPayment({ amountCents: 10000, receivedAmountCents: 15000 }),
+      creditedPayment({ id: 2, mode: "test" }),
+      creditedPayment({ id: 3, creditedAt: null }),
+      creditedPayment({ id: 4, receivedAmountCents: null }),
+      creditedPayment({ id: 5, currency: "USD" }),
+      creditedPayment({ id: 6, status: "pending" }),
+      creditedPayment({
+        id: 7,
+        provider: "manual",
+        mode: "offline",
+        receivedAmountCents: 1000,
+      }),
+    ]);
+    db.put(s.refunds, [
+      refundRow({ amountCents: 2000 }),
+      refundRow({ id: 2, status: "pending", amountCents: 3000 }),
+      refundRow({ id: 3, mode: "test", amountCents: 4000 }),
+    ]);
+    expect(await commercialPaidCents(db as any, 1)).toBe(14000);
+  });
+  it("propose le total serveur avec seulement les suppléments acceptés terminés", async () => {
+    db.put(s.requests, [fixedContract()]);
+    db.put(s.invoices, []);
+    db.put(s.extraWorks, [
+      {
+        id: 1,
+        requestId: 1,
+        status: "completed",
+        acceptedAt: new Date(),
+        completedAt: new Date(),
+        amountCents: 2000,
+      },
+      { id: 2, requestId: 1, status: "pending", amountCents: 8000 },
+    ]);
+    await caller(user(1, "admin")).proposePlan({
+      requestId: 1,
+      version: 4,
+      depositCents: 3000,
+      conditions: "Acompte puis solde à la facture",
+    });
+    expect(db.rows(s.paymentPlans)[0]).toMatchObject({
+      totalCents: 14000,
+      status: "proposed",
+      version: 0,
+    });
+    expect(db.rows(s.requests)[0]).toMatchObject({
+      status: "awaiting_client",
+      version: 5,
+      proposedPriceCents: 12000,
+    });
+  });
+  it("refuse un échéancier avant approbation MDS et refuse de changer les fonds actifs", async () => {
+    const propose = {
+      requestId: 1,
+      version: 4,
+      depositCents: 3000,
+      conditions: "Acompte puis solde à la facture",
+    };
+    db.put(s.requests, [fixedContract({ status: "awaiting_mds" })]);
+    await expect(caller(user(1, "admin")).proposePlan(propose)).rejects.toThrow(
+      "accord MDS"
+    );
+    db.put(s.requests, [fixedContract()]);
+    db.put(s.payments, [payment({ mode: "live" })]);
+    await expect(caller(user(1, "admin")).proposePlan(propose)).rejects.toThrow(
+      "réservation"
+    );
+  });
+  it("l’accord d’échéancier appartient au client, ne confirme ni RDV ni prix, et exige version actuelle", async () => {
+    db.put(s.requests, [fixedContract()]);
+    db.put(s.paymentPlans, [
+      paymentPlan({ status: "proposed", acceptedAt: null }),
+    ]);
+    const consent = {
+      reference: input.reference,
+      token,
+      id: 1,
+      version: 0,
+      accept: true,
+    };
+    await expect(
+      caller(user(1, "admin")).respondPlan(consent)
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      caller().respondPlan({ ...consent, version: 1 })
+    ).rejects.toThrow("actuelle");
+    await caller().respondPlan(consent);
+    expect(db.rows(s.paymentPlans)[0]).toMatchObject({
+      status: "accepted",
+      version: 1,
+    });
+    expect(db.rows(s.requests)[0]).toMatchObject({
+      status: "awaiting_client",
+      version: 4,
+      proposedPriceCents: 12000,
+    });
+    expect(db.rows(s.appointments)).toHaveLength(0);
+    await expect(caller().respondPlan(consent)).rejects.toThrow("actuelle");
+  });
+  it("l’acompte exige le plan accepté actuel et aucun contrat expiré", async () => {
+    db.put(s.requests, [fixedContract()]);
+    db.put(s.invoices, []);
+    db.put(s.paymentPlans, [paymentPlan({ status: "proposed" })]);
+    await expect(
+      caller().checkout({ ...input, purpose: "deposit" })
+    ).rejects.toThrow("accepté");
+    db.put(s.paymentPlans, [paymentPlan()]);
+    db.put(s.requests, [fixedContract({ expiresAt: new Date(0) })]);
+    await expect(
+      caller().checkout({ ...input, purpose: "deposit" })
+    ).rejects.toThrow("valides");
+    expect(boundary.create).not.toHaveBeenCalled();
+  });
+  it("crée un acompte avant facture avec lien plan stable et montant non envoyé par le client", async () => {
+    db.put(s.requests, [fixedContract()]);
+    db.put(s.invoices, []);
+    db.put(s.paymentPlans, [paymentPlan()]);
+    await caller().checkout({ ...input, purpose: "deposit" });
+    expect(db.rows(s.payments)[0]).toMatchObject({
+      invoiceId: null,
+      planId: 1,
+      purpose: "deposit",
+      amountCents: 3000,
+    });
+    expect(boundary.create.mock.calls[0][0]).toMatchObject({
+      metadata: { invoice_id: "", plan_id: "1", purpose: "deposit" },
+    });
+    expect(
+      boundary.create.mock.calls[0][0].line_items[0].price_data.unit_amount
+    ).toBe(3000);
+  });
+  it("l’acompte live impute réellement sans acquitter la facture ni confirmer le rendez-vous", async () => {
+    db.put(s.requests, [fixedContract()]);
+    db.put(s.invoices, []);
+    db.put(s.paymentPlans, [paymentPlan()]);
+    db.put(s.payments, [
+      payment({
+        mode: "live",
+        invoiceId: null,
+        purpose: "deposit",
+        planId: 1,
+        amountCents: 3000,
+      }),
+    ]);
+    const ev = signedEvent(
+      "evt_deposit",
+      undefined,
+      {
+        amount_received: 3000,
+        amount: 3000,
+        metadata: {
+          payment_id: "1",
+          request_id: "1",
+          invoice_id: "",
+          plan_id: "1",
+          purpose: "deposit",
+          checkout_key: "test-durable-payment-key",
+        },
+      },
+      true
+    );
+    expect((await processPaymentEvent(ev, "live")).outcome).toBe(
+      "live_deposit_received"
+    );
+    expect(db.rows(s.payments)[0].creditedAt).toBeInstanceOf(Date);
+    expect(await commercialPaidCents(db as any, 1)).toBe(3000);
+    expect(db.rows(s.requests)[0]).toMatchObject({
+      status: "awaiting_client",
+      version: 4,
+    });
+    expect(db.rows(s.invoices)).toHaveLength(0);
+    expect(db.rows(s.appointments)).toHaveLength(0);
+    expect(db.rows(s.events)[0].status).toBe("awaiting_client");
+  });
+  it("l’acompte test ne réduit pas le solde commercial et ne crédite pas le dossier", async () => {
+    db.put(s.requests, [fixedContract()]);
+    db.put(s.invoices, []);
+    db.put(s.paymentPlans, [paymentPlan()]);
+    db.put(s.payments, [
+      payment({
+        invoiceId: null,
+        purpose: "deposit",
+        planId: 1,
+        amountCents: 3000,
+      }),
+    ]);
+    const ev = signedEvent("evt_deposit_test", undefined, {
+      amount_received: 3000,
+      metadata: {
+        payment_id: "1",
+        request_id: "1",
+        invoice_id: "",
+        plan_id: "1",
+        purpose: "deposit",
+        checkout_key: "test-durable-payment-key",
+      },
+    });
+    expect((await processPaymentEvent(ev, "test")).outcome).toBe(
+      "test_succeeded_no_fulfillment"
+    );
+    expect(await commercialPaidCents(db as any, 1)).toBe(0);
+    expect(db.rows(s.payments)[0].creditedAt).toBeNull();
+    expect((await caller().plan(input)).remainingCents).toBe(12000);
+  });
+  it("un solde ne débite que la facture moins les crédits réels et remboursements confirmés", async () => {
+    db.put(s.payments, [
+      creditedPayment({
+        purpose: "deposit",
+        planId: 1,
+        invoiceId: null,
+        amountCents: 3000,
+        receivedAmountCents: 3000,
+      }),
+    ]);
+    db.put(s.refunds, [refundRow({ amountCents: 1000 })]);
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_live_unit");
+    boundary.create.mockImplementation(async params =>
+      session(params, {
+        livemode: true,
+        id: "cs_balance",
+        payment_intent: "pi_balance",
+      })
+    );
+    await caller().checkout({ ...input, purpose: "balance" });
+    expect(
+      boundary.create.mock.calls[0][0].line_items[0].price_data.unit_amount
+    ).toBe(10000);
+  });
+  it("un solde live exact acquitte uniquement le restant confirmé", async () => {
+    db.put(s.payments, [
+      creditedPayment({
+        id: 2,
+        purpose: "deposit",
+        amountCents: 3000,
+        receivedAmountCents: 3000,
+        paymentIntentId: "pi_deposit",
+      }),
+      payment({ mode: "live", purpose: "balance", amountCents: 9000 }),
+    ]);
+    const ev = signedEvent(
+      "evt_balance",
+      undefined,
+      {
+        amount_received: 9000,
+        amount: 9000,
+        metadata: {
+          payment_id: "1",
+          request_id: "1",
+          invoice_id: "1",
+          purpose: "balance",
+          checkout_key: "test-durable-payment-key",
+        },
+      },
+      true
+    );
+    expect((await processPaymentEvent(ev, "live")).outcome).toBe(
+      "live_fulfilled"
+    );
+    expect(await commercialPaidCents(db as any, 1)).toBe(12000);
+    expect(db.rows(s.invoices)[0].paidAt).toBeInstanceOf(Date);
+  });
+  it("une tentative live pending ou failed d’une autre échéance interdit une seconde charge", async () => {
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_live_unit");
+    for (const status of ["pending", "failed"]) {
+      db.put(s.payments, [
+        payment({
+          mode: "live",
+          purpose: "deposit",
+          invoiceId: null,
+          amountCents: 3000,
+          status,
+        }),
+      ]);
+      await expect(
+        caller().checkout({ ...input, purpose: "balance" })
+      ).rejects.toThrow("facture a changé");
+    }
+    expect(boundary.create).not.toHaveBeenCalled();
+  });
+  it("un succès retenu conserve reçu réel mais ne compte jamais commercialement et empêche un nouveau débit", async () => {
+    db.put(s.payments, [payment({ mode: "live", amountCents: 10000 })]);
+    await processPaymentEvent(
+      signedEvent("evt_over", undefined, { amount_received: 15000 }, true),
+      "live"
+    );
+    expect(db.rows(s.payments)[0]).toMatchObject({
+      receivedAmountCents: 15000,
+      creditedAt: null,
+    });
+    expect(await commercialPaidCents(db as any, 1)).toBe(0);
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_live_unit");
+    await expect(caller().checkout(input)).rejects.toThrow("prise en compte");
+    expect((await caller().list(input))[0]).toMatchObject({
+      amountCents: 10000,
+      receivedAmountCents: 15000,
+      creditedAt: null,
+    });
+  });
+});
+
+describe("remboursements Stripe confirmés par relecture SDK", () => {
+  beforeEach(() => {
+    db.put(s.payments, [
+      payment({
+        status: "succeeded",
+        paymentIntentId: "pi_mock",
+        receivedAmountCents: 12000,
+        confirmedAt: new Date(),
+      }),
+    ]);
+    mockRefunds();
+  });
+  it("refuse tout non propriétaire et exige checkbox, mode, montant, référence et motif explicites", async () => {
+    await expect(caller(user(2)).refund(refundInput())).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    await expect(
+      caller(user(2, "admin")).refundable({ paymentId: 1 })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      caller(user(1, "admin")).refund({
+        ...refundInput(),
+        confirm: false,
+      } as any)
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      caller(user(1, "admin")).refund(refundInput({ mode: "live" }))
+    ).rejects.toThrow("exactement");
+    await expect(
+      caller(user(1, "admin")).refund(refundInput({ reference: "MDS-P-other" }))
+    ).rejects.toThrow("exactement");
+    expect(boundary.refundCreate).not.toHaveBeenCalled();
+  });
+  it("le plafond utilise les fonds provider réellement reçus, jamais le prix réservé 100 contre 150", async () => {
+    db.put(s.payments, [
+      payment({
+        status: "succeeded",
+        paymentIntentId: "pi_mock",
+        amountCents: 10000,
+        receivedAmountCents: 15000,
+      }),
+    ]);
+    boundary.intentRetrieve.mockResolvedValue({
+      object: "payment_intent",
+      id: "pi_mock",
+      status: "succeeded",
+      livemode: false,
+      currency: "eur",
+      amount_received: 15000,
+    });
+    expect(
+      await caller(user(1, "admin")).refundable({ paymentId: 1 })
+    ).toMatchObject({
+      remainingRefundableCents: 15000,
+      reservedAmountCents: 10000,
+      receivedAmountCents: 15000,
+    });
+    await expect(
+      caller(user(1, "admin")).refund(refundInput({ amountCents: 15001 }))
+    ).rejects.toThrow("fonds réellement");
+    expect(boundary.refundCreate).not.toHaveBeenCalled();
+  });
+  it("réserve avant le réseau, re-lit le remboursement, et test ne change aucun acquittement commercial", async () => {
+    db.put(s.invoices, [invoice({ paidAt: new Date() })]);
+    db.put(s.requests, [request(1, { status: "paid" })]);
+    boundary.refundCreate.mockImplementation(async () => {
+      expect(db.rows(s.refunds)[0].status).toBe("pending");
+      expect(db.rows(s.refunds)[0].confirmedAt == null).toBe(true);
+      return refundProof();
+    });
+    const result = await caller(user(1, "admin")).refund(refundInput());
+    expect(result).toMatchObject({
+      status: "succeeded",
+      mode: "test",
+      amountCents: 2000,
+    });
+    expect(boundary.refundRetrieve).toHaveBeenCalledWith("re_mock");
+    expect(db.rows(s.invoices)[0].paidAt).toBeInstanceOf(Date);
+    expect(db.rows(s.requests)[0].status).toBe("paid");
+  });
+  it("pending ne vaut pas succès même si create affirme succeeded ; sync exige une vraie relecture", async () => {
+    boundary.refundRetrieve.mockResolvedValue(
+      refundProof({ status: "pending" })
+    );
+    expect((await caller(user(1, "admin")).refund(refundInput())).status).toBe(
+      "pending"
+    );
+    expect(db.rows(s.refunds)[0].confirmedAt).toBeNull();
+    boundary.refundRetrieve.mockResolvedValue(refundProof());
+    expect((await caller(user(1, "admin")).syncRefund({ id: 1 })).status).toBe(
+      "succeeded"
+    );
+    expect(boundary.refundCreate).toHaveBeenCalledTimes(1);
+  });
+  it("un timeout garde la même réservation et clé ; une autre clé reste bloquée", async () => {
+    boundary.refundCreate.mockRejectedValueOnce(
+      new Error("timeout after create")
+    );
+    const artisan = caller(user(1, "admin"));
+    await expect(artisan.refund(refundInput())).rejects.toThrow(
+      "clé sont conservées"
+    );
+    const key = db.rows(s.refunds)[0].idempotencyKey;
+    await expect(
+      artisan.refund(
+        refundInput({ idempotencyKey: "other-refund-confirmation-123" })
+      )
+    ).rejects.toThrow("en attente");
+    await artisan.refund(refundInput());
+    expect(db.rows(s.refunds)).toHaveLength(1);
+    expect(
+      boundary.refundCreate.mock.calls.map(c => c[1].idempotencyKey)
+    ).toEqual([key, key]);
+    await artisan.refund(refundInput());
+    expect(boundary.refundCreate).toHaveBeenCalledTimes(2);
+  });
+  it("deux confirmations simultanées ne créent qu’une réservation et une clé", async () => {
+    const a = caller(user(1, "admin"));
+    await Promise.all([a.refund(refundInput()), a.refund(refundInput())]);
+    expect(db.rows(s.refunds)).toHaveLength(1);
+    expect(
+      new Set(boundary.refundCreate.mock.calls.map(c => c[1].idempotencyKey))
+        .size
+    ).toBe(1);
+    expect(db.rows(s.events)).toHaveLength(1);
+  });
+  it.each([
+    { payment_intent: "pi_other" },
+    { currency: "usd" },
+    { amount: 1999 },
+  ])("ne confirme jamais une preuve divergente %o", async patch => {
+    boundary.refundRetrieve.mockResolvedValue(refundProof(patch));
+    await expect(
+      caller(user(1, "admin")).refund(refundInput())
+    ).rejects.toThrow("preuve Stripe");
+    expect(db.rows(s.refunds)[0]).toMatchObject({
+      status: "pending",
+      providerRefundId: "re_mock",
+    });
+    expect(db.rows(s.events)).toHaveLength(0);
+  });
+  it("refuse une relecture mode intent divergent, puis peut resynchroniser sans nouvelle dépense", async () => {
+    await caller(user(1, "admin")).refund(refundInput());
+    boundary.intentRetrieve.mockResolvedValue({
+      object: "payment_intent",
+      id: "pi_mock",
+      status: "succeeded",
+      livemode: true,
+      currency: "eur",
+      amount_received: 12000,
+    });
+    await expect(
+      caller(user(1, "admin")).syncRefund({ id: 1 })
+    ).rejects.toThrow("preuve Stripe");
+    expect(boundary.refundCreate).toHaveBeenCalledTimes(1);
+  });
+  it("un remboursement live confirmé enlève uniquement le crédit remboursé et rouvre financièrement une facture clôturée", async () => {
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_live_unit");
+    mockRefunds(true);
+    db.put(s.payments, [creditedPayment()]);
+    db.put(s.invoices, [invoice({ paidAt: new Date() })]);
+    db.put(s.requests, [request(1, { status: "closed" })]);
+    await caller(user(1, "admin")).refund(refundInput({ mode: "live" }));
+    expect(await commercialPaidCents(db as any, 1)).toBe(10000);
+    expect(db.rows(s.invoices)[0].paidAt).toBeNull();
+    expect(db.rows(s.requests)[0]).toMatchObject({
+      status: "invoiced",
+      version: 5,
+    });
+    expect(db.rows(s.events)[0].message).toContain(
+      "Réouverture financière auditée"
+    );
+    await caller(user(1, "admin")).syncRefund({ id: 1 });
+    expect(db.rows(s.requests)[0].version).toBe(5);
+  });
+  it("un remboursement d’un versement retenu ne révoque pas un règlement commercial indépendant", async () => {
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_live_unit");
+    mockRefunds(true);
+    db.put(s.payments, [creditedPayment({ creditedAt: null })]);
+    db.put(s.invoices, [invoice({ paidAt: new Date() })]);
+    db.put(s.requests, [request(1, { status: "paid" })]);
+    await caller(user(1, "admin")).refund(refundInput({ mode: "live" }));
+    expect(db.rows(s.invoices)[0].paidAt).toBeInstanceOf(Date);
+    expect(db.rows(s.requests)[0].status).toBe("paid");
+  });
+  it("la disponibilité est bornée par remboursements provider et réservations locales pending", async () => {
+    db.put(s.refunds, [
+      refundRow({
+        mode: "test",
+        status: "pending",
+        confirmedAt: null,
+        amountCents: 3000,
+      }),
+    ]);
+    boundary.refundList.mockResolvedValue({
+      data: [refundProof({ amount: 4000 })],
+      has_more: false,
+    });
+    expect(
+      (await caller(user(1, "admin")).refundable({ paymentId: 1 }))
+        .remainingRefundableCents
+    ).toBe(8000);
+    boundary.refundList.mockResolvedValue({ data: [], has_more: true });
+    await expect(
+      caller(user(1, "admin")).refundable({ paymentId: 1 })
+    ).rejects.toThrow("rapprochement");
+  });
+});
+
+describe("rapprochement conservateur et contrat immuable", () => {
+  it("un acompte sans facture reste imputable si la facture a été émise avant le webhook", async () => {
+    db.put(s.requests, [fixedContract({ status: "invoiced" })]);
+    db.put(s.paymentPlans, [paymentPlan()]);
+    db.put(s.payments, [
+      payment({
+        mode: "live",
+        invoiceId: null,
+        purpose: "deposit",
+        planId: 1,
+        amountCents: 3000,
+      }),
+    ]);
+    const ev = signedEvent(
+      "evt_deposit_after_invoice",
+      undefined,
+      {
+        amount_received: 3000,
+        metadata: {
+          payment_id: "1",
+          request_id: "1",
+          invoice_id: "",
+          plan_id: "1",
+          purpose: "deposit",
+          checkout_key: "test-durable-payment-key",
+        },
+      },
+      true
+    );
+    expect((await processPaymentEvent(ev, "live")).outcome).toBe(
+      "live_deposit_received"
+    );
+    expect(db.rows(s.invoices)[0].paidAt).toBeNull();
+    expect(await commercialPaidCents(db as any, 1)).toBe(3000);
+  });
+  it("un nouveau contrat modifié ne permet ni facture divergente ni acompte ancien", async () => {
+    db.put(s.requests, [fixedContract({ status: "invoiced" })]);
+    db.put(s.invoices, [invoice({ amountCents: 15000 })]);
+    expect((await caller().plan(input)).invoicePayable).toBe(false);
+    await expect(caller().checkout(input)).rejects.toThrow("contrat accepté");
+    db.put(s.paymentPlans, [paymentPlan({ totalCents: 15000 })]);
+    await expect(
+      caller().checkout({ ...input, purpose: "deposit" })
+    ).rejects.toThrow("contrat inchangé");
+    expect(boundary.create).not.toHaveBeenCalled();
+  });
+  it("un devis accepté doit exister réellement avant une proposition d’acompte", async () => {
+    db.put(s.requests, [
+      request(1, {
+        status: "awaiting_client",
+        quoteStatus: "accepted",
+        proposedPriceCents: 18000,
+      }),
+    ]);
+    const proposal = {
+      requestId: 1,
+      version: 4,
+      depositCents: 4500,
+      conditions: "Acompte à la commande, solde à réception",
+    };
+    await expect(
+      caller(user(1, "admin")).proposePlan(proposal)
+    ).rejects.toThrow("divergent");
+    db.put(s.quotes, [
+      {
+        id: 1,
+        requestId: 1,
+        status: "accepted",
+        documentId: 1,
+        acceptedAt: new Date(),
+        amountCents: 18000,
+      },
+    ]);
+    await caller(user(1, "admin")).proposePlan(proposal);
+    expect(db.rows(s.paymentPlans)[0]).toMatchObject({
+      totalCents: 18000,
+      depositCents: 4500,
+    });
+  });
+  it("un reçu à devise malformée n’expose pas un faux montant EUR et ne crédite pas le dossier", async () => {
+    db.put(s.payments, [payment({ mode: "live" })]);
+    await processPaymentEvent(
+      signedEvent("evt_non_eur", undefined, { currency: "usd" }, true),
+      "live"
+    );
+    expect(db.rows(s.payments)[0]).toMatchObject({
+      status: "succeeded",
+      receivedAmountCents: null,
+      creditedAt: null,
+    });
+    expect(await commercialPaidCents(db as any, 1)).toBe(0);
+  });
+  it("la relecture malformée des fonds ne peut confirmer ni altérer un remboursement", async () => {
+    db.put(s.payments, [
+      payment({
+        status: "succeeded",
+        receivedAmountCents: 12000,
+        paymentIntentId: "pi_mock",
+      }),
+    ]);
+    mockRefunds();
+    boundary.refundRetrieve.mockImplementation(async () => {
+      boundary.intentRetrieve.mockResolvedValue({
+        object: "payment_intent",
+        id: "pi_mock",
+        status: "succeeded",
+        livemode: false,
+        currency: "eur",
+        amount_received: Number.NaN,
+      });
+      return refundProof();
+    });
+    await expect(
+      caller(user(1, "admin")).refund(refundInput())
+    ).rejects.toThrow("preuve Stripe");
+    expect(db.rows(s.refunds)[0]).toMatchObject({
+      status: "pending",
+      providerRefundId: "re_mock",
+    });
+    expect(db.rows(s.payments)[0].receivedAmountCents).toBe(12000);
+  });
+  it("une réservation ambiguë après 23h ne renouvelle jamais la clé de débit", async () => {
+    db.put(s.payments, [
+      payment({
+        status: "succeeded",
+        receivedAmountCents: 12000,
+        paymentIntentId: "pi_mock",
+      }),
+    ]);
+    mockRefunds();
+    boundary.refundCreate.mockRejectedValueOnce(
+      new Error("ambiguous creation")
+    );
+    await expect(
+      caller(user(1, "admin")).refund(refundInput())
+    ).rejects.toThrow("conservées");
+    db.rows(s.refunds)[0].createdAt = new Date(Date.now() - 24 * 3600000);
+    await expect(
+      caller(user(1, "admin")).refund(refundInput())
+    ).rejects.toThrow("rapprochée");
+    expect(boundary.refundCreate).toHaveBeenCalledTimes(1);
+    expect(db.rows(s.refunds)).toHaveLength(1);
   });
 });

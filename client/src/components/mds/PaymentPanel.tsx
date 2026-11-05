@@ -1,5 +1,4 @@
-import { Link } from "wouter";
-import { CreditCard, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -12,6 +11,11 @@ const labels: Record<string, string> = {
   failed: "Non abouti",
   expired: "Expiré",
   cancelled: "Annulé",
+};
+const purposes: Record<string, string> = {
+  full: "Règlement",
+  deposit: "Acompte",
+  balance: "Solde",
 };
 export function PaymentPanel({
   reference,
@@ -28,13 +32,37 @@ export function PaymentPanel({
     paidAt: Date | string | null;
   } | null;
 }) {
+  const utils = trpc.useUtils();
   const config = trpc.mds.payments.config.useQuery(undefined, { retry: false });
+  const ledger = trpc.mds.payments.plan.useQuery(
+    { reference, token },
+    { retry: false, refetchInterval: 10000 }
+  );
   const records = trpc.mds.payments.list.useQuery(
     { reference, token },
     { retry: false, refetchInterval: 10000 }
   );
   const checkout = trpc.mds.payments.checkout.useMutation();
+  const respond = trpc.mds.payments.respondPlan.useMutation();
   const [error, setError] = useState("");
+  const data = ledger.data;
+  const plan = data?.activePlan;
+  const settled = !!(
+    data?.invoice?.paidAt ||
+    invoice?.paidAt ||
+    status === "paid"
+  );
+  // One contextual payment action. No arbitrary browser amount; server recomputes the stage.
+  const purpose = data?.invoicePayable
+    ? data.totalPaidCents > 0 || plan?.status === "accepted"
+      ? "balance"
+      : "full"
+    : "deposit";
+  const due = purpose === "deposit" ? data?.depositCents : data?.remainingCents;
+  const testDone =
+    config.data?.mode === "test" &&
+    data?.successfulTestPurposes.includes(purpose);
+  const blocked = settled || data?.withheldLive || testDone;
   async function pay() {
     setError("");
     const tab = window.open("about:blank", "_blank");
@@ -44,14 +72,16 @@ export function PaymentPanel({
         reference,
         token,
         origin: window.location.origin,
+        purpose,
       });
       toast.info(
         result.mode === "test"
-          ? "Ouverture de Stripe en mode test : aucun débit réel."
-          : "Ouverture du paiement sécurisé dans un nouvel onglet."
+          ? "Ouverture de Stripe TEST · aucun règlement réel."
+          : "Ouverture de Stripe dans un nouvel onglet sécurisé."
       );
       if (tab) tab.location.href = result.url;
       else window.location.assign(result.url);
+      void ledger.refetch();
       void records.refetch();
     } catch (cause) {
       tab?.close();
@@ -62,189 +92,212 @@ export function PaymentPanel({
       );
     }
   }
-  const receivedLive =
-    records.data?.some(
-      record => record.mode === "live" && record.status === "succeeded"
-    ) ?? false;
-  const successfulTest =
-    records.data?.some(
-      record => record.mode === "test" && record.status === "succeeded"
-    ) ?? false;
-  const alreadyReceived =
-    config.data?.mode === "live"
-      ? receivedLive
-      : config.data?.mode === "test"
-        ? successfulTest
-        : false;
-  const hasCommercialPayment =
-    invoice?.paidAt || status === "paid" || status === "closed";
+  async function consent(accept: boolean) {
+    if (!plan) return;
+    setError("");
+    try {
+      await respond.mutateAsync({
+        reference,
+        token,
+        id: plan.id,
+        version: plan.version,
+        accept,
+      });
+      await ledger.refetch();
+      void utils.mds.requests.invalidate();
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "L’accord n’a pas été enregistré."
+      );
+    }
+  }
+  if (
+    data &&
+    !data.activePlan &&
+    !data.invoice &&
+    !invoice &&
+    !records.data?.length
+  )
+    return null;
   return (
-    <section className="panel stack" aria-label="Paiement de la facture">
-      <div
-        className="row"
-        style={{ justifyContent: "space-between", flexWrap: "wrap" }}
-      >
-        <h2 style={{ fontSize: 22 }}>Votre facture et son règlement</h2>
-        <CreditCard size={21} aria-hidden="true" />
-      </div>
-      {invoice ? (
-        <div>
-          <strong>
-            {invoice.amountCents === null
-              ? "Montant à vérifier par MDS"
-              : money(invoice.amountCents)}
-          </strong>
-          <p className="muted small-text">
-            Montant issu du tarif ou du devis confirmé dans ce dossier.
-            Consultez le PDF de facture dans les documents.
-          </p>
-        </div>
+    <section className="panel stack" aria-label="Paiement">
+      <h2 style={{ fontSize: 22 }}>Votre règlement</h2>
+      {ledger.isLoading ? (
+        <Loading />
+      ) : ledger.error ? (
+        <ApiError
+          message={ledger.error.message}
+          retry={() => ledger.refetch()}
+        />
       ) : (
-        <p className="muted">
-          Aucune facture émise pour le moment. Aucun paiement n’est demandé.
-        </p>
-      )}
-      {hasCommercialPayment ? (
-        <p className="success-message" role="status">
-          Le règlement de cette facture a été confirmé. Aucun nouveau paiement
-          n’est demandé.
-        </p>
-      ) : receivedLive ? (
-        <p className="notice" role="status">
-          Un versement Stripe a été reçu et attend un rapprochement par MDS. La
-          facture n’est pas encore acquittée ; ne lancez pas un second paiement.
-        </p>
-      ) : (
-        invoice &&
-        status === "invoiced" && (
-          <>
-            {config.isLoading ? (
-              <Loading />
-            ) : config.error ? (
-              <ApiError
-                message={config.error.message}
-                retry={() => config.refetch()}
-              />
-            ) : config.data?.enabled ? (
-              <>
-                {config.data.mode === "test" && (
-                  <div className="notice">
-                    <strong>Mode test · aucun débit réel</strong>
-                    <p>
-                      Le compte de paiement commercial MDS n’est pas ouvert dans
-                      cette version. Un essai réussi apparaît dans l’historique,
-                      mais ne règle pas la facture réelle.
-                    </p>
-                  </div>
-                )}
-                {successfulTest && config.data.mode === "test" && (
-                  <p className="notice">
-                    L’essai est réussi. Aucun règlement commercial n’a été
-                    enregistré ; aucun second essai n’est nécessaire pour cette
-                    facture.
-                  </p>
-                )}
+        <>
+          {plan?.status === "proposed" && (
+            <div className="stack">
+              <strong>Échéancier proposé</strong>
+              <p>
+                Total {money(plan.totalCents)} · acompte{" "}
+                {money(plan.depositCents)} · solde prévu{" "}
+                {money(plan.totalCents - plan.depositCents)}
+              </p>
+              <p style={{ whiteSpace: "pre-wrap" }}>{plan.conditions}</p>
+              <p className="small-text muted">
+                Cet accord de paiement est distinct de la confirmation du
+                rendez-vous.
+              </p>
+              <div className="row" style={{ flexWrap: "wrap" }}>
+                <button
+                  className="btn primary"
+                  disabled={respond.isPending}
+                  onClick={() => consent(true)}
+                >
+                  Accepter l’échéancier
+                </button>
+                <button
+                  className="btn secondary"
+                  disabled={respond.isPending}
+                  onClick={() => consent(false)}
+                >
+                  Refuser
+                </button>
+              </div>
+            </div>
+          )}
+          {settled ? (
+            <p className="success-message" role="status">
+              Facture réglée.
+            </p>
+          ) : data?.withheldLive ? (
+            <p className="notice" role="status">
+              Un versement attend le rapprochement MDS. Aucun second paiement ne
+              doit être lancé.
+            </p>
+          ) : due != null && due >= 50 ? (
+            <>
+              <strong>
+                {purpose === "deposit"
+                  ? "Acompte à régler"
+                  : "Restant à régler"}{" "}
+                : {money(due)}
+              </strong>
+              {data?.totalPaidCents ? (
+                <p className="small-text muted">
+                  Déjà imputé, remboursements déduits :{" "}
+                  {money(data.totalPaidCents)}
+                </p>
+              ) : null}
+              {config.data?.mode === "test" && (
+                <p className="notice">
+                  <strong>TEST · aucun encaissement réel.</strong> Un essai ne
+                  règle pas votre facture.
+                </p>
+              )}
+              {testDone ? (
+                <p className="small-text muted">
+                  Essai de cette échéance réussi. Facture réelle non acquittée.
+                </p>
+              ) : (
                 <button
                   className="btn primary"
                   disabled={
-                    alreadyReceived ||
-                    checkout.isPending ||
-                    invoice.amountCents === null ||
-                    invoice.amountCents < 50
+                    !!blocked || checkout.isPending || !config.data?.enabled
                   }
                   onClick={pay}
                 >
                   {checkout.isPending
-                    ? "Préparation du paiement…"
-                    : config.data.mode === "test"
-                      ? successfulTest
-                        ? "Essai de paiement déjà réussi"
-                        : "Tester le paiement sécurisé"
-                      : "Régler ma facture"}
+                    ? "Préparation…"
+                    : `${config.data?.mode === "test" ? "Tester" : "Payer"} ${purpose === "deposit" ? "l’acompte" : purpose === "full" ? "la facture" : "le solde"} · ${money(due)}`}
                   <ExternalLink size={17} aria-hidden="true" />
                 </button>
-                {invoice.amountCents !== null && invoice.amountCents < 50 && (
-                  <p className="small-text muted">
-                    Ce montant ne permet pas un paiement Stripe. Contactez MDS
-                    pour le règlement adapté.
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="notice">
-                Le paiement en ligne n’est pas configuré. MDS peut vous
-                communiquer les modalités de règlement et enregistrer un
-                paiement réellement vérifié.
-              </p>
-            )}
-          </>
-        )
+              )}
+              {!config.data?.enabled && (
+                <p className="small-text muted">
+                  Paiement en ligne indisponible. Contactez MDS.
+                </p>
+              )}
+            </>
+          ) : !settled && plan?.status !== "proposed" ? (
+            <p className="muted">Aucune échéance payable actuellement.</p>
+          ) : null}
+        </>
       )}
       {error && (
         <p className="notice error-message" role="alert">
           {error}
         </p>
       )}
-      <div>
-        <h3>Historique des paiements</h3>
-        <p className="small-text muted">
-          Un retour de Stripe ne prouve pas le paiement. La confirmation
-          nécessite la réponse vérifiée du prestataire.
-        </p>
-      </div>
-      {records.isLoading ? (
-        <Loading />
-      ) : records.error ? (
-        <ApiError
-          message={records.error.message}
-          retry={() => records.refetch()}
-        />
-      ) : records.data?.length ? (
-        <ul className="payment-history">
-          {records.data.map(record => (
-            <li key={record.id}>
-              <div
-                className="row"
-                style={{ justifyContent: "space-between", flexWrap: "wrap" }}
-              >
-                <strong>
-                  {record.provider === "stripe"
-                    ? "Montant contractuel réservé : "
-                    : "Montant vérifié : "}
-                  {money(record.amountCents)}
-                </strong>
-                {record.mode === "test" ? (
-                  <span className="payment-test-label">
-                    {record.status === "succeeded"
-                      ? "Essai réussi · pas de règlement réel"
-                      : "Essai · " + (labels[record.status] || record.status)}
-                  </span>
-                ) : (
-                  <span className="badge">
-                    {record.status === "succeeded" &&
-                    record.provider === "stripe"
-                      ? "Versement reçu"
-                      : labels[record.status] || record.status}
-                  </span>
-                )}
-              </div>
-              <p className="small-text muted">
-                {dateTime(record.confirmedAt || record.createdAt)} ·{" "}
-                {record.provider === "manual"
-                  ? "Paiement vérifié par MDS"
-                  : "Stripe"}
-              </p>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="muted small-text">
-          Aucun paiement enregistré pour cette facture.
-        </p>
-      )}
-      <Link className="text-link" href="/paiements">
-        Mes paiements et factures
-      </Link>
+      <details>
+        <summary>Montants, conditions et historique</summary>
+        <div className="stack" style={{ marginTop: 12 }}>
+          {plan && (
+            <p className="small-text">
+              Échéancier {plan.status === "accepted" ? "accepté" : "proposé"} ·{" "}
+              {money(plan.totalCents)}
+              <br />
+              {plan.conditions}
+            </p>
+          )}
+          {(data?.invoice || invoice) && (
+            <p>
+              Facture :{" "}
+              {money(data?.invoice?.amountCents ?? invoice?.amountCents)} ·{" "}
+              {settled ? "acquittée" : "non acquittée"}
+            </p>
+          )}
+          <p className="small-text muted">
+            Un retour Stripe ne prouve pas le règlement. Un code promotionnel
+            peut nécessiter un rapprochement du montant reçu.
+          </p>
+          {records.isLoading ? (
+            <Loading />
+          ) : records.error ? (
+            <ApiError
+              message={records.error.message}
+              retry={() => records.refetch()}
+            />
+          ) : records.data?.length ? (
+            <ul className="payment-history">
+              {records.data.map(record => (
+                <li key={record.id}>
+                  <strong>
+                    {purposes[record.purpose] || "Règlement"} · réservé{" "}
+                    {money(record.amountCents)}
+                  </strong>
+                  <p className="small-text">
+                    {record.mode === "test"
+                      ? "TEST · aucun encaissement commercial"
+                      : ""}{" "}
+                    {labels[record.status] || record.status}
+                  </p>
+                  {record.status === "succeeded" && (
+                    <p className="small-text">
+                      {record.mode === "test"
+                        ? "Reçu en test"
+                        : "Reçu confirmé"}{" "}
+                      :{" "}
+                      {record.receivedAmountCents == null
+                        ? "montant EUR à rapprocher"
+                        : money(record.receivedAmountCents)}{" "}
+                      ·{" "}
+                      {record.mode === "test"
+                        ? "non imputé à la facture"
+                        : record.creditedAt
+                          ? "imputé au dossier"
+                          : "non imputé, à rapprocher"}
+                    </p>
+                  )}
+                  <p className="small-text muted">
+                    {dateTime(record.confirmedAt || record.createdAt)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="small-text muted">Aucun paiement enregistré.</p>
+          )}
+        </div>
+      </details>
     </section>
   );
 }

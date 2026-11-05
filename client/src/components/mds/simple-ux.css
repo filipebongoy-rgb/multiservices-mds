@@ -1,0 +1,415 @@
+/* Raffinement local MDS : aucun remplacement du thème partagé. */
+.site-header.simple-header {
+  height: auto;
+  min-height: 84px;
+}
+.simple-header .header-inner {
+  min-height: 84px;
+  padding: 14px 40px;
+  gap: 16px;
+  max-width: 1216px;
+}
+.simple-primary-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.simple-header .simple-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #262a27;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.simple-header .simple-nav-link:hover,
+.simple-header .simple-nav-link.active,
+.simple-header .simple-nav-link[data-state="open"] {
+  background: #f8eee9;
+  color: #a33f1d;
+}
+.simple-space-menu {
+  min-width: 220px;
+}
+.simple-space-menu [role="menuitem"] {
+  min-height: 44px;
+  font-size: 16px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+.simple-space-menu [role="menuitem"]:focus-visible {
+  outline: 2px solid #bc4c23;
+  outline-offset: -2px;
+}
+.simple-header-error {
+  max-width: 1136px;
+  margin: 0 auto 12px;
+  padding: 0 24px;
+  color: #a32424;
+  font-size: 16px;
+}
+.site-footer.simple-footer {
+  padding: 12px 0;
+}
+.simple-footer-inner {
+  max-width: 1216px;
+  padding: 0 40px;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: #e5e7e2;
+}
+.simple-footer-inner nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.simple-footer-inner a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.simple-footer-inner a:hover {
+  text-decoration: underline;
+}
+.simple-home {
+  max-width: 1056px;
+  padding-top: clamp(32px, 5vw, 64px);
+  padding-bottom: 40px;
+}
+.simple-home-intro {
+  max-width: 800px;
+}
+.simple-home h1 {
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.18;
+  font-weight: 650;
+  letter-spacing: -1.5px;
+  max-width: 800px;
+  margin-bottom: 26px;
+}
+.simple-home h1 span {
+  display: block;
+  color: #bc4c23;
+}
+.simple-description-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.simple-description-form label {
+  font-size: 17px;
+  font-weight: 600;
+}
+.simple-description-form textarea {
+  width: 100%;
+  min-height: 112px;
+  padding: 16px 18px;
+  border: 1px solid #c7cac3;
+  border-radius: 8px;
+  font-size: 18px;
+  line-height: 1.5;
+  background: #fcfcfa;
+  color: #262a27;
+  resize: vertical;
+}
+.simple-description-form textarea::placeholder {
+  color: #686d65;
+}
+.simple-home .simple-continue {
+  align-self: flex-start;
+  min-height: 48px;
+  min-width: 180px;
+  font-size: 17px;
+}
+.simple-services {
+  margin-top: 32px;
+}
+.simple-services h2 {
+  font-size: 21px;
+  letter-spacing: -0.4px;
+  margin-bottom: 16px;
+}
+.simple-trades {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+.simple-trade {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 14px;
+  min-height: 112px;
+  border: 1px solid #e1e2dc;
+  border-radius: 8px;
+  background: #fff;
+  padding: 18px;
+  font-size: 16px;
+  font-weight: 600;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.simple-trade svg {
+  color: #bc4c23;
+}
+.simple-trade:hover {
+  border-color: #bc4c23;
+  background: #fcf6f2;
+}
+.simple-free-request {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  margin-top: 16px;
+  padding: 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.simple-free-request:hover {
+  color: #a33f1d;
+}
+.simple-pro.private-workspace {
+  max-width: 1136px;
+  padding-top: 28px;
+  padding-bottom: 40px;
+}
+.simple-pro-header {
+  margin-bottom: 24px;
+}
+.simple-pro-header h1 {
+  font-size: clamp(28px, 4vw, 36px);
+  font-weight: 650;
+  letter-spacing: -1px;
+  margin-top: 5px;
+}
+.simple-pro-context {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.simple-pro-context .field {
+  flex: 1 1 260px;
+  max-width: 520px;
+  margin: 0;
+}
+.simple-pro.private-workspace .field > span {
+  font-size: 16px;
+}
+.simple-pro .field input,
+.simple-pro .field select,
+.simple-pro .field textarea {
+  font-size: 16px;
+  min-height: 48px;
+}
+.simple-pro .btn {
+  font-size: 16px;
+}
+.simple-pro .muted,
+.simple-pro .notice,
+.simple-pro .empty,
+.simple-pro .data-row p,
+.simple-pro .data-row small {
+  font-size: 16px;
+}
+.simple-pro .badge {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.simple-pro .stack {
+  gap: 16px;
+}
+.simple-pro-setup,
+.simple-pro .simple-context-details {
+  border: 1px solid #e2e4de;
+  border-radius: 8px;
+  background: white;
+  padding: 0 18px;
+}
+.simple-pro summary {
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  min-height: 48px;
+  padding: 13px 0;
+}
+.simple-pro summary:focus-visible {
+  outline: 3px solid #bc4c23;
+  outline-offset: 3px;
+}
+.simple-pro-setup > .row {
+  padding-bottom: 16px;
+  flex-wrap: wrap;
+}
+.simple-pro-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  background: #f3f3ef;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+.simple-pro .simple-pro-nav .btn {
+  flex: 1 1 0;
+  min-height: 48px;
+  padding: 12px 8px;
+  background: transparent;
+  color: #4e544d;
+  border: 0;
+}
+.simple-pro .simple-pro-nav .btn[aria-pressed="true"] {
+  background: #262a27;
+  color: #fff;
+}
+.simple-pro .simple-panel-title {
+  font-size: 22px;
+  letter-spacing: -0.5px;
+}
+.simple-pro .simple-panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.simple-pro .simple-context-details > .stack {
+  padding: 0 0 18px;
+}
+.simple-pro .simple-request-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  border: 1px solid #e2e4de;
+  border-radius: 8px;
+  padding: 18px;
+}
+.simple-request-card > div {
+  min-width: 0;
+  flex: 1 1 240px;
+  overflow-wrap: anywhere;
+}
+.simple-pro .simple-request-meta {
+  display: flex;
+  gap: 8px 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.simple-pro .simple-request-description {
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.simple-pro .simple-site-preview {
+  border-left: 3px solid #bc4c23;
+  background: #faf8f4;
+  padding: 14px 16px;
+  border-radius: 0 6px 6px 0;
+}
+@media (max-width: 700px) {
+  .simple-header .header-inner {
+    padding: 14px 20px;
+  }
+  .simple-header .simple-nav-link {
+    padding: 10px 12px;
+  }
+  .simple-trades {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .simple-trade {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    min-height: 68px;
+    padding: 14px;
+  }
+  .simple-trade:last-child {
+    grid-column: 1 / -1;
+  }
+  .simple-home {
+    padding: 32px 20px;
+  }
+  .simple-home h1 {
+    letter-spacing: -1px;
+  }
+  .simple-home .simple-continue {
+    width: 100%;
+  }
+  .simple-pro.private-workspace {
+    padding: 24px 20px 32px;
+  }
+  .simple-pro-context .field {
+    max-width: none;
+  }
+  .simple-footer-inner {
+    padding: 0 20px;
+    gap: 4px;
+  }
+  .simple-footer-inner nav {
+    gap: 16px;
+  }
+}
+@media (max-width: 480px) {
+  .simple-header .header-inner {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 12px 20px 8px;
+  }
+  .simple-header .simple-primary-nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .simple-header.is-private .simple-primary-nav {
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .simple-header .simple-nav-link {
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+  .simple-free-request {
+    gap: 8px;
+  }
+  .simple-footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Les formulaires professionnels portent leur propre marqueur, y compris dans les portails. */
+.private-modal:has(.simple-pro-form) .field > span,
+.private-modal:has(.simple-pro-form) .field input,
+.private-modal:has(.simple-pro-form) .field select,
+.private-modal:has(.simple-pro-form) .field textarea,
+.private-modal:has(.simple-pro-form) .btn,
+.private-modal:has(.simple-pro-form) .muted {
+  font-size: 16px;
+}
+.private-modal:has(.simple-pro-form) .field input,
+.private-modal:has(.simple-pro-form) .field select {
+  min-height: 48px;
+}

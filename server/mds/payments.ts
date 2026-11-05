@@ -19,6 +19,9 @@ import {
   type SqlDb,
 } from "./common";
 import { fail } from "./workflow";
+import { stageFor, stageProcedures } from "./payment-stages";
+import { refundProcedures } from "./refunds";
+export { commercialPaidCents } from "./payment-stages";
 
 export type StripeMode = "test" | "live";
 export type Payment = typeof s.payments.$inferSelect;
@@ -121,6 +124,10 @@ export const publicPaymentFields = {
   mode: s.payments.mode,
   status: s.payments.status,
   amountCents: s.payments.amountCents,
+  receivedAmountCents: s.payments.receivedAmountCents,
+  creditedAt: s.payments.creditedAt,
+  purpose: s.payments.purpose,
+  planId: s.payments.planId,
   currency: s.payments.currency,
   reference: s.payments.reference,
   expiresAt: s.payments.expiresAt,
@@ -136,34 +143,6 @@ async function loadRequest(db: SqlDb, reference: string, lock = false) {
   const [request] = await (lock ? query.for("update") : query);
   if (!request) fail("Cette demande est introuvable.", "NOT_FOUND");
   return request;
-}
-function payable(
-  request: s.MdsRequest,
-  invoice: typeof s.invoices.$inferSelect | undefined
-) {
-  if (!invoice) fail("Aucune facture émise ne permet ce paiement.", "CONFLICT");
-  if (invoice.paidAt || ["paid", "closed"].includes(request.status))
-    fail(
-      "Cette facture est déjà réglée. Aucun nouveau paiement n’est nécessaire.",
-      "CONFLICT"
-    );
-  if (request.status !== "invoiced")
-    fail(
-      "Le dossier doit avoir une facture émise avant le paiement.",
-      "CONFLICT"
-    );
-  if (
-    !Number.isSafeInteger(invoice.amountCents) ||
-    invoice.amountCents == null ||
-    invoice.amountCents < 50
-  )
-    fail(
-      "La facture doit comporter un montant validé d’au moins 0,50 € pour Stripe.",
-      "CONFLICT"
-    );
-  if (invoice.currency !== "EUR")
-    fail("Seules les factures en euros sont prises en charge.", "CONFLICT");
-  return invoice as typeof s.invoices.$inferSelect & { amountCents: number };
 }
 const bounded = (value: string | null | undefined) =>
   value?.trim().slice(0, 255) || "";
@@ -221,7 +200,9 @@ function completeParameters(
 ) {
   const metadata = {
     ...params.metadata,
-    invoice_id: String(payment.invoiceId),
+    invoice_id: payment.invoiceId == null ? "" : String(payment.invoiceId),
+    plan_id: payment.planId == null ? "" : String(payment.planId),
+    purpose: payment.purpose || "full",
     payment_id: String(payment.id),
     checkout_key: payment.checkoutKey!,
   };
@@ -242,7 +223,11 @@ function validSession(
     session.livemode === (payment.mode === "live") &&
     session.client_reference_id === request.reference &&
     md?.payment_id === String(payment.id) &&
-    md.invoice_id === String(payment.invoiceId) &&
+    md.invoice_id ===
+      (payment.invoiceId == null ? "" : String(payment.invoiceId)) &&
+    (md.purpose ?? "full") === (payment.purpose || "full") &&
+    (md.plan_id ?? "") ===
+      (payment.planId == null ? "" : String(payment.planId)) &&
     md.request_id === String(payment.requestId) &&
     md.checkout_key === payment.checkoutKey
   );
@@ -270,6 +255,8 @@ function checkoutUrl(session: Stripe.Checkout.Session) {
 }
 
 export const paymentsRouter = router({
+  ...stageProcedures,
+  ...refundProcedures,
   config: procedure.query(() => paymentConfig()),
   list: procedure.input(trackSchema).query(async ({ input, ctx }) => {
     const db = await dbRequired();
@@ -295,7 +282,12 @@ export const paymentsRouter = router({
       .orderBy(desc(s.payments.createdAt), desc(s.payments.id));
   }),
   checkout: procedure
-    .input(trackSchema.extend({ origin: z.string().url().max(2048) }))
+    .input(
+      trackSchema.extend({
+        origin: z.string().url().max(2048),
+        purpose: z.enum(["full", "deposit", "balance"]).default("full"),
+      })
+    )
     .mutation(async ({ input, ctx }) => {
       const origin = validateCheckoutOrigin(input.origin, ctx.req);
       const { stripe, mode } = stripeRequired();
@@ -311,33 +303,45 @@ export const paymentsRouter = router({
           .from(s.invoices)
           .where(eq(s.invoices.requestId, request.id))
           .for("update");
-        const invoice = payable(request, rawInvoice);
+        const stage = await stageFor(tx, request, rawInvoice, input.purpose);
         const history = await tx
           .select()
           .from(s.payments)
           .where(
             and(
-              eq(s.payments.invoiceId, invoice.id),
+              eq(s.payments.requestId, request.id),
               eq(s.payments.provider, "stripe"),
               eq(s.payments.mode, mode)
             )
           )
           .orderBy(desc(s.payments.id))
           .for("update");
-        if (history.some(p => p.status === "succeeded"))
+        if (
+          history.some(
+            p =>
+              p.status === "succeeded" &&
+              (mode === "live"
+                ? !p.creditedAt
+                : (p.purpose || "full") === input.purpose &&
+                  p.planId == stage.planId)
+          )
+        )
           fail(
             mode === "test"
               ? "Cette facture possède déjà un paiement test réussi. Aucun encaissement réel n’a été enregistré."
               : "Un paiement reçu attend déjà sa prise en compte. Contactez MDS avant un nouveau règlement.",
             "CONFLICT"
           );
-        const existing = history.find(
-          p => !["expired", "cancelled"].includes(p.status)
+        const existing = history.find(p =>
+          ["pending", "failed"].includes(p.status)
         );
         if (existing) {
           if (
-            existing.amountCents !== invoice.amountCents ||
-            existing.currency !== invoice.currency
+            existing.amountCents !== stage.amountCents ||
+            existing.currency !== "EUR" ||
+            (existing.purpose || "full") !== input.purpose ||
+            existing.planId != stage.planId ||
+            existing.invoiceId !== stage.invoiceId
           )
             fail(
               "La facture a changé pendant le paiement. MDS doit vérifier la session existante avant tout nouveau règlement.",
@@ -368,18 +372,20 @@ export const paymentsRouter = router({
           };
         }
         const expiresAt = new Date(Math.floor(Date.now() / 1000 + 3600) * 1000);
-        const base = { amountCents: invoice.amountCents, expiresAt };
+        const base = { amountCents: stage.amountCents, expiresAt };
         const params = checkoutParameters(request, base, origin, user);
         const checkoutKey = `mds-v1-${randomUUID()}-${parameterFingerprint(params)}`;
         const [created] = await tx
           .insert(s.payments)
           .values({
             requestId: request.id,
-            invoiceId: invoice.id,
+            invoiceId: stage.invoiceId,
+            planId: stage.planId,
+            purpose: input.purpose,
             provider: "stripe",
             mode,
             status: "pending",
-            amountCents: invoice.amountCents,
+            amountCents: stage.amountCents,
             currency: "EUR",
             checkoutKey,
             reference: `MDS-P-${randomUUID().slice(0, 18).toUpperCase()}`,
@@ -431,7 +437,7 @@ export const paymentsRouter = router({
         const [invoice] = await tx
           .select()
           .from(s.invoices)
-          .where(eq(s.invoices.id, reserved.payment.invoiceId))
+          .where(eq(s.invoices.requestId, request.id))
           .for("update");
         const [payment] = await tx
           .select()
@@ -462,12 +468,22 @@ export const paymentsRouter = router({
           .set(patch)
           .where(eq(s.payments.id, payment.id));
         // Provider IDs remain saved even if the invoice was paid/cancelled while the network was in flight.
-        const allowed =
-          request.status === "invoiced" &&
-          !invoice?.paidAt &&
-          invoice?.amountCents === payment.amountCents &&
-          invoice?.currency === payment.currency &&
-          payment.status !== "succeeded";
+        let allowed = false;
+        try {
+          const now = await stageFor(
+            tx,
+            request,
+            invoice,
+            payment.purpose || "full"
+          );
+          allowed =
+            now.amountCents === payment.amountCents &&
+            now.invoiceId === payment.invoiceId &&
+            now.planId == payment.planId &&
+            payment.status !== "succeeded";
+        } catch {
+          /* IDs remain persisted; changed commercial context cannot deliver the link. */
+        }
         return { allowed, payment: { ...payment, ...patch } as Payment };
       });
       if (!persisted.allowed)

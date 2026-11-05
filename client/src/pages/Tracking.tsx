@@ -14,6 +14,8 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { statusLabels, dateTime, money } from "@shared/mds";
 import { PriceDetails } from "@/components/mds/PriceDetails";
+import { ClientOperations } from "@/components/mds/ClientOperations";
+import { UploadDocument } from "@/components/mds/private-common";
 import { PaymentPanel } from "@/components/mds/PaymentPanel";
 import { ApiError, Loading } from "@/components/mds/Layout";
 
@@ -47,6 +49,7 @@ export default function Tracking() {
   );
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("09:00");
+  const [alternativeId, setAlternativeId] = useState<string>("");
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const details = trpc.mds.requests.track.useQuery(
@@ -109,6 +112,8 @@ export default function Tracking() {
         action: type,
         message: message || undefined,
         desiredStart,
+        alternativeId:
+          type === "confirm" && alternativeId ? alternativeId : undefined,
       });
       setSuccess(
         type === "confirm"
@@ -141,12 +146,7 @@ export default function Tracking() {
   const canConfirm =
     user?.role !== "admin" &&
     r &&
-    [
-      "awaiting_client",
-      "proposed_slot",
-      "accepted_mds",
-      "quote_accepted",
-    ].includes(r.status) &&
+    ["awaiting_client", "proposed_slot", "quote_accepted"].includes(r.status) &&
     r.quoteStatus !== "pending" &&
     r.quoteStatus !== "refused";
   const isFinished =
@@ -238,10 +238,7 @@ export default function Tracking() {
           <div className="tracking-header">
             <div>
               <h1 className="page-title">Suivi de votre intervention</h1>
-              <p className="muted small-text">
-                Dossier {r.reference} · Actualisation automatique toutes les 10
-                secondes
-              </p>
+              <p className="muted small-text">Dossier {r.reference}</p>
             </div>
             <span className="badge">
               {statusLabels[r.status as keyof typeof statusLabels] || r.status}
@@ -250,7 +247,12 @@ export default function Tracking() {
           <div className="tracking-layout">
             <div className="stack">
               {r.pricingSnapshot && (
-                <PriceDetails snapshot={r.pricingSnapshot} frozen />
+                <details className="panel">
+                  <summary className="simple-summary">
+                    Prix et conditions convenus
+                  </summary>
+                  <PriceDetails snapshot={r.pricingSnapshot} frozen />
+                </details>
               )}
               {canConfirm && (
                 <section className="panel stack">
@@ -273,6 +275,31 @@ export default function Tracking() {
                     <p className="small-text muted">
                       Proposition valable jusqu’au {dateTime(r.expiresAt)}.
                     </p>
+                  )}
+                  {!!r.alternatives?.length && (
+                    <div className="field">
+                      <label htmlFor="alternative">
+                        Choisir un créneau proposé
+                      </label>
+                      <select
+                        id="alternative"
+                        value={alternativeId}
+                        onChange={e => setAlternativeId(e.target.value)}
+                      >
+                        <option value="">{dateTime(r.proposedStart)}</option>
+                        {r.alternatives
+                          .filter(
+                            s =>
+                              new Date(s.startAt).getTime() !==
+                              new Date(r.proposedStart || 0).getTime()
+                          )
+                          .map(s => (
+                            <option key={s.id} value={s.id}>
+                              {dateTime(s.startAt)}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
                   )}
                   <button
                     className="btn primary"
@@ -337,6 +364,12 @@ export default function Tracking() {
                   <div className="eyebrow">UNE PRÉCISION EST NÉCESSAIRE</div>
                   <h2 style={{ fontSize: 22 }}>MDS a une question pour vous</h2>
                   <p>{r.proposalMessage}</p>
+                  <UploadDocument
+                    reference={r.reference}
+                    token={lookup?.token}
+                    kind="photo"
+                    onUploaded={() => void details.refetch()}
+                  />
                   <button
                     className="btn primary"
                     onClick={() => setEditor("information")}
@@ -430,12 +463,19 @@ export default function Tracking() {
                   </p>
                 </section>
               )}
-              {details.data?.invoice && (
+              {details.data && (
                 <PaymentPanel
                   reference={r.reference}
                   token={lookup?.token}
                   status={r.status}
                   invoice={details.data.invoice}
+                />
+              )}
+              {details.data && user?.role !== "admin" && (
+                <ClientOperations
+                  detail={details.data}
+                  token={lookup?.token}
+                  onChanged={() => void details.refetch()}
                 />
               )}
               {success && (
@@ -448,11 +488,11 @@ export default function Tracking() {
                   {error}
                 </p>
               )}
-              <section className="panel">
+              <details className="panel">
+                <summary className="simple-summary">
+                  Historique du dossier
+                </summary>
                 <div className="section-heading">
-                  <h2 style={{ fontSize: 22 }}>
-                    L’avancement de votre dossier
-                  </h2>
                   <button
                     className="text-link"
                     onClick={() => details.refetch()}
@@ -487,11 +527,12 @@ export default function Tracking() {
                     </li>
                   ))}
                 </ol>
-              </section>
+              </details>
               {isFinished && (
-                <section className="panel stack">
-                  <div className="eyebrow">APRÈS L’INTERVENTION</div>
-                  <h2 style={{ fontSize: 22 }}>Votre expérience compte</h2>
+                <details className="panel stack">
+                  <summary className="simple-summary">
+                    Évaluer mon intervention
+                  </summary>
                   <p className="small-text muted">
                     Les évaluations sont liées à une intervention terminée et
                     restent privées, sans publication automatique.
@@ -613,7 +654,7 @@ export default function Tracking() {
                       </small>
                     </div>
                   ))}
-                </section>
+                </details>
               )}
               {!isTerminal && !isFinished && (
                 <button
@@ -633,8 +674,10 @@ export default function Tracking() {
               )}
             </div>
             <aside className="stack">
-              <section className="panel tracking-detail">
-                <div className="eyebrow">VOTRE DEMANDE</div>
+              <details className="panel tracking-detail">
+                <summary className="simple-summary">
+                  Détails de ma demande
+                </summary>
                 <h3 style={{ marginTop: 10 }}>
                   {r.serviceName || "Demande libre"}
                 </h3>
@@ -658,9 +701,11 @@ export default function Tracking() {
                     {r.phone}
                   </dd>
                 </dl>
-              </section>
-              <section className="panel">
-                <h3>Photos et documents</h3>
+              </details>
+              <details className="panel">
+                <summary className="simple-summary">
+                  Photos et documents
+                </summary>
                 {details.data?.documents.length ? (
                   details.data.documents.map(d => (
                     <div className="document-item" key={d.id}>
@@ -681,13 +726,10 @@ export default function Tracking() {
                     Aucun document joint pour le moment.
                   </p>
                 )}
-              </section>
-              <div className="notice">
+              </details>
+              <div className="small-text muted row">
                 <LockKeyhole size={19} />
-                <p>
-                  Votre lien privé donne accès à ce dossier. Ne le publiez pas
-                  et ne le transférez pas à une personne non autorisée.
-                </p>
+                <p>Gardez votre lien privé.</p>
               </div>
               <button
                 className="text-link"

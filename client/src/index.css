@@ -1847,3 +1847,113 @@ select:focus-visible {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* Parcours MDS regroupé, outils contextuels et lisibilité mobile. */
+.simple-summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+.simple-summary::before {
+  content: "+";
+  color: var(--primary);
+  font-size: 22px;
+  font-weight: 500;
+}
+details[open] > .simple-summary::before {
+  content: "−";
+}
+.request-progress {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+.request-progress li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #626762;
+}
+.request-progress li span {
+  height: 28px;
+  width: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e2e2df;
+  flex-shrink: 0;
+}
+.request-progress li.current {
+  color: var(--foreground);
+  font-weight: 700;
+}
+.request-progress li.current span,
+.request-progress li.done span {
+  background: var(--foreground);
+  color: white;
+  border-color: var(--foreground);
+}
+.request-simple .page-title {
+  font-size: clamp(26px, 5vw, 36px);
+  margin-bottom: 4px;
+}
+.request-simple .panel {
+  padding: clamp(20px, 4vw, 32px);
+}
+.refinement {
+  border-top: 1px solid #e2e2df;
+  padding-top: 12px;
+}
+.slot-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.slot-list .selected {
+  border: 2px solid var(--primary);
+  background: #fff3ed;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+input[type="checkbox"] {
+  min-width: 20px;
+  min-height: 20px;
+  accent-color: var(--primary);
+}
+input[type="file"]:focus-visible + label,
+label.btn:has(+ input:focus-visible) {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+@media (max-width: 480px) {
+  .request-progress {
+    gap: 6px;
+    font-size: 12px;
+  }
+  .request-progress li {
+    gap: 5px;
+  }
+  .request-progress li span {
+    width: 24px;
+    height: 24px;
+  }
+  .request-simple .form-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}

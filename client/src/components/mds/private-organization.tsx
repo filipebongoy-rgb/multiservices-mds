@@ -5,7 +5,6 @@ import {
   FileText,
   MapPin,
   Plus,
-  ShieldCheck,
   Trash2,
   UserPlus,
 } from "lucide-react";
@@ -65,9 +64,9 @@ export function OrganizationDetail({
     { id: summary.id },
     { retry: false, refetchInterval: 30_000 }
   );
-  const [tab, setTab] = useState<
-    "requests" | "sites" | "members" | "documents" | "contracts"
-  >("requests");
+  const [tab, setTab] = useState<"declare" | "follow" | "buildings">("declare");
+  const [siteId, setSiteId] = useState<number | null>(null);
+  const [draftError, setDraftError] = useState<unknown>(null);
   const [modal, setModal] = useState<"site" | "invite" | null>(null);
   const [removing, setRemoving] = useState<{
     userId: number;
@@ -82,43 +81,50 @@ export function OrganizationDetail({
   });
   const canManage = summary.role === "manager" || summary.role === "owner";
   const data = detail.data;
+  const selectedSite =
+    data?.sites.find(site => site.id === siteId) || data?.sites[0];
+
+  function prepareRequest(site: Site) {
+    const stored = sessionStorage.getItem("mds-request-draft");
+    let raw: unknown = {};
+    try {
+      raw = JSON.parse(stored || "{}");
+    } catch {
+      // Un brouillon invalide n'empêche pas une nouvelle déclaration.
+    }
+    const saved =
+      raw && typeof raw === "object" && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
+    sessionStorage.setItem(
+      "mds-request-draft",
+      JSON.stringify({
+        ...saved,
+        organizationId: summary.id,
+        siteId: site.id,
+        address: site.address,
+        postcode: site.postcode,
+        city: site.city,
+        name: site.contactName || saved.name || "",
+        phone: site.contactPhone || saved.phone || "",
+        key:
+          typeof saved.key === "string" && saved.key.length >= 16
+            ? saved.key
+            : crypto.randomUUID(),
+      })
+    );
+    sessionStorage.removeItem("mds-description-ready");
+    setDraftError(null);
+  }
+
   return (
     <section className="stack" aria-label={`Organisation ${summary.name}`}>
-      <header
-        className="panel row"
-        style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}
-      >
-        <div>
-          <span className="eyebrow">
-            {organizationTypes.find(type => type.id === summary.type)?.name ||
-              summary.type}
-          </span>
-          <h2 style={{ fontSize: 27 }}>{summary.name}</h2>
-          <span className="badge row">
-            <ShieldCheck size={15} aria-hidden="true" />
-            {roleLabel(summary.role)}
-          </span>
-        </div>
-        <a
-          href={`/demande?org=${summary.id}`}
-          className="btn primary"
-          style={{ minHeight: 44 }}
-        >
-          Déclarer une intervention
-        </a>
-      </header>
-      <div
-        className="tabs row"
-        style={{ flexWrap: "wrap" }}
-        aria-label="Rubriques de l’organisation"
-      >
+      <nav className="simple-pro-nav" aria-label="Navigation professionnelle">
         {(
           [
-            ["requests", "Interventions"],
-            ["sites", "Sites"],
-            ["members", "Contacts autorisés"],
-            ["documents", "Devis et factures"],
-            ["contracts", "Contrats"],
+            ["declare", "Déclarer"],
+            ["follow", "Suivre"],
+            ["buildings", "Bâtiments"],
           ] as const
         ).map(([id, label]) => (
           <ActionButton
@@ -130,7 +136,7 @@ export function OrganizationDetail({
             {label}
           </ActionButton>
         ))}
-      </div>
+      </nav>
       <QueryState
         loading={detail.isLoading}
         error={detail.error}
@@ -138,42 +144,115 @@ export function OrganizationDetail({
       />
       {data && !detail.error && (
         <>
-          {tab === "requests" && (
+          {tab === "declare" && (
             <section className="panel stack">
-              <h3>Interventions de l’organisation</h3>
-              <p className="muted">
-                Le serveur limite ces dossiers aux organisations auxquelles vous
-                appartenez.
-              </p>
+              <h2 className="simple-panel-title">Où faut-il intervenir ?</h2>
+              {selectedSite ? (
+                <>
+                  <Field label="Bâtiment">
+                    <select
+                      value={selectedSite.id}
+                      onChange={event => setSiteId(Number(event.target.value))}
+                    >
+                      {data.sites.map(site => (
+                        <option key={site.id} value={site.id}>
+                          {site.name}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <div className="simple-site-preview">
+                    <p>
+                      {selectedSite.address}, {selectedSite.postcode}{" "}
+                      {selectedSite.city}
+                    </p>
+                    {selectedSite.contactName && (
+                      <p className="muted">
+                        {selectedSite.contactName}
+                        {selectedSite.contactPhone
+                          ? ` · ${selectedSite.contactPhone}`
+                          : ""}
+                      </p>
+                    )}
+                  </div>
+                  <ErrorNotice error={draftError} />
+                  <a
+                    href={`/demande?org=${summary.id}&site=${selectedSite.id}`}
+                    className="btn primary"
+                    onClick={event => {
+                      try {
+                        prepareRequest(selectedSite);
+                      } catch {
+                        event.preventDefault();
+                        setDraftError(
+                          new Error(
+                            "Impossible de conserver votre brouillon. Autorisez le stockage de cette session puis réessayez."
+                          )
+                        );
+                      }
+                    }}
+                  >
+                    Décrire le problème
+                  </a>
+                </>
+              ) : (
+                <>
+                  <p className="muted">Aucun bâtiment enregistré.</p>
+                  {canManage ? (
+                    <ActionButton
+                      className="primary"
+                      onClick={() => setModal("site")}
+                    >
+                      <Plus size={18} aria-hidden="true" />
+                      Ajouter un bâtiment
+                    </ActionButton>
+                  ) : (
+                    <p className="muted">
+                      Demandez à votre gestionnaire d’ajouter un bâtiment.
+                    </p>
+                  )}
+                  <a
+                    href={`/demande?org=${summary.id}`}
+                    className="btn secondary"
+                  >
+                    Déclarer sans bâtiment
+                  </a>
+                </>
+              )}
+            </section>
+          )}
+          {tab === "follow" && (
+            <section className="panel stack">
+              <h2 className="simple-panel-title">Vos demandes</h2>
               <OrganizationRequests
                 requests={data.requests}
                 sites={data.sites}
               />
             </section>
           )}
-          {tab === "sites" && (
+          {tab === "buildings" && (
             <section className="panel stack">
               <div
                 className="row"
                 style={{ justifyContent: "space-between", flexWrap: "wrap" }}
               >
-                <h3>Sites et lieux d’intervention</h3>
+                <h2 className="simple-panel-title">Vos bâtiments</h2>
                 {canManage && (
                   <ActionButton
                     className="primary"
                     onClick={() => setModal("site")}
                   >
                     <Plus size={17} aria-hidden="true" />
-                    Ajouter un site
+                    Ajouter un bâtiment
                   </ActionButton>
                 )}
               </div>
               {data.sites.length === 0 ? (
                 <div className="empty">
-                  Aucun site enregistré.{" "}
+                  Aucun bâtiment enregistré.{" "}
                   {canManage
                     ? "Ajoutez votre premier lieu d’intervention."
-                    : "Un gestionnaire peut ajouter les sites."}
+                    : "Un gestionnaire peut ajouter les bâtiments."}
                 </div>
               ) : (
                 data.sites.map(site => (
@@ -196,169 +275,189 @@ export function OrganizationDetail({
                       className="btn secondary"
                       style={{ minHeight: 44, alignSelf: "start" }}
                       href={`/demande?org=${summary.id}&site=${site.id}`}
+                      onClick={event => {
+                        try {
+                          prepareRequest(site);
+                        } catch {
+                          event.preventDefault();
+                          setDraftError(
+                            new Error(
+                              "Impossible de conserver votre brouillon. Autorisez le stockage de cette session puis réessayez."
+                            )
+                          );
+                        }
+                      }}
                     >
-                      Déclarer sur ce site
+                      Déclarer un problème
                     </a>
                   </article>
                 ))
               )}
+              <ErrorNotice error={draftError} />
             </section>
           )}
-          {tab === "members" && (
-            <section className="panel stack">
-              <div
-                className="row"
-                style={{ justifyContent: "space-between", flexWrap: "wrap" }}
-              >
-                <h3>Contacts autorisés</h3>
-                {canManage && (
-                  <ActionButton
-                    className="primary"
-                    onClick={() => setModal("invite")}
-                  >
-                    <UserPlus size={17} aria-hidden="true" />
-                    Inviter un contact
-                  </ActionButton>
-                )}
-              </div>
-              <p className="muted">
-                Les invitations sont partagées manuellement par code. Aucun
-                email n’est envoyé par l’application.
-              </p>
-              {data.members.length === 0 ? (
-                <div className="empty">Aucun membre accessible.</div>
-              ) : (
-                data.members.map(member => (
-                  <div
-                    key={member.id}
-                    className="data-row row"
-                    style={{
-                      justifyContent: "space-between",
-                      flexWrap: "wrap",
-                      gap: 12,
-                    }}
-                  >
-                    <div>
-                      <strong>
-                        {member.name || member.email || "Compte authentifié"}
-                      </strong>
-                      <p className="muted" style={{ overflowWrap: "anywhere" }}>
-                        {member.email}
-                      </p>
-                      <span className="badge">
-                        {roleLabel(member.role)}
-                        {member.userId === currentUserId ? " · vous" : ""}
-                      </span>
-                    </div>
-                    {canManage &&
-                      member.role !== "owner" &&
-                      member.userId !== currentUserId &&
-                      member.userId !== data.organization.ownerUserId && (
-                        <ActionButton
-                          className="secondary danger"
-                          onClick={() => setRemoving(member)}
-                          aria-label={`Retirer ${member.name || member.email || "ce contact"}`}
-                        >
-                          <Trash2 size={17} aria-hidden="true" />
-                          Retirer
-                        </ActionButton>
-                      )}
-                  </div>
-                ))
-              )}
-              {canManage && (
-                <section className="stack" style={{ marginTop: 16 }}>
-                  <h4>Invitations en attente</h4>
-                  {data.invitations.length === 0 ? (
-                    <p className="muted">Aucune invitation en attente.</p>
-                  ) : (
-                    data.invitations.map(invitation => (
-                      <div key={invitation.id} className="data-row">
-                        <strong>{invitation.email}</strong>
-                        <p className="muted">
-                          {roleLabel(invitation.role)} · créée le{" "}
-                          {dateTime(invitation.createdAt)}
-                        </p>
-                      </div>
-                    ))
+          {tab === "buildings" && (
+            <details className="simple-context-details">
+              <summary>Contacts et accès</summary>
+              <section className="stack">
+                <div
+                  className="row"
+                  style={{ justifyContent: "space-between", flexWrap: "wrap" }}
+                >
+                  <h3>Contacts autorisés</h3>
+                  {canManage && (
+                    <ActionButton
+                      className="primary"
+                      onClick={() => setModal("invite")}
+                    >
+                      <UserPlus size={17} aria-hidden="true" />
+                      Inviter un contact
+                    </ActionButton>
                   )}
-                  <p className="muted">
-                    Les codes ne sont affichés qu’à leur création. Le compte qui
-                    rejoint doit utiliser l’email invité.
-                  </p>
-                </section>
-              )}
-            </section>
-          )}
-          {tab === "documents" && (
-            <OrganizationDocuments documents={data.documents} />
-          )}
-          {tab === "contracts" && (
-            <section className="panel stack">
-              <h3>Contrats réels</h3>
-              <p className="muted">
-                Documents indexés pour cette organisation, sans contrat de
-                démonstration.
-              </p>
-              {data.contracts.length === 0 ? (
-                <div className="empty">Aucun contrat indexé.</div>
-              ) : (
-                data.contracts.map(contract => (
-                  <article className="data-row stack" key={contract.id}>
-                    <h4>{contract.name}</h4>
-                    <span className="badge" style={{ alignSelf: "start" }}>
-                      {contract.status === "indexed"
-                        ? "Document indexé"
-                        : contract.status === "active"
-                          ? "Actif"
-                          : contract.status === "ended"
-                            ? "Terminé"
-                            : contract.status}
-                    </span>
-                    {(contract.startAt || contract.endAt) && (
-                      <p className="muted">
-                        {contract.startAt
-                          ? `Début : ${dateTime(contract.startAt)}`
-                          : "Début non renseigné"}{" "}
-                        ·{" "}
-                        {contract.endAt
-                          ? `Fin : ${dateTime(contract.endAt)}`
-                          : "Fin non renseignée"}
-                      </p>
+                </div>
+                <p className="muted">
+                  Les invitations sont partagées manuellement par code. Aucun
+                  email n’est envoyé par l’application.
+                </p>
+                {data.members.length === 0 ? (
+                  <div className="empty">Aucun membre accessible.</div>
+                ) : (
+                  data.members.map(member => (
+                    <div
+                      key={member.id}
+                      className="data-row row"
+                      style={{
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: 12,
+                      }}
+                    >
+                      <div>
+                        <strong>
+                          {member.name || member.email || "Compte authentifié"}
+                        </strong>
+                        <p
+                          className="muted"
+                          style={{ overflowWrap: "anywhere" }}
+                        >
+                          {member.email}
+                        </p>
+                        <span className="badge">
+                          {roleLabel(member.role)}
+                          {member.userId === currentUserId ? " · vous" : ""}
+                        </span>
+                      </div>
+                      {canManage &&
+                        member.role !== "owner" &&
+                        member.userId !== currentUserId &&
+                        member.userId !== data.organization.ownerUserId && (
+                          <ActionButton
+                            className="secondary danger"
+                            onClick={() => setRemoving(member)}
+                            aria-label={`Retirer ${member.name || member.email || "ce contact"}`}
+                          >
+                            <Trash2 size={17} aria-hidden="true" />
+                            Retirer
+                          </ActionButton>
+                        )}
+                    </div>
+                  ))
+                )}
+                {canManage && (
+                  <section className="stack" style={{ marginTop: 16 }}>
+                    <h4>Invitations en attente</h4>
+                    {data.invitations.length === 0 ? (
+                      <p className="muted">Aucune invitation en attente.</p>
+                    ) : (
+                      data.invitations.map(invitation => (
+                        <div key={invitation.id} className="data-row">
+                          <strong>{invitation.email}</strong>
+                          <p className="muted">
+                            {roleLabel(invitation.role)} · créée le{" "}
+                            {dateTime(invitation.createdAt)}
+                          </p>
+                        </div>
+                      ))
                     )}
-                    <DocumentList
-                      documents={data.documents.filter(
-                        document => document.id === contract.documentId
+                    <p className="muted">
+                      Les codes ne sont affichés qu’à leur création. Le compte
+                      qui rejoint doit utiliser l’email invité.
+                    </p>
+                  </section>
+                )}
+              </section>
+            </details>
+          )}
+          {tab === "buildings" && (
+            <details className="simple-context-details">
+              <summary>Devis et factures</summary>
+              <OrganizationDocuments documents={data.documents} />
+            </details>
+          )}
+          {tab === "buildings" && (
+            <details className="simple-context-details">
+              <summary>Contrats</summary>
+              <section className="stack">
+                {data.contracts.length === 0 ? (
+                  <div className="empty">Aucun contrat indexé.</div>
+                ) : (
+                  data.contracts.map(contract => (
+                    <article className="data-row stack" key={contract.id}>
+                      <h4>{contract.name}</h4>
+                      <span className="badge" style={{ alignSelf: "start" }}>
+                        {contract.status === "indexed"
+                          ? "Document indexé"
+                          : contract.status === "active"
+                            ? "Actif"
+                            : contract.status === "ended"
+                              ? "Terminé"
+                              : contract.status}
+                      </span>
+                      {(contract.startAt || contract.endAt) && (
+                        <p className="muted">
+                          {contract.startAt
+                            ? `Début : ${dateTime(contract.startAt)}`
+                            : "Début non renseigné"}{" "}
+                          ·{" "}
+                          {contract.endAt
+                            ? `Fin : ${dateTime(contract.endAt)}`
+                            : "Fin non renseignée"}
+                        </p>
                       )}
-                      emptyText="Le document rattaché n’est pas accessible dans cet index."
+                      <DocumentList
+                        documents={data.documents.filter(
+                          document => document.id === contract.documentId
+                        )}
+                        emptyText="Le document rattaché n’est pas accessible dans cet index."
+                      />
+                    </article>
+                  ))
+                )}
+                {canManage && (
+                  <details>
+                    <summary
+                      style={{
+                        minHeight: 44,
+                        padding: "12px 0",
+                        cursor: "pointer",
+                        fontWeight: 700,
+                      }}
+                    >
+                      Déposer un contrat existant
+                    </summary>
+                    <p className="muted" style={{ marginBottom: 16 }}>
+                      Déposez un contrat PDF réel. Son indexation ne présume pas
+                      qu’il est signé ou actif.
+                    </p>
+                    <UploadDocument
+                      kind="contract"
+                      organizationId={summary.id}
+                      onUploaded={() => void detail.refetch()}
                     />
-                  </article>
-                ))
-              )}
-              {canManage && (
-                <details>
-                  <summary
-                    style={{
-                      minHeight: 44,
-                      padding: "12px 0",
-                      cursor: "pointer",
-                      fontWeight: 700,
-                    }}
-                  >
-                    Déposer un contrat existant
-                  </summary>
-                  <p className="muted" style={{ marginBottom: 16 }}>
-                    Déposez un contrat PDF réel. Son indexation ne présume pas
-                    qu’il est signé ou actif.
-                  </p>
-                  <UploadDocument
-                    kind="contract"
-                    organizationId={summary.id}
-                    onUploaded={() => void detail.refetch()}
-                  />
-                </details>
-              )}
-            </section>
+                  </details>
+                )}
+              </section>
+            </details>
           )}
         </>
       )}
@@ -388,7 +487,7 @@ export function OrganizationDetail({
           onClose={() => setRemoving(null)}
         >
           <ErrorNotice error={remove.error} />
-          <div className="row">
+          <div className="row simple-pro-form">
             <ActionButton
               className="dark"
               disabled={remove.isPending}
@@ -422,7 +521,7 @@ function OrganizationRequests({
 }) {
   const [search, setSearch] = useState("");
   const filtered = requests.filter(request =>
-    `${request.reference} ${request.serviceName || ""} ${request.description}`
+    `${request.reference} ${request.serviceName || ""} ${request.description} ${sites.find(site => site.id === request.siteId)?.name || request.city}`
       .toLowerCase()
       .includes(search.toLowerCase())
   );
@@ -444,15 +543,7 @@ function OrganizationRequests({
         </div>
       ) : (
         filtered.map(request => (
-          <article
-            key={request.id}
-            className="data-row row"
-            style={{
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: 12,
-            }}
-          >
+          <article key={request.id} className="simple-request-card">
             <div>
               <strong>{request.serviceName || "Demande libre"}</strong>
               <p className="muted">
@@ -460,15 +551,21 @@ function OrganizationRequests({
                 {sites.find(site => site.id === request.siteId)?.name ||
                   request.city}
               </p>
-              <StatusBadge status={request.status} />
-              <p className="muted">Déclarée le {dateTime(request.createdAt)}</p>
+              <div className="simple-request-meta">
+                <StatusBadge status={request.status} />
+                <p className="muted">{dateTime(request.createdAt)}</p>
+              </div>
+              <p className="muted simple-request-description">
+                {request.description}
+              </p>
             </div>
             <a
               className="btn secondary"
               style={{ minHeight: 44 }}
               href={`/suivi?ref=${encodeURIComponent(request.reference)}`}
+              aria-label={`Ouvrir le dossier ${request.reference}`}
             >
-              Consulter le suivi
+              Ouvrir
             </a>
           </article>
         ))
@@ -481,37 +578,23 @@ function OrganizationDocuments({
 }: {
   documents: PrivateDocument[];
 }) {
-  const [kind, setKind] = useState<"quote" | "invoice">("quote");
   return (
     <section className="panel stack">
-      <h3>Devis et factures</h3>
-      <div className="tabs row">
-        <ActionButton
-          className={kind === "quote" ? "dark" : "secondary"}
-          aria-pressed={kind === "quote"}
-          onClick={() => setKind("quote")}
-        >
-          <FileText size={17} aria-hidden="true" />
-          Devis
-        </ActionButton>
-        <ActionButton
-          className={kind === "invoice" ? "dark" : "secondary"}
-          aria-pressed={kind === "invoice"}
-          onClick={() => setKind("invoice")}
-        >
-          Factures
-        </ActionButton>
-      </div>
-      <p className="muted">
-        Téléchargement après vérification de votre accès par le serveur.
-      </p>
+      <h3 className="row">
+        <FileText size={18} aria-hidden="true" />
+        Devis
+      </h3>
       <DocumentList
-        documents={documents.filter(document => document.kind === kind)}
-        emptyText={
-          kind === "quote"
-            ? "Aucun devis déposé pour cette organisation."
-            : "Aucune facture déposée pour cette organisation."
-        }
+        documents={documents.filter(document => document.kind === "quote")}
+        emptyText="Aucun devis déposé pour cette organisation."
+      />
+      <h3 className="row">
+        <FileText size={18} aria-hidden="true" />
+        Factures
+      </h3>
+      <DocumentList
+        documents={documents.filter(document => document.kind === "invoice")}
+        emptyText="Aucune facture déposée pour cette organisation."
       />
     </section>
   );
@@ -540,18 +623,18 @@ function AddSite({
     setValues(previous => ({ ...previous, [key]: value }));
   return (
     <PrivateModal
-      title="Ajouter un site"
+      title="Ajouter un bâtiment"
       description="Ce lieu d’intervention sera partagé avec les membres autorisés de l’organisation."
       onClose={onClose}
     >
       <form
-        className="stack"
+        className="stack simple-pro-form"
         onSubmit={e => {
           e.preventDefault();
           add.mutate({ organizationId, ...values });
         }}
       >
-        <Field label="Nom du site">
+        <Field label="Nom du bâtiment">
           <input
             required
             minLength={2}
@@ -614,7 +697,7 @@ function AddSite({
           className="primary"
           disabled={add.isPending}
         >
-          {add.isPending ? "Enregistrement…" : "Ajouter le site"}
+          {add.isPending ? "Enregistrement…" : "Ajouter le bâtiment"}
         </ActionButton>
       </form>
     </PrivateModal>
@@ -640,7 +723,7 @@ function InviteMember({
       onClose={onClose}
     >
       {code ? (
-        <div className="stack">
+        <div className="stack simple-pro-form">
           <p>
             Partagez ce code en privé avec <strong>{email}</strong>. Le contact
             doit se connecter avec cet email pour rejoindre l’organisation.
@@ -681,7 +764,7 @@ function InviteMember({
         </div>
       ) : (
         <form
-          className="stack"
+          className="stack simple-pro-form"
           onSubmit={e => {
             e.preventDefault();
             invite.mutate({ organizationId, email: email.trim(), role });

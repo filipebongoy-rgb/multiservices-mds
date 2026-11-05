@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Building2, KeyRound, Plus, ShieldCheck, Users } from "lucide-react";
+import { KeyRound, Plus } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import {
@@ -13,7 +13,6 @@ import {
 import {
   OrganizationDetail,
   organizationTypes,
-  type OrganizationSummary,
   type OrganizationType,
 } from "@/components/mds/private-organization";
 import "@/components/mds/private.css";
@@ -21,22 +20,10 @@ import "@/components/mds/private.css";
 export default function Professional() {
   const auth = useAuth();
   return (
-    <main
-      className="page-shell private-workspace"
-      style={{ paddingTop: 40, paddingBottom: 64 }}
-    >
-      <header className="section-heading" style={{ marginBottom: 32 }}>
-        <span className="eyebrow">MDS · Professionnels</span>
-        <h1 className="page-title">
-          Vos sites. Vos dossiers.
-          <br />
-          Un seul interlocuteur.
-        </h1>
-        <p className="muted" style={{ maxWidth: 680 }}>
-          Entreprises, syndics, bailleurs, gestionnaires, associations et
-          collectivités : regroupez vos demandes et vos documents dans un espace
-          privé partagé avec vos contacts autorisés.
-        </p>
+    <main id="main-content" className="page-shell private-workspace simple-pro">
+      <header className="simple-pro-header">
+        <span className="eyebrow">Espace professionnel</span>
+        <h1>Déclarer un problème. Suivre sa résolution.</h1>
       </header>
       {auth.loading ? (
         <QueryState loading />
@@ -50,71 +37,28 @@ export default function Professional() {
     </main>
   );
 }
+
 function ProfessionalLanding() {
   return (
-    <div className="stack">
-      <section className="panel stack" style={{ maxWidth: 780 }}>
-        <h2>Un espace réellement privé</h2>
-        <p>
-          Connectez-vous avec votre compte Manus pour créer votre organisation
-          ou rejoindre celle qui vous a invité. Aucun compte ni dossier de
-          démonstration ne remplace vos données.
-        </p>
-        <LoginButton />
-        <p className="muted">
-          Le créateur de l’organisation dispose des droits de gestion. Les accès
-          des collaborateurs sont accordés par invitation, jamais par choix de
-          rôle à la connexion.
-        </p>
-      </section>
-      <section
-        className="form-grid"
-        aria-label="Fonctions de l’espace professionnel"
-      >
-        <article className="panel stack">
-          <Building2 size={24} aria-hidden="true" />
-          <h3>Plusieurs lieux</h3>
-          <p className="muted">
-            Enregistrez vos sites et leurs contacts sur place pour déclarer au
-            bon endroit.
-          </p>
-        </article>
-        <article className="panel stack">
-          <Users size={24} aria-hidden="true" />
-          <h3>Les bons contacts</h3>
-          <p className="muted">
-            Partagez un code d’invitation en privé. Aucun email n’est envoyé
-            automatiquement.
-          </p>
-        </article>
-        <article className="panel stack">
-          <ShieldCheck size={24} aria-hidden="true" />
-          <h3>Vos documents seulement</h3>
-          <p className="muted">
-            Consultez les interventions, devis, factures et contrats réellement
-            rattachés à votre organisation.
-          </p>
-        </article>
-      </section>
-      <p className="notice">
-        Pas encore de compte ? Vous pouvez aussi{" "}
-        <a className="text-link" href="/demande">
-          décrire un problème à MDS
-        </a>{" "}
-        sans compte. Le rattachement à une organisation nécessite une connexion
-        et un accès autorisé.
-      </p>
-    </div>
+    <section className="panel stack" style={{ maxWidth: 640 }}>
+      <h2 className="simple-panel-title">Vos bâtiments et vos demandes</h2>
+      <p>Connectez-vous pour retrouver votre organisation ou en créer une.</p>
+      <LoginButton />
+    </section>
   );
 }
+
 function ProfessionalWorkspace({ currentUserId }: { currentUserId: number }) {
   const organizations = trpc.mds.organizations.list.useQuery(undefined, {
     retry: false,
+    refetchInterval: 30_000,
   });
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [modal, setModal] = useState<"create" | "join" | null>(null);
   const list = organizations.data ?? [];
-  const selected = list.find(organization => organization.id === selectedId);
+  const selected =
+    list.find(organization => organization.id === selectedId) || list[0];
+
   async function onCreated(id: number) {
     setModal(null);
     await organizations.refetch();
@@ -124,79 +68,80 @@ function ProfessionalWorkspace({ currentUserId }: { currentUserId: number }) {
     setModal(null);
     await organizations.refetch();
   }
+
+  const setupActions = (
+    <div className="row" style={{ flexWrap: "wrap" }}>
+      <ActionButton
+        className={list.length ? "secondary" : "primary"}
+        onClick={() => setModal("create")}
+      >
+        <Plus size={18} aria-hidden="true" />
+        Créer une organisation
+      </ActionButton>
+      <ActionButton onClick={() => setModal("join")}>
+        <KeyRound size={18} aria-hidden="true" />
+        Rejoindre par code
+      </ActionButton>
+    </div>
+  );
+
   return (
     <div className="stack">
-      <section className="panel stack">
-        <div
-          className="row"
-          style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}
-        >
-          <div>
-            <h2>Mes organisations</h2>
-            <p className="muted">
-              Accès vérifiés par le serveur à chaque dossier.
-            </p>
-          </div>
-          <div className="row" style={{ flexWrap: "wrap" }}>
-            <ActionButton
-              className="primary"
-              onClick={() => setModal("create")}
-            >
-              <Plus size={17} aria-hidden="true" />
-              Créer une organisation
-            </ActionButton>
-            <ActionButton onClick={() => setModal("join")}>
-              <KeyRound size={17} aria-hidden="true" />
-              Rejoindre par code
-            </ActionButton>
-          </div>
-        </div>
-        <QueryState
-          loading={organizations.isLoading}
-          error={organizations.error}
-          retry={organizations.refetch}
-          empty={
-            !organizations.isLoading &&
-            !organizations.error &&
-            list.length === 0
-          }
-          emptyText="Vous n’appartenez encore à aucune organisation. Créez la vôtre ou utilisez un code d’invitation reçu."
-        />
-        {list.length > 0 && (
-          <Field label="Choisir une organisation">
-            <select
-              value={selectedId ?? ""}
-              onChange={e =>
-                setSelectedId(e.target.value ? Number(e.target.value) : null)
-              }
-            >
-              <option value="">Sélectionner une organisation</option>
-              {list.map(organization => (
-                <option key={organization.id} value={organization.id}>
-                  {organization.name} —{" "}
-                  {organizationTypes.find(type => type.id === organization.type)
-                    ?.name || organization.type}
-                </option>
-              ))}
-            </select>
-          </Field>
-        )}
-      </section>
-      {selected ? (
-        <OrganizationDetail
-          key={selected.id}
-          summary={selected}
-          currentUserId={currentUserId}
-        />
-      ) : list.length > 0 && !organizations.error ? (
-        <section className="panel empty">
-          <Building2 size={28} aria-hidden="true" />
-          <p>
-            Choisissez une organisation pour consulter ses sites et ses
-            interventions.
-          </p>
-        </section>
-      ) : null}
+      <QueryState
+        loading={organizations.isLoading}
+        error={organizations.error}
+        retry={organizations.refetch}
+      />
+      {!organizations.isLoading && !organizations.error && (
+        <>
+          {selected ? (
+            <>
+              <div className="simple-pro-context">
+                <Field label="Organisation">
+                  <select
+                    value={selected.id}
+                    onChange={event =>
+                      setSelectedId(Number(event.target.value))
+                    }
+                  >
+                    {list.map(organization => (
+                      <option key={organization.id} value={organization.id}>
+                        {organization.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <span className="badge">
+                  {selected.role === "owner"
+                    ? "Propriétaire"
+                    : selected.role === "manager"
+                      ? "Gestionnaire"
+                      : "Collaborateur"}
+                </span>
+              </div>
+              <OrganizationDetail
+                key={selected.id}
+                summary={selected}
+                currentUserId={currentUserId}
+              />
+              <details className="simple-pro-setup">
+                <summary>Gérer mes organisations</summary>
+                {setupActions}
+              </details>
+            </>
+          ) : (
+            <section className="panel stack">
+              <h2 className="simple-panel-title">
+                Votre première organisation
+              </h2>
+              <p className="muted">
+                Créez votre organisation ou utilisez le code d’invitation reçu.
+              </p>
+              {setupActions}
+            </section>
+          )}
+        </>
+      )}
       {modal === "create" && (
         <CreateOrganization
           onClose={() => setModal(null)}
@@ -209,6 +154,7 @@ function ProfessionalWorkspace({ currentUserId }: { currentUserId: number }) {
     </div>
   );
 }
+
 function CreateOrganization({
   onClose,
   onCreated,
@@ -224,13 +170,13 @@ function CreateOrganization({
   return (
     <PrivateModal
       title="Créer mon organisation"
-      description="Votre compte devient propriétaire avec les droits de gestion. Aucun autre utilisateur n’obtient d’accès automatiquement."
+      description="Vous disposerez des droits de gestion de cette organisation."
       onClose={onClose}
     >
       <form
-        className="stack"
-        onSubmit={e => {
-          e.preventDefault();
+        className="stack simple-pro-form"
+        onSubmit={event => {
+          event.preventDefault();
           if (type) create.mutate({ name: name.trim(), type });
         }}
       >
@@ -241,14 +187,14 @@ function CreateOrganization({
             maxLength={200}
             autoComplete="organization"
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={event => setName(event.target.value)}
           />
         </Field>
         <Field label="Type d’organisation">
           <select
             required
             value={type}
-            onChange={e => setType(e.target.value as OrganizationType)}
+            onChange={event => setType(event.target.value as OrganizationType)}
           >
             <option value="">Choisir un type</option>
             {organizationTypes.map(item => (
@@ -270,6 +216,7 @@ function CreateOrganization({
     </PrivateModal>
   );
 }
+
 function JoinOrganization({
   onClose,
   onJoined,
@@ -287,13 +234,13 @@ function JoinOrganization({
   return (
     <PrivateModal
       title="Rejoindre une organisation"
-      description="Utilisez le code partagé par un gestionnaire et connectez-vous avec l’email auquel l’invitation a été adressée."
+      description="Utilisez le code reçu et le compte correspondant à l’email invité."
       onClose={onClose}
     >
       <form
-        className="stack"
-        onSubmit={e => {
-          e.preventDefault();
+        className="stack simple-pro-form"
+        onSubmit={event => {
+          event.preventDefault();
           join.mutate({ code: code.trim() });
         }}
       >
@@ -307,12 +254,9 @@ function JoinOrganization({
             minLength={64}
             maxLength={64}
             title="Code privé de 64 caractères partagé par un gestionnaire"
-            onChange={e => setCode(e.target.value)}
+            onChange={event => setCode(event.target.value)}
           />
         </Field>
-        <p className="muted">
-          Les droits sont ceux de l’invitation et sont vérifiés par le serveur.
-        </p>
         <ErrorNotice error={join.error} />
         <ActionButton
           type="submit"

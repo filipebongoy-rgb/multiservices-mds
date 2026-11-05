@@ -86,6 +86,7 @@ export const statusLabels = {
   refused: "Refusée",
   cancelled: "Annulée",
   planned: "Intervention planifiée",
+  en_route: "Artisan en route",
   in_progress: "Intervention en cours",
   completed: "Intervention terminée",
   invoiced: "Facture émise",
@@ -176,6 +177,9 @@ export const artisanActionSchema = z.object({
     "refuse",
     "propose",
     "information",
+    "photo",
+    "diagnostic",
+    "depart",
     "quote",
     "start",
     "complete",
@@ -185,6 +189,10 @@ export const artisanActionSchema = z.object({
     "close",
   ]),
   proposedStart: z.string().datetime({ offset: true }).optional(),
+  alternativeStarts: z
+    .array(z.string().datetime({ offset: true }))
+    .max(5)
+    .optional(),
   priceCents: z.number().int().min(0).max(MAX_CENTS).optional(),
   durationMinutes: z.number().int().min(15).max(1440).optional(),
   message: z.string().trim().max(3000).optional(),
@@ -206,6 +214,7 @@ export const clientActionSchema = trackSchema.extend({
   ]),
   message: z.string().trim().max(3000).optional(),
   desiredStart: z.string().datetime({ offset: true }).optional(),
+  alternativeId: z.string().min(1).max(80).optional(),
 });
 export function money(cents: number | null | undefined) {
   return cents == null

@@ -10,6 +10,7 @@ import {
   type Tx,
 } from "./common";
 import { providerId, stripeRequired, type Payment } from "./payments";
+import { stageFor } from "./payment-stages";
 
 type Metadata = Record<string, string> | null;
 type Evidence = {
@@ -75,15 +76,13 @@ async function notifyReview(
   reason: string
 ) {
   const p = await principal(tx);
-  await tx
-    .insert(s.notifications)
-    .values({
-      userId: p.artisanUserId,
-      requestId: request.id,
-      audience: "artisan",
-      title: `${request.reference} — paiement à rapprocher`,
-      message: `Stripe live signale un règlement pour ${payment.reference || `paiement ${payment.id}`}, sans validation de la facture : ${reason}. Vérifiez le Dashboard Stripe et effectuez un rapprochement manuel avant toute clôture ou nouveau débit.`,
-    });
+  await tx.insert(s.notifications).values({
+    userId: p.artisanUserId,
+    requestId: request.id,
+    audience: "artisan",
+    title: `${request.reference} — paiement à rapprocher`,
+    message: `Stripe live signale un règlement pour ${payment.reference || `paiement ${payment.id}`}, sans validation de la facture : ${reason}. Vérifiez le Dashboard Stripe et effectuez un rapprochement manuel avant toute clôture ou nouveau débit.`,
+  });
   await recordAudit(tx, null, "payment.live.review", "payment", payment.id);
 }
 async function reject(
@@ -137,16 +136,14 @@ export async function processPaymentEvent(
         ? "ignored_subscription"
         : "ignored_unrelated";
     else if (payment) outcome = await applyEvidence(tx, ev, proof, payment);
-    await tx
-      .insert(s.paymentEvents)
-      .values({
-        eventId: ev.id,
-        provider: "stripe",
-        mode,
-        type: ev.type,
-        paymentId: payment?.id || null,
-        outcome,
-      });
+    await tx.insert(s.paymentEvents).values({
+      eventId: ev.id,
+      provider: "stripe",
+      mode,
+      type: ev.type,
+      paymentId: payment?.id || null,
+      outcome,
+    });
     return { duplicate: false, outcome };
   });
 }
@@ -164,7 +161,7 @@ async function applyEvidence(
   const [invoice] = await tx
     .select()
     .from(s.invoices)
-    .where(eq(s.invoices.id, payment.invoiceId))
+    .where(eq(s.invoices.requestId, payment.requestId))
     .for("update");
   const md = proof.metadata;
   const rejectEvidence = (reason: string) =>
@@ -179,15 +176,21 @@ async function applyEvidence(
     !md ||
     positiveId(md.payment_id) !== payment.id ||
     positiveId(md.request_id) !== payment.requestId ||
-    positiveId(md.invoice_id) !== payment.invoiceId ||
+    (payment.invoiceId == null
+      ? md.invoice_id !== ""
+      : positiveId(md.invoice_id) !== payment.invoiceId) ||
+    (md.purpose ?? "full") !== (payment.purpose || "full") ||
+    (md.plan_id ?? "") !==
+      (payment.planId == null ? "" : String(payment.planId)) ||
     !payment.checkoutKey ||
     md.checkout_key !== payment.checkoutKey
   )
     return rejectEvidence("rejected_linkage");
   if (
     !request ||
-    !invoice ||
-    invoice.requestId !== request.id ||
+    ((payment.purpose || "full") !== "deposit" &&
+      (!invoice || invoice.id !== payment.invoiceId)) ||
+    (invoice && invoice.requestId !== request.id) ||
     payment.requestId !== request.id
   )
     return rejectEvidence("rejected_business_linkage");
@@ -230,7 +233,7 @@ async function applyEvidence(
   if (payment.status === "succeeded") {
     if (
       proof.successful &&
-      (proof.amount !== payment.amountCents ||
+      (proof.amount !== (payment.receivedAmountCents ?? payment.amountCents) ||
         proof.currency?.toLowerCase() !== "eur")
     )
       return rejectEvidence("rejected_succeeded_amount");
@@ -262,17 +265,38 @@ async function applyEvidence(
     payment.amountCents >= 50 &&
     proof.currency?.toLowerCase() === "eur" &&
     payment.currency === "EUR";
-  const invoiceMatches =
-    invoice.amountCents != null &&
-    invoice.amountCents === payment.amountCents &&
-    invoice.currency === "EUR";
-  const stateMatches = request.status === "invoiced" && !invoice.paidAt;
+  let stageMatches = false;
+  let stateMatches = request.status === "invoiced" && !invoice?.paidAt;
+  if (payment.purpose === "deposit")
+    stateMatches = ![
+      "paid",
+      "closed",
+      "cancelled",
+      "refused",
+      "expired",
+      "quote_refused",
+    ].includes(request.status);
+  try {
+    const stage = await stageFor(
+      tx,
+      request,
+      invoice,
+      payment.purpose || "full"
+    );
+    stageMatches =
+      stage.amountCents === payment.amountCents &&
+      stage.planId == payment.planId &&
+      (stage.invoiceId === payment.invoiceId ||
+        (payment.purpose === "deposit" && payment.invoiceId == null));
+  } catch {
+    /* preserve provider receipt, withhold commercial credit */
+  }
   const reason = !amountMatches
     ? "withheld_amount_currency"
-    : !invoiceMatches
-      ? "withheld_invoice_changed"
-      : !stateMatches
-        ? "withheld_request_state"
+    : !stateMatches
+      ? "withheld_request_state"
+      : !stageMatches
+        ? "withheld_invoice_changed"
         : null;
   // succeeded describes the signed provider ledger, not commercial fulfillment. Discount mismatches are withheld.
   const confirmedAt = new Date();
@@ -282,6 +306,13 @@ async function applyEvidence(
       ...ids,
       status: "succeeded",
       confirmedAt,
+      receivedAmountCents:
+        proof.currency?.toLowerCase() === "eur" &&
+        Number.isSafeInteger(proof.amount) &&
+        proof.amount! >= 0
+          ? proof.amount
+          : null,
+      creditedAt: !reason && payment.mode === "live" ? confirmedAt : null,
       verificationNote: reason
         ? `Stripe ${payment.mode} : ${reason}; facture non acquittée, rapprochement nécessaire.`
         : payment.mode === "test"
@@ -310,6 +341,25 @@ async function applyEvidence(
     );
     return "test_succeeded_no_fulfillment";
   }
+  if (payment.purpose === "deposit") {
+    await businessEvent(
+      tx,
+      request,
+      request.status,
+      `Acompte réellement reçu et imputé : ${payment.amountCents} centimes. Le paiement ne confirme ni le rendez-vous ni l’acquittement final.`,
+      "system",
+      null
+    );
+    await recordAudit(
+      tx,
+      null,
+      "payment.live.deposit_received",
+      "payment",
+      payment.id
+    );
+    return "live_deposit_received";
+  }
+  if (!invoice) throw new Error("Missing fulfillment invoice");
   const [changed] = await tx
     .update(s.requests)
     .set({
@@ -382,12 +432,10 @@ export async function paymentWebhookHandler(req: Request, res: Response) {
     console.error(
       "[MDS payment] Transaction webhook impossible ; nouvelle livraison requise."
     );
-    res
-      .status(500)
-      .json({
-        received: false,
-        error: "Traitement temporairement indisponible",
-      });
+    res.status(500).json({
+      received: false,
+      error: "Traitement temporairement indisponible",
+    });
   }
 }
 /** MUST be registered before express.json()/urlencoded() or any parser consuming this path. */

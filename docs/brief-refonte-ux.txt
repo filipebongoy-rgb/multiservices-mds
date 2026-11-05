@@ -1,0 +1,145 @@
+Réfléchi pendant 20s
+
+Oui. Et je pense qu'il faut changer notre approche.
+
+MULTISERVICES MDS doit être une application web, pas un gros logiciel de gestion avec une multitude de menus.
+
+On conserve toutes les fonctionnalités en arrière-plan, mais on simplifie radicalement ce que les personnes voient et font.
+
+Le modèle sera :
+
+* Client : il demande une intervention et suit sa commande.
+
+* Artisan : il reçoit les demandes et accepte ou refuse.
+
+* Professionnel : il déclare un problème et suit sa résolution.
+
+Pas trois logiciels. Une seule application web, avec une interface adaptée à chaque utilisateur.
+
+J'ai regardé ta vidéo. La base actuelle est bonne : le champ de recherche, les catégories de métiers et l'option « Je ne trouve pas mon problème » sont pertinents.
+
+Ce qu'il faut supprimer, c'est la surcharge d'explications et les parcours trop longs.
+
+### La nouvelle interface que je recommande
+
+### MDS.
+
+### Un problème chez vous ?
+
+### On s'en occupe.
+
+Décrivez votre problème...
+
+Choisissez un service
+
+Plomberie
+
+Électricité
+
+Chauffage
+
+Peinture
+
+Petits travaux
+
+Je ne trouve pas mon problème
+
+Maquette fonctionnelle indicative de la page d'accueil.
+
+### Le fonctionnement simplifié
+
+| Utilisateur   | Ce qu'il fait                  |
+| ------------- | ------------------------------ |
+| Particulier   | Demande → confirme → suit      |
+| Professionnel | Déclare → confirme → suit      |
+| Artisan       | Accepte → intervient → termine |
+
+Le système gère le reste : notifications, planning, devis, factures et paiements.
+
+### Prompt court à donner à Manus
+
+# REFONTE UX — MULTISERVICES MDS
+
+Reprends entièrement l'expérience utilisateur de MULTISERVICES MDS en conservant les fonctionnalités métier nécessaires.
+
+OBJECTIF : créer une application web extrêmement simple, rapide et intuitive, inspirée de la fluidité de Doctolib et Uber Eats.
+
+Ne crée pas une interface avec beaucoup de menus, de tableaux, de textes et d'étapes.
+
+### 1. UNE SEULE APPLICATION WEB
+
+Créer une application responsive, mobile-first et éventuellement installable comme PWA.
+
+Un seul produit avec trois espaces selon le profil :
+- Particulier.
+- Professionnel.
+- Artisan MDS.
+
+### 2. ACCUEIL CLIENT
+
+Afficher uniquement :
+- Logo MDS.
+- « Un problème chez vous ? On s'en occupe. »
+- Un champ pour décrire le problème.
+- Les cinq catégories de services.
+- « Je ne trouve pas mon problème ».
+
+Supprimer les longs textes de présentation et les explications répétitives.
+
+### 3. PARCOURS CLIENT
+
+Réduire le parcours à trois actions :
+1. Décrire ou sélectionner son problème.
+2. Indiquer son adresse et choisir un créneau.
+3. Envoyer sa demande.
+
+L'artisan accepte ou refuse. Le client confirme la proposition.
+
+Appliquer le tarif hybride : prix affiché pour les prestations standardisées, devis pour les travaux complexes.
+
+### 4. ESPACE ARTISAN
+
+Créer un écran unique avec :
+- Nouvelles demandes.
+- Planning.
+- Interventions.
+
+Chaque demande dispose de trois actions principales :
+- Accepter.
+- Refuser.
+- Proposer un autre créneau.
+
+Le reste est automatisé.
+
+### 5. ESPACE PROFESSIONNEL
+
+Permettre de déclarer une intervention, sélectionner un bâtiment et suivre son dossier.
+
+Afficher uniquement les informations nécessaires.
+
+### 6. RÈGLES UX
+
+- Maximum trois actions pour un parcours courant.
+- Aucun long formulaire.
+- Aucun texte inutile.
+- Trois entrées de navigation maximum par espace.
+- Boutons larges.
+- Texte lisible.
+- Interface adaptée aux personnes âgées.
+- Aucune fonctionnalité décorative.
+- Aucune répétition d'informations.
+- Aucun écran surchargé.
+
+### 7. CONSIGNE IMPORTANTE
+
+Analyse l'application actuelle avant toute modification.
+
+Conserve les fonctionnalités réellement utiles et supprime la complexité visuelle et fonctionnelle inutile.
+
+Ne reconstruis pas artificiellement des écrans supplémentaires.
+
+Priorité absolue : moins de lecture, moins de clics, moins de décisions, plus d'automatisation.
+
+L'application doit donner l'impression que tout est évident dès la première utilisation.
+
+Ma recommandation : garde cette page d'accueil comme point de départ. Nous devons améliorer l'existant, pas remplacer une interface déjà pertinente par un logiciel beaucoup plus compliqué.

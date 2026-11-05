@@ -2,14 +2,9 @@ import { useState } from "react";
 import {
   Bell,
   CalendarDays,
-  ChevronRight,
   ClipboardList,
-  FileCheck2,
-  FileText,
-  LayoutDashboard,
   LockKeyhole,
   Settings2,
-  Users,
   Wrench,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -17,16 +12,19 @@ import { trpc } from "@/lib/trpc";
 import { dateTime } from "@shared/mds";
 import {
   ActionButton,
-  DocumentList,
   ErrorNotice,
   Field,
   LoginButton,
   QueryState,
   StatusBadge,
-  UploadDocument,
 } from "@/components/mds/private-common";
-import { ArtisanRequests } from "@/components/mds/private-artisan-requests";
+import {
+  ArtisanRequests,
+  RequestDetail,
+} from "@/components/mds/private-artisan-requests";
 import { ArtisanSettings } from "@/components/mds/private-artisan-settings";
+import { ArtisanCalendar } from "@/components/mds/private-calendar";
+import { AutomationSettings } from "@/components/mds/private-automation";
 import {
   activeRequestStatuses,
   dayKey,
@@ -37,13 +35,9 @@ import {
 import "@/components/mds/private.css";
 
 const navigation = [
-  { id: "today", name: "Aujourd’hui", icon: LayoutDashboard },
   { id: "requests", name: "Demandes", icon: ClipboardList },
   { id: "planning", name: "Planning", icon: CalendarDays },
-  { id: "quotes", name: "Devis", icon: FileText },
-  { id: "clients", name: "Clients", icon: Users },
-  { id: "invoices", name: "Factures", icon: FileCheck2 },
-  { id: "settings", name: "Paramètres", icon: Settings2 },
+  { id: "interventions", name: "Interventions", icon: Wrench },
 ] as const;
 type Tab = (typeof navigation)[number]["id"];
 
@@ -71,11 +65,7 @@ export default function Artisan() {
           <span className="eyebrow">Espace privé MDS</span>
           <LockKeyhole size={30} aria-hidden="true" />
           <h1 className="page-title">L’atelier de l’artisan</h1>
-          <p className="muted">
-            Connectez-vous pour accéder à vos dossiers. Cet espace est réservé à
-            l’artisan MDS ; aucun compte de démonstration ne donne accès aux
-            demandes.
-          </p>
+          <p className="muted">Connectez-vous pour accéder à vos dossiers.</p>
           <LoginButton />
         </section>
       </main>
@@ -113,8 +103,7 @@ function ArtisanActivation({
           administrateur.
         </p>
         <p className="muted">
-          Seul le propriétaire MDS disposant du code privé d’activation peut
-          activer cet espace. Ne partagez pas ce code.
+          Le code privé d’activation est réservé au propriétaire MDS.
         </p>
         <form
           className="stack"
@@ -154,15 +143,16 @@ function ArtisanActivation({
           }}
           href="/professionnels"
         >
-          Accéder plutôt à mon espace professionnel
+          Accéder à mon espace professionnel
         </a>
       </section>
     </main>
   );
 }
 function ArtisanWorkspace() {
-  const [tab, setTab] = useState<Tab>("today");
+  const [tab, setTab] = useState<Tab>("requests");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const requestsQuery = trpc.mds.requests.list.useQuery(undefined, {
     retry: false,
     refetchInterval: 30_000,
@@ -175,9 +165,13 @@ function ArtisanWorkspace() {
     retry: false,
     refetchInterval: 30_000,
   });
-  const requests = requestsQuery.data ?? [];
-  const services = catalogQuery.data ?? [];
-  const appointments = appointmentsQuery.data ?? [];
+  const utils = trpc.useUtils();
+  const requests = requestsQuery.data ?? [],
+    services = catalogQuery.data ?? [],
+    appointments = appointmentsQuery.data ?? [];
+  const pending = requests.filter(request =>
+    activeRequestStatuses.includes(request.status)
+  );
   const openRequest = (id: number) => {
     setSelectedId(id);
     setTab("requests");
@@ -185,66 +179,81 @@ function ArtisanWorkspace() {
   const refreshRequests = () => {
     void requestsQuery.refetch();
     void appointmentsQuery.refetch();
+    void utils.mds.calendar.get.invalidate();
   };
   return (
     <main
       className="page-shell private-workspace"
-      style={{ paddingTop: 32, paddingBottom: 64 }}
+      style={{ paddingTop: 24, paddingBottom: 64 }}
     >
       <header
         className="row"
         style={{
           justifyContent: "space-between",
-          marginBottom: 28,
+          marginBottom: 20,
           flexWrap: "wrap",
-          gap: 16,
+          gap: 12,
         }}
       >
         <div>
-          <span className="eyebrow">Espace artisan · MDS</span>
+          <span className="eyebrow">Artisan MDS</span>
           <h1 className="page-title" style={{ marginBottom: 0 }}>
-            Votre atelier, au clair.
+            Votre atelier
           </h1>
         </div>
         <span className="badge row">
-          <Wrench size={16} aria-hidden="true" />
-          Accès artisan autorisé
+          <Wrench size={16} aria-hidden="true" /> Accès privé
         </span>
       </header>
-      <div className="workspace">
-        <nav className="workspace-nav" aria-label="Espace artisan">
-          {navigation.map(item => (
-            <button
-              key={item.id}
-              type="button"
-              className={`btn ${tab === item.id ? "active" : ""}`}
-              onClick={() => setTab(item.id)}
-              aria-current={tab === item.id ? "page" : undefined}
-              style={{ minHeight: 48, justifyContent: "flex-start", gap: 12 }}
-            >
-              <item.icon size={19} aria-hidden="true" />
-              {item.name}
-            </button>
-          ))}
-        </nav>
-        <div className="workspace-main" style={{ minWidth: 0 }}>
-          {tab === "today" && (
-            <Today
-              requests={requests}
+      <nav
+        className="row"
+        aria-label="Espace artisan"
+        style={{ flexWrap: "wrap", gap: 8, marginBottom: 24 }}
+      >
+        {navigation.map(item => (
+          <ActionButton
+            key={item.id}
+            className={tab === item.id ? "primary" : "secondary"}
+            onClick={() => {
+              setTab(item.id);
+              setSelectedId(null);
+            }}
+            aria-current={tab === item.id ? "page" : undefined}
+            style={{ flex: "1 1 140px", minHeight: 48 }}
+          >
+            <item.icon size={19} aria-hidden="true" />
+            {item.name}
+          </ActionButton>
+        ))}
+      </nav>
+      <div className="stack" style={{ minWidth: 0 }}>
+        {tab === "requests" && (
+          <>
+            <TodaySummary
+              pending={pending.length}
               appointments={appointments}
               requestsLoading={requestsQuery.isLoading}
               requestsError={requestsQuery.error}
-              retryRequests={requestsQuery.refetch}
               appointmentsLoading={appointmentsQuery.isLoading}
               appointmentsError={appointmentsQuery.error}
-              retryAppointments={appointmentsQuery.refetch}
-              onOpen={openRequest}
               onPlanning={() => setTab("planning")}
             />
-          )}
-          {tab === "requests" && (
+            <ActionButton
+              aria-pressed={showHistory}
+              onClick={() => setShowHistory(value => !value)}
+              style={{ alignSelf: "flex-start" }}
+            >
+              {showHistory
+                ? "Voir les demandes à traiter"
+                : "Historique des demandes"}
+            </ActionButton>
             <ArtisanRequests
-              requests={requests}
+              requests={requests.filter(
+                request =>
+                  showHistory ||
+                  activeRequestStatuses.includes(request.status) ||
+                  request.id === selectedId
+              )}
               services={services}
               selectedId={selectedId}
               onSelect={setSelectedId}
@@ -253,494 +262,208 @@ function ArtisanWorkspace() {
               retry={requestsQuery.refetch}
               onChanged={refreshRequests}
             />
-          )}
-          {tab === "planning" && (
-            <Planning
-              appointments={appointments}
-              loading={appointmentsQuery.isLoading}
-              error={appointmentsQuery.error}
-              retry={appointmentsQuery.refetch}
-              onOpen={openRequest}
-            />
-          )}
-          {(tab === "quotes" || tab === "invoices") && (
-            <ArtisanDocuments
-              key={tab}
-              kind={tab === "quotes" ? "quote" : "invoice"}
-              requests={requests}
-              loading={requestsQuery.isLoading}
-              error={requestsQuery.error}
-              retry={requestsQuery.refetch}
-              onOpen={openRequest}
-            />
-          )}
-          {tab === "clients" && (
-            <Clients
-              requests={requests}
-              loading={requestsQuery.isLoading}
-              error={requestsQuery.error}
-              retry={requestsQuery.refetch}
-              onOpen={openRequest}
-            />
-          )}
-          {tab === "settings" && (
-            <ArtisanSettings
-              services={services}
-              catalogLoading={catalogQuery.isLoading}
-              catalogError={catalogQuery.error}
-              retryCatalog={catalogQuery.refetch}
-              onCatalogChanged={() => void catalogQuery.refetch()}
-            />
-          )}
-        </div>
+            <details className="panel">
+              <summary
+                className="row"
+                style={{ minHeight: 44, cursor: "pointer" }}
+              >
+                <Bell size={18} aria-hidden="true" /> Notifications
+              </summary>
+              <Notifications onOpen={openRequest} />
+            </details>
+          </>
+        )}
+        {tab === "planning" && (
+          <>
+            <ArtisanCalendar onOpen={openRequest} />
+            <details className="panel">
+              <summary
+                className="row"
+                style={{ minHeight: 44, cursor: "pointer" }}
+              >
+                <Settings2 size={18} aria-hidden="true" /> Paramètres MDS
+              </summary>
+              <div className="stack" style={{ paddingTop: 20 }}>
+                <ArtisanSettings
+                  services={services}
+                  catalogLoading={catalogQuery.isLoading}
+                  catalogError={catalogQuery.error}
+                  retryCatalog={catalogQuery.refetch}
+                  onCatalogChanged={() => void catalogQuery.refetch()}
+                />
+                <AutomationSettings />
+              </div>
+            </details>
+          </>
+        )}
+        {tab === "interventions" && (
+          <Interventions
+            requests={requests}
+            services={services}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            loading={requestsQuery.isLoading}
+            error={requestsQuery.error}
+            retry={requestsQuery.refetch}
+            onChanged={refreshRequests}
+          />
+        )}
       </div>
     </main>
   );
 }
-function Today({
-  requests,
+function TodaySummary({
+  pending,
   appointments,
   requestsLoading,
   requestsError,
-  retryRequests,
   appointmentsLoading,
   appointmentsError,
-  retryAppointments,
-  onOpen,
   onPlanning,
 }: {
-  requests: RequestRecord[];
+  pending: number;
   appointments: Appointment[];
   requestsLoading: boolean;
   requestsError: unknown;
-  retryRequests: () => unknown;
   appointmentsLoading: boolean;
   appointmentsError: unknown;
-  retryAppointments: () => unknown;
-  onOpen: (id: number) => void;
   onPlanning: () => void;
 }) {
-  const pending = requests.filter(request =>
-    activeRequestStatuses.includes(request.status)
-  );
   const today = dayKey(new Date());
-  const todayAppointments = appointments
-    .filter(
-      appointment =>
-        appointment.status !== "cancelled" &&
-        dayKey(appointment.startAt) === today
-    )
-    .sort(
-      (a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
-    );
-  return (
-    <div className="stack">
-      <div className="section-heading">
-        <h2>Aujourd’hui</h2>
-        <p className="muted">
-          Les dossiers à traiter et les rendez-vous validés. Rien de plus.
-        </p>
-      </div>
-      <div className="metric-row">
-        <div className="metric">
-          <span className="muted">Dossiers en attente</span>
-          <strong style={{ fontSize: 36 }}>
-            {requestsLoading || requestsError ? "—" : pending.length}
-          </strong>
-          <span className="muted">MDS ou client</span>
-        </div>
-        <div className="metric">
-          <span className="muted">Rendez-vous aujourd’hui</span>
-          <strong style={{ fontSize: 36 }}>
-            {appointmentsLoading || appointmentsError
-              ? "—"
-              : todayAppointments.length}
-          </strong>
-          <span className="muted">Heure de Paris</span>
-        </div>
-      </div>
-      <section className="panel stack">
-        <div className="row" style={{ justifyContent: "space-between" }}>
-          <h3>À traiter</h3>
-          <ClipboardList size={20} aria-hidden="true" />
-        </div>
-        <QueryState
-          loading={requestsLoading}
-          error={requestsError}
-          retry={retryRequests}
-          empty={!requestsLoading && !requestsError && pending.length === 0}
-          emptyText="Aucun dossier en attente pour le moment."
-        />
-        {!requestsError &&
-          pending.slice(0, 6).map(request => (
-            <button
-              type="button"
-              key={request.id}
-              className="data-row row"
-              onClick={() => onOpen(request.id)}
-              style={{
-                minHeight: 70,
-                width: "100%",
-                border: 0,
-                borderBottom: "1px solid #e7e5e2",
-                background: "transparent",
-                textAlign: "left",
-                justifyContent: "space-between",
-                cursor: "pointer",
-                gap: 12,
-              }}
-            >
-              <div>
-                <strong>{request.name}</strong>
-                <p className="muted">
-                  {request.serviceName || "Demande libre"} · {request.reference}
-                </p>
-                <StatusBadge status={request.status} />
-              </div>
-              <ChevronRight size={20} aria-hidden="true" />
-            </button>
-          ))}
-      </section>
-      <section className="panel stack">
-        <div
-          className="row"
-          style={{ justifyContent: "space-between", flexWrap: "wrap" }}
-        >
-          <h3>Rendez-vous du jour</h3>
-          <ActionButton onClick={onPlanning}>Voir le planning</ActionButton>
-        </div>
-        <QueryState
-          loading={appointmentsLoading}
-          error={appointmentsError}
-          retry={retryAppointments}
-          empty={
-            !appointmentsLoading &&
-            !appointmentsError &&
-            todayAppointments.length === 0
-          }
-          emptyText="Aucun rendez-vous confirmé aujourd’hui."
-        />
-        {!appointmentsError &&
-          todayAppointments.map(appointment => (
-            <AppointmentRow
-              key={appointment.id}
-              appointment={appointment}
-              onOpen={onOpen}
-            />
-          ))}
-      </section>
-      <Notifications onOpen={onOpen} />
-    </div>
-  );
-}
-function AppointmentRow({
-  appointment,
-  onOpen,
-}: {
-  appointment: Appointment;
-  onOpen: (id: number) => void;
-}) {
+  const count = appointments.filter(
+    a => a.status !== "cancelled" && dayKey(a.startAt) === today
+  ).length;
   return (
     <div
-      className="data-row row"
-      style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}
+      className="row"
+      style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}
     >
-      <div>
-        <strong>{dateTime(appointment.startAt)}</strong>
-        <p>Jusqu’au {dateTime(appointment.endAt)}</p>
-        <p>
-          {appointment.name} · {appointment.address}
-        </p>
-        <span className="muted">{appointment.reference}</span>
-      </div>
-      <ActionButton onClick={() => onOpen(appointment.requestId)}>
-        Ouvrir le dossier
+      <p>
+        <strong>{requestsLoading || requestsError ? "—" : pending}</strong>{" "}
+        demande{pending !== 1 ? "s" : ""} à traiter
+      </p>
+      <ActionButton onClick={onPlanning}>
+        <CalendarDays size={18} aria-hidden="true" />{" "}
+        {appointmentsLoading || appointmentsError ? "—" : count} rendez-vous
+        aujourd’hui
       </ActionButton>
     </div>
   );
 }
-function Planning({
-  appointments,
+const runningStates: RequestRecord["status"][] = [
+  "confirmed",
+  "planned",
+  "en_route",
+  "in_progress",
+];
+const completedStates: RequestRecord["status"][] = [
+  "completed",
+  "invoiced",
+  "paid",
+  "closed",
+];
+function Interventions({
+  requests,
+  services,
+  selectedId,
+  onSelect,
   loading,
   error,
   retry,
-  onOpen,
+  onChanged,
 }: {
-  appointments: Appointment[];
+  requests: RequestRecord[];
+  services: Service[];
+  selectedId: number | null;
+  onSelect: (id: number | null) => void;
   loading: boolean;
   error: unknown;
   retry: () => unknown;
-  onOpen: (id: number) => void;
+  onChanged: () => void;
 }) {
-  const [date, setDate] = useState("");
-  const confirmed = appointments
-    .filter(
-      appointment =>
-        appointment.status !== "cancelled" &&
-        (!date || dayKey(appointment.startAt) === date)
+  const [showCompleted, setShowCompleted] = useState(false);
+  const visible = requests
+    .filter(r =>
+      (showCompleted ? completedStates : runningStates).includes(r.status)
     )
     .sort(
-      (a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
+      (a, b) =>
+        +new Date(a.proposedStart ?? a.createdAt) -
+        +new Date(b.proposedStart ?? b.createdAt)
     );
   return (
-    <div className="stack">
+    <section className="stack">
       <div className="section-heading">
-        <h2>Planning</h2>
-        <p className="muted">
-          Uniquement les rendez-vous effectivement confirmés par MDS et le
-          client.
-        </p>
+        <h2>Interventions</h2>
       </div>
-      <p className="notice">
-        Le calendrier avancé et la gestion des disponibilités seront poursuivis
-        au prompt 2/3. Cette liste ne représente pas des créneaux réservables.
-      </p>
-      <section className="panel stack">
-        <div className="row" style={{ alignItems: "end", flexWrap: "wrap" }}>
-          <Field label="Filtrer par date (heure de Paris)">
-            <input
-              type="date"
-              value={date}
-              onChange={e => setDate(e.target.value)}
+      <div className="row" role="group" aria-label="Filtrer les interventions">
+        <ActionButton
+          aria-pressed={!showCompleted}
+          className={!showCompleted ? "primary" : "secondary"}
+          onClick={() => setShowCompleted(false)}
+        >
+          À réaliser / en cours
+        </ActionButton>
+        <ActionButton
+          aria-pressed={showCompleted}
+          className={showCompleted ? "primary" : "secondary"}
+          onClick={() => setShowCompleted(true)}
+        >
+          Terminées
+        </ActionButton>
+      </div>
+      <QueryState loading={loading} error={error} retry={retry} />
+      {!loading && !error && (
+        <div className="split-view" style={{ alignItems: "start" }}>
+          <div className="panel stack">
+            {!visible.length && (
+              <p className="muted">
+                Aucune intervention {showCompleted ? "terminée" : "à réaliser"}.
+              </p>
+            )}
+            {visible.map(request => (
+              <button
+                type="button"
+                key={request.id}
+                className="data-row"
+                onClick={() => onSelect(request.id)}
+                aria-pressed={selectedId === request.id}
+                style={{
+                  width: "100%",
+                  minHeight: 72,
+                  textAlign: "left",
+                  border: 0,
+                  background:
+                    selectedId === request.id ? "#fff3ed" : "transparent",
+                  padding: 12,
+                  cursor: "pointer",
+                }}
+              >
+                <strong>{request.name}</strong>
+                <p>
+                  {request.serviceName || "Demande libre"} · {request.city}
+                </p>
+                <StatusBadge status={request.status} />
+                {request.proposedStart && (
+                  <p className="muted">{dateTime(request.proposedStart)}</p>
+                )}
+              </button>
+            ))}
+          </div>
+          {selectedId ? (
+            <RequestDetail
+              key={selectedId}
+              id={selectedId}
+              services={services}
+              onBack={() => onSelect(null)}
+              onChanged={onChanged}
             />
-          </Field>
-          {date && (
-            <ActionButton onClick={() => setDate("")}>
-              Toutes les dates
-            </ActionButton>
+          ) : (
+            <div className="panel empty">Choisissez une intervention.</div>
           )}
         </div>
-        <QueryState
-          loading={loading}
-          error={error}
-          retry={retry}
-          empty={!loading && !error && confirmed.length === 0}
-          emptyText="Aucun rendez-vous confirmé pour cette sélection."
-        />
-        {!error &&
-          !loading &&
-          confirmed.map(appointment => (
-            <AppointmentRow
-              key={appointment.id}
-              appointment={appointment}
-              onOpen={onOpen}
-            />
-          ))}
-      </section>
-    </div>
-  );
-}
-function ArtisanDocuments({
-  kind,
-  requests,
-  loading,
-  error,
-  retry,
-  onOpen,
-}: {
-  kind: "quote" | "invoice";
-  requests: RequestRecord[];
-  loading: boolean;
-  error: unknown;
-  retry: () => unknown;
-  onOpen: (id: number) => void;
-}) {
-  const [uploadReference, setUploadReference] = useState("");
-  const results = trpc.useQueries(router =>
-    requests.map(request =>
-      router.mds.requests.detail(
-        { id: request.id },
-        { retry: false, staleTime: 30_000 }
-      )
-    )
-  );
-  const documentGroups = results.flatMap((result, index) => {
-    const data = result.data;
-    if (!data) return [];
-    const documents = data.documents.filter(document => document.kind === kind);
-    return documents.length ? [{ request: requests[index], documents }] : [];
-  });
-  const reading = results.some(result => result.isLoading);
-  const firstError = results.find(result => result.error)?.error;
-  const refresh = () => {
-    results.forEach(result => void result.refetch());
-  };
-  return (
-    <div className="stack">
-      <div className="section-heading">
-        <h2>{kind === "quote" ? "Devis" : "Factures"}</h2>
-        <p className="muted">
-          Documents PDF réellement déposés dans les dossiers. Aucun document
-          n’est généré automatiquement.
-        </p>
-      </div>
-      <section className="panel stack">
-        <QueryState
-          loading={loading || reading}
-          error={error || firstError}
-          retry={error ? retry : refresh}
-          empty={
-            !loading &&
-            !reading &&
-            !error &&
-            !firstError &&
-            documentGroups.length === 0
-          }
-          emptyText={
-            kind === "quote" ? "Aucun devis déposé." : "Aucune facture déposée."
-          }
-        />
-        {documentGroups.map(group => (
-          <section className="stack" key={group.request.id}>
-            <div
-              className="row"
-              style={{ justifyContent: "space-between", flexWrap: "wrap" }}
-            >
-              <h3>
-                {group.request.name} · {group.request.reference}
-              </h3>
-              <ActionButton onClick={() => onOpen(group.request.id)}>
-                Ouvrir le dossier
-              </ActionButton>
-            </div>
-            <DocumentList
-              documents={group.documents}
-              reference={group.request.reference}
-            />
-          </section>
-        ))}
-      </section>
-      <section className="panel stack">
-        <h3>
-          Déposer un {kind === "quote" ? "devis" : "document de facturation"}
-        </h3>
-        <Field label="Dossier de rattachement">
-          <select
-            value={uploadReference}
-            onChange={e => setUploadReference(e.target.value)}
-          >
-            <option value="">Choisir une demande</option>
-            {requests.map(request => (
-              <option key={request.id} value={request.reference}>
-                {request.reference} — {request.name}
-              </option>
-            ))}
-          </select>
-        </Field>
-        {uploadReference && (
-          <UploadDocument
-            key={uploadReference}
-            reference={uploadReference}
-            kind={kind}
-            onUploaded={refresh}
-          />
-        )}
-        {requests.length === 0 && !loading && (
-          <p className="muted">
-            Un document doit être rattaché à une demande réelle.
-          </p>
-        )}
-      </section>
-    </div>
-  );
-}
-function Clients({
-  requests,
-  loading,
-  error,
-  retry,
-  onOpen,
-}: {
-  requests: RequestRecord[];
-  loading: boolean;
-  error: unknown;
-  retry: () => unknown;
-  onOpen: (id: number) => void;
-}) {
-  const [search, setSearch] = useState("");
-  const groups = new Map<
-    string,
-    { name: string; email: string; phone: string; requests: RequestRecord[] }
-  >();
-  requests.forEach(request => {
-    const key = request.email.toLowerCase();
-    const current = groups.get(key);
-    if (current) current.requests.push(request);
-    else
-      groups.set(key, {
-        name: request.name,
-        email: request.email,
-        phone: request.phone,
-        requests: [request],
-      });
-  });
-  const clients = [...groups.values()].filter(client =>
-    `${client.name} ${client.email}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
-  return (
-    <div className="stack">
-      <div className="section-heading">
-        <h2>Clients</h2>
-        <p className="muted">
-          Contacts issus des demandes reçues, regroupés par email. Aucun fichier
-          client fictif.
-        </p>
-      </div>
-      <section className="panel stack">
-        <Field label="Rechercher un contact">
-          <input
-            type="search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Nom ou email"
-          />
-        </Field>
-        <QueryState
-          loading={loading}
-          error={error}
-          retry={retry}
-          empty={!loading && !error && clients.length === 0}
-          emptyText="Aucun contact dans cette sélection."
-        />
-        {!error &&
-          clients.map(client => (
-            <details key={client.email} className="data-row">
-              <summary
-                style={{ minHeight: 44, cursor: "pointer", padding: "8px 0" }}
-              >
-                <strong>{client.name}</strong> · {client.requests.length}{" "}
-                dossier{client.requests.length !== 1 ? "s" : ""}
-              </summary>
-              <div className="stack">
-                <p style={{ overflowWrap: "anywhere" }}>
-                  {client.email} · {client.phone}
-                </p>
-                {client.requests.map(request => (
-                  <div
-                    className="row"
-                    key={request.id}
-                    style={{
-                      justifyContent: "space-between",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <div>
-                      <strong>{request.reference}</strong>
-                      <p>{request.serviceName || "Demande libre"}</p>
-                      <StatusBadge status={request.status} />
-                    </div>
-                    <ActionButton onClick={() => onOpen(request.id)}>
-                      Consulter
-                    </ActionButton>
-                  </div>
-                ))}
-              </div>
-            </details>
-          ))}
-      </section>
-    </div>
+      )}
+    </section>
   );
 }
 function Notifications({ onOpen }: { onOpen: (id: number) => void }) {
@@ -752,15 +475,7 @@ function Notifications({ onOpen }: { onOpen: (id: number) => void }) {
     onSuccess: () => void notifications.refetch(),
   });
   return (
-    <section className="panel stack">
-      <h3 className="row">
-        <Bell size={20} aria-hidden="true" />
-        Notifications internes
-      </h3>
-      <p className="muted">
-        Notifications enregistrées dans l’application. Aucun email ou SMS n’est
-        annoncé comme envoyé.
-      </p>
+    <div className="stack" style={{ paddingTop: 16 }}>
       <QueryState
         loading={notifications.isLoading}
         error={notifications.error}
@@ -783,7 +498,7 @@ function Notifications({ onOpen }: { onOpen: (id: number) => void }) {
           <div className="row" style={{ flexWrap: "wrap" }}>
             {notification.requestId && (
               <ActionButton onClick={() => onOpen(notification.requestId!)}>
-                Voir le dossier
+                Ouvrir le dossier
               </ActionButton>
             )}
             {!notification.readAt && (
@@ -797,6 +512,6 @@ function Notifications({ onOpen }: { onOpen: (id: number) => void }) {
           </div>
         </div>
       ))}
-    </section>
+    </div>
   );
 }

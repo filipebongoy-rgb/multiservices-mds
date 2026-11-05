@@ -45,13 +45,26 @@ export function Privacy() {
         réussi. Une photo sélectionnée n’est pas conservée dans le brouillon
         après le rechargement de la page.
       </p>
+      <h2>L’aide à la description</h2>
+      <p>
+        Si vous activez l’aide IA, votre description et les réponses utiles sont
+        transmises au service de modèles intégré à Manus pour proposer un métier
+        et une question. Les champs de contact et d’adresse ne sont pas envoyés
+        avec cet appel ; évitez d’écrire des coordonnées dans votre description.
+        Cette aide ne pose aucun diagnostic et ne confirme aucune intervention.
+        Vous pouvez toujours continuer sans elle.
+      </p>
       <h2>Les évaluations et notifications</h2>
       <p>
         Une évaluation exige une identité authentifiée et une intervention
         réellement terminée. Les évaluations restent privées et ne sont pas
-        publiées automatiquement. Les notifications actuelles sont internes à
-        l’application ; aucun envoi automatique d’e-mail ou de SMS n’est
-        annoncé.
+        publiées automatiquement. Les notifications sont enregistrées dans
+        l’application. Si MDS configure et active les canaux externes, le nom de
+        canal, les coordonnées nécessaires et un message court incluant le lien
+        privé de suivi sont transmis au fournisseur choisi pour l’envoi. Les
+        adaptateurs préparés sont Resend et Twilio ; un canal non configuré
+        reste désactivé. Le registre distingue message accepté par le
+        fournisseur, livré, échoué ou à vérifier.
       </p>
       <h2>Les paiements</h2>
       <p>
@@ -63,9 +76,11 @@ export function Privacy() {
       </p>
       <p>
         Le registre MDS conserve les références, dates, modes et statuts de
-        paiement ainsi que le montant contractuel réservé. Une divergence avec
-        le montant reçu nécessite un rapprochement avec les données Stripe. Les
-        essais de paiement sont signalés et ne règlent pas une facture réelle.
+        paiement, acompte, solde et remboursement, ainsi que le montant
+        contractuel réservé et le montant reçu effectivement confirmé. Une
+        divergence avec le montant reçu nécessite un rapprochement avec les
+        données Stripe. Les essais de paiement sont signalés et ne règlent pas
+        une facture réelle.
       </p>
       <h2>Cookies et services du site</h2>
       <p>
@@ -139,12 +154,6 @@ export function LegalNotice() {
             accepter ou proposer des conditions ; le client doit ensuite les
             valider. Pour les travaux nécessitant un devis, son acceptation est
             une étape distincte.
-          </p>
-          <h2>Visuels</h2>
-          <p>
-            Le visuel de l’accueil est une illustration photographique générée.
-            Il ne représente pas le véritable artisan MDS ni une intervention
-            réalisée pour un client.
           </p>
           <div className="notice">
             Cette application est une fondation technique. Les informations

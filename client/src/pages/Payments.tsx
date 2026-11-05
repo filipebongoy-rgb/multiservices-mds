@@ -102,60 +102,82 @@ export default function Payments() {
               retry={() => history.refetch()}
             />
           ) : history.data?.length ? (
-            <ul className="payment-history">
-              {history.data.map(record => (
-                <li key={record.id}>
-                  <div
-                    className="row"
-                    style={{
-                      justifyContent: "space-between",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <strong>
-                      {record.provider === "stripe"
-                        ? "Montant contractuel réservé : "
-                        : "Montant vérifié : "}
-                      {money(record.amountCents)}
-                    </strong>
-                    <span
-                      className={
-                        record.mode === "test" ? "payment-test-label" : "badge"
+            <details>
+              <summary>Voir les paiements de votre compte</summary>
+              <ul className="payment-history">
+                {history.data.map(record => (
+                  <li key={record.id}>
+                    <div
+                      className="row"
+                      style={{
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <strong>
+                        {record.provider === "stripe"
+                          ? "Montant contractuel réservé : "
+                          : "Montant vérifié : "}
+                        {money(record.amountCents)}
+                      </strong>
+                      <span
+                        className={
+                          record.mode === "test"
+                            ? "payment-test-label"
+                            : "badge"
+                        }
+                      >
+                        {record.mode === "test" ? "Mode test · " : ""}
+                        {record.status === "succeeded"
+                          ? record.mode === "test"
+                            ? "Essai réussi"
+                            : record.provider === "stripe"
+                              ? "Versement reçu"
+                              : "Vérifié par MDS"
+                          : record.status === "pending"
+                            ? "En attente"
+                            : record.status === "failed"
+                              ? "Non abouti"
+                              : record.status === "expired"
+                                ? "Expiré"
+                                : "Annulé"}
+                      </span>
+                    </div>
+                    {record.status === "succeeded" && (
+                      <p className="small-text">
+                        {record.mode === "test"
+                          ? "Reçu en test"
+                          : "Reçu confirmé"}{" "}
+                        :{" "}
+                        {record.receivedAmountCents == null
+                          ? "montant EUR à rapprocher"
+                          : money(record.receivedAmountCents)}{" "}
+                        ·{" "}
+                        {record.mode === "test"
+                          ? "aucun règlement commercial"
+                          : record.creditedAt
+                            ? "imputé au dossier"
+                            : "non imputé, à rapprocher"}
+                      </p>
+                    )}
+                    <p className="small-text muted">
+                      {dateTime(record.confirmedAt || record.createdAt)} ·{" "}
+                      {record.requestReference} ·{" "}
+                      {record.serviceName || "Intervention MDS"}
+                    </p>
+                    <Link
+                      className="text-link"
+                      href={
+                        "/paiements?ref=" +
+                        encodeURIComponent(record.requestReference)
                       }
                     >
-                      {record.mode === "test" ? "Mode test · " : ""}
-                      {record.status === "succeeded"
-                        ? record.mode === "test"
-                          ? "Essai réussi"
-                          : record.provider === "stripe"
-                            ? "Versement reçu"
-                            : "Vérifié par MDS"
-                        : record.status === "pending"
-                          ? "En attente"
-                          : record.status === "failed"
-                            ? "Non abouti"
-                            : record.status === "expired"
-                              ? "Expiré"
-                              : "Annulé"}
-                    </span>
-                  </div>
-                  <p className="small-text muted">
-                    {dateTime(record.confirmedAt || record.createdAt)} ·{" "}
-                    {record.requestReference} ·{" "}
-                    {record.serviceName || "Intervention MDS"}
-                  </p>
-                  <Link
-                    className="text-link"
-                    href={
-                      "/paiements?ref=" +
-                      encodeURIComponent(record.requestReference)
-                    }
-                  >
-                    Consulter la facture et le suivi
-                  </Link>
-                </li>
-              ))}
-            </ul>
+                      Consulter la facture et le suivi
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </details>
           ) : (
             <p className="muted">
               Aucun paiement enregistré dans les dossiers accessibles à votre

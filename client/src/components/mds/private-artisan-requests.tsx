@@ -1,4 +1,7 @@
+import { PaymentTools } from "./private-payment-tools";
 import { useState } from "react";
+import { PrivateOperations } from "./private-operations";
+import { PrivateQuoteBuilder } from "./private-quote-builder";
 import {
   CalendarDays,
   Check,
@@ -50,6 +53,9 @@ const actionLabels: Record<ArtisanAction, string> = {
   refuse: "Refuser la demande",
   propose: "Proposer un autre créneau",
   information: "Demander des précisions",
+  photo: "Demander une photo",
+  diagnostic: "Organiser un diagnostic",
+  depart: "Déclarer mon départ réel",
   quote: "Soumettre un devis",
   start: "Commencer l’intervention",
   complete: "Terminer l’intervention",
@@ -231,6 +237,7 @@ export function RequestDetail({
   const detail = trpc.mds.requests.detail.useQuery({ id }, { retry: false });
   const utils = trpc.useUtils();
   const [action, setAction] = useState<ArtisanAction | null>(null);
+  const [quoteAmount, setQuoteAmount] = useState<number | undefined>();
   const [success, setSuccess] = useState("");
   const [error, setError] = useState<unknown>(null);
   const mutation = trpc.mds.requests.artisanAction.useMutation();
@@ -279,7 +286,7 @@ export function RequestDetail({
     quickPrice != null &&
     !needsAcceptedQuote;
   const canCancel =
-    editable || ["confirmed", "planned"].includes(request.status);
+    editable || ["confirmed", "planned", "en_route"].includes(request.status);
   const documents = detail.data?.documents ?? [];
   const hasInvoice = documents.some(document => document.kind === "invoice");
   const hasQuote = documents.some(document => document.kind === "quote");
@@ -377,6 +384,18 @@ export function RequestDetail({
         {request.proposedStart && (
           <p>Proposé par MDS : {dateTime(request.proposedStart)}</p>
         )}
+        {!!request.alternatives?.length && (
+          <details>
+            <summary>
+              Autres créneaux proposés ({request.alternatives.length})
+            </summary>
+            <ul>
+              {request.alternatives.map(value => (
+                <li key={value.id}>{dateTime(value.startAt)}</li>
+              ))}
+            </ul>
+          </details>
+        )}
         <p>
           Prix proposé : {money(request.proposedPriceCents)} · Durée :{" "}
           {request.durationMinutes} min
@@ -413,14 +432,31 @@ export function RequestDetail({
           </p>
         )}
       </section>
-      <section className="stack">
-        <h4>Actions sur le dossier</h4>
+      {detail.data && (
+        <PrivateOperations detail={detail.data} onChanged={refresh} />
+      )}
+      {editable && (
+        <PrivateQuoteBuilder
+          request={request}
+          latestQuoteDocumentId={
+            documents.filter(doc => doc.kind === "quote").at(-1)?.id
+          }
+          onChanged={refresh}
+          onSubmitQuote={amount => {
+            setQuoteAmount(amount);
+            setAction("quote");
+          }}
+        />
+      )}
+      <PaymentTools
+        requestId={request.id}
+        version={request.version}
+        reference={request.reference}
+      />
+      <section className="stack" aria-label="Répondre à la demande">
         {editable && needsAcceptedQuote && (
           <p className="notice">
-            Un devis réel doit être accepté par le client avant l’acceptation ou
-            une autre proposition de créneau. Utilisez « Devis » pour déposer un
-            nouveau PDF et soumettre son montant ; attendez ensuite l’accord
-            client.
+            Un devis doit être accepté avant confirmation.
           </p>
         )}
         <div className="row" style={{ flexWrap: "wrap", gap: 8 }}>
@@ -437,21 +473,20 @@ export function RequestDetail({
                       action: "accept",
                       proposedStart: new Date(quickStart!).toISOString(),
                       priceCents: quickPrice!,
-                      durationMinutes:
-                        request.durationMinutes ||
-                        request.pricingSnapshot?.durationMinutes ||
-                        service?.durationMinutes,
+                      durationMinutes: request.durationMinutes,
                     });
                   else setAction("accept");
                 }}
               >
                 <Check size={17} aria-hidden="true" />
-                {quickAccept
-                  ? "Accepter en un clic"
-                  : request.pricingSnapshot ||
-                      request.quoteStatus === "accepted"
-                    ? "Accepter et proposer le créneau"
-                    : "Proposer prix et créneau"}
+                Accepter
+              </ActionButton>
+              <ActionButton
+                disabled={mutation.isPending}
+                onClick={() => setAction("refuse")}
+              >
+                <X size={17} aria-hidden="true" />
+                Refuser
               </ActionButton>
               <ActionButton
                 disabled={mutation.isPending || needsAcceptedQuote}
@@ -460,38 +495,25 @@ export function RequestDetail({
                 <CalendarDays size={17} aria-hidden="true" />
                 Autre créneau
               </ActionButton>
-              <ActionButton
-                disabled={mutation.isPending}
-                onClick={() => setAction("information")}
-              >
-                <MessageSquare size={17} aria-hidden="true" />
-                Précisions
-              </ActionButton>
-              <ActionButton
-                disabled={mutation.isPending}
-                onClick={() => setAction("quote")}
-              >
-                <FileText size={17} aria-hidden="true" />
-                Devis
-              </ActionButton>
-              <ActionButton
-                className="secondary danger"
-                disabled={mutation.isPending}
-                onClick={() => setAction("refuse")}
-              >
-                <X size={17} aria-hidden="true" />
-                Refuser
-              </ActionButton>
             </>
           )}
           {["confirmed", "planned"].includes(request.status) && (
             <ActionButton
               className="primary"
               disabled={mutation.isPending}
+              onClick={() => setAction("depart")}
+            >
+              Déclarer mon départ
+            </ActionButton>
+          )}
+          {request.status === "en_route" && (
+            <ActionButton
+              className="primary"
+              disabled={mutation.isPending}
               onClick={() => setAction("start")}
             >
               <Play size={17} aria-hidden="true" />
-              Commencer
+              Commencer sur place
             </ActionButton>
           )}
           {request.status === "in_progress" && (
@@ -501,7 +523,7 @@ export function RequestDetail({
               onClick={() => setAction("complete")}
             >
               <SquareCheck size={17} aria-hidden="true" />
-              Terminer
+              Terminer l’intervention
             </ActionButton>
           )}
           {request.status === "completed" && hasInvoice && (
@@ -528,23 +550,81 @@ export function RequestDetail({
               Clôturer
             </ActionButton>
           )}
-          {canCancel && (
-            <ActionButton
-              className="secondary danger"
-              disabled={mutation.isPending}
-              onClick={() => setAction("cancel")}
-            >
-              Annuler
-            </ActionButton>
-          )}
         </div>
-        <p className="muted">
-          Les changements d’état et la version du dossier sont vérifiés par le
-          serveur. Le montant de la facture est calculé côté serveur depuis le
-          prix applicable au dossier. Une confirmation manuelle exige la
-          vérification d’un paiement réellement reçu ; un essai de paiement ne
-          suffit pas.
-        </p>
+        {(editable ||
+          canCancel ||
+          ["confirmed", "planned"].includes(request.status)) && (
+          <details>
+            <summary
+              style={{
+                minHeight: 44,
+                padding: "12px 0",
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
+            >
+              Autres outils
+            </summary>
+            <div className="row" style={{ flexWrap: "wrap", gap: 8 }}>
+              {editable && (
+                <>
+                  <ActionButton
+                    disabled={mutation.isPending}
+                    onClick={() =>
+                      void perform({
+                        id: request.id,
+                        version: request.version,
+                        action: "photo",
+                      })
+                    }
+                  >
+                    Demander une photo
+                  </ActionButton>
+                  <ActionButton
+                    disabled={mutation.isPending}
+                    onClick={() => setAction("information")}
+                  >
+                    <MessageSquare size={17} aria-hidden="true" />
+                    Précisions
+                  </ActionButton>
+                  <ActionButton
+                    disabled={mutation.isPending}
+                    onClick={() => setAction("diagnostic")}
+                  >
+                    Organiser un diagnostic
+                  </ActionButton>
+                  <ActionButton
+                    disabled={mutation.isPending}
+                    onClick={() => {
+                      setQuoteAmount(undefined);
+                      setAction("quote");
+                    }}
+                  >
+                    <FileText size={17} aria-hidden="true" />
+                    Soumettre un PDF de devis
+                  </ActionButton>
+                </>
+              )}
+              {["confirmed", "planned"].includes(request.status) && (
+                <ActionButton
+                  disabled={mutation.isPending}
+                  onClick={() => setAction("start")}
+                >
+                  Commencer si déjà sur place
+                </ActionButton>
+              )}
+              {canCancel && (
+                <ActionButton
+                  className="secondary danger"
+                  disabled={mutation.isPending}
+                  onClick={() => setAction("cancel")}
+                >
+                  Annuler
+                </ActionButton>
+              )}
+            </div>
+          </details>
+        )}
       </section>
       <details className="stack">
         <summary
@@ -617,12 +697,13 @@ export function RequestDetail({
       )}
       {action && (
         <ActionForm
-          key={`${request.id}-${action}`}
+          key={`${request.id}-${request.version}-${action}`}
           action={action}
           request={request}
           service={service}
           pending={mutation.isPending}
           hasQuote={hasQuote}
+          initialQuotePrice={quoteAmount}
           onDocumentUploaded={() => void refresh()}
           error={error}
           onClose={() => {
@@ -643,6 +724,7 @@ function ActionForm({
   pending,
   error,
   hasQuote,
+  initialQuotePrice,
   onDocumentUploaded,
   onClose,
   onSubmit,
@@ -653,17 +735,22 @@ function ActionForm({
   pending: boolean;
   error: unknown;
   hasQuote: boolean;
+  initialQuotePrice?: number;
   onDocumentUploaded: () => void;
   onClose: () => void;
   onSubmit: (input: z.infer<typeof artisanActionSchema>) => Promise<void>;
 }) {
+  const [openedVersion] = useState(request.version);
   const [start, setStart] = useState(
     dateInput(request.proposedStart ?? request.desiredStart)
+  );
+  const [alternatives, setAlternatives] = useState<string[]>(
+    request.alternatives?.map(value => dateInput(value.startAt)) || []
   );
   const [price, setPrice] = useState(() =>
     euroInput(
       action === "quote"
-        ? request.proposedPriceCents
+        ? (initialQuotePrice ?? request.proposedPriceCents)
         : proposalPrice(request, service)
     )
   );
@@ -675,7 +762,11 @@ function ActionForm({
         15
     )
   );
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(
+    action === "diagnostic"
+      ? "Un diagnostic doit être organisé avant de proposer les travaux. Pouvez-vous préciser les symptômes et vos disponibilités pour en discuter ?"
+      : ""
+  );
   const proposal = ["accept", "propose", "quote"].includes(action);
   const priceLocked =
     action !== "quote" &&
@@ -702,7 +793,7 @@ function ActionForm({
         );
       await onSubmit({
         id: request.id,
-        version: request.version,
+        version: openedVersion,
         action,
         message,
         ...(proposal
@@ -710,6 +801,9 @@ function ActionForm({
               ...(start
                 ? { proposedStart: new Date(start).toISOString() }
                 : {}),
+              alternativeStarts: alternatives.map(value =>
+                new Date(value).toISOString()
+              ),
               ...(proposedPrice != null ? { priceCents: proposedPrice } : {}),
               durationMinutes: Number(duration),
             }
@@ -769,6 +863,39 @@ function ActionForm({
                 required
               />
             </Field>
+            {alternatives.map((value, index) => (
+              <Field key={index} label={`Autre créneau ${index + 1}`}>
+                <div className="row">
+                  <input
+                    type="datetime-local"
+                    required
+                    value={value}
+                    onChange={e =>
+                      setAlternatives(
+                        alternatives.map((row, n) =>
+                          n === index ? e.target.value : row
+                        )
+                      )
+                    }
+                  />
+                  <ActionButton
+                    onClick={() =>
+                      setAlternatives(
+                        alternatives.filter((_, n) => n !== index)
+                      )
+                    }
+                  >
+                    Retirer
+                  </ActionButton>
+                </div>
+              </Field>
+            ))}
+            <ActionButton
+              disabled={alternatives.length >= 5}
+              onClick={() => setAlternatives([...alternatives, ""])}
+            >
+              Ajouter un autre créneau
+            </ActionButton>
             <div className="form-grid">
               <Field
                 label={
@@ -807,6 +934,18 @@ function ActionForm({
               </Field>
             </div>
           </>
+        )}
+        {action === "depart" && (
+          <p className="notice">
+            Je confirme que je pars maintenant vers ce rendez-vous. Le client
+            verra « Artisan en route » après cette déclaration.
+          </p>
+        )}
+        {action === "diagnostic" && (
+          <p className="notice">
+            Cette demande d’informations ne réserve pas de diagnostic et
+            n’annonce aucun tarif.
+          </p>
         )}
         {action === "paid" && (
           <p className="notice">

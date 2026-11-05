@@ -274,13 +274,15 @@ export function DocumentList({
 
 export function UploadDocument({
   reference,
+  token,
   organizationId,
   kind,
   onUploaded,
 }: {
   reference?: string;
+  token?: string;
   organizationId?: number;
-  kind: "quote" | "invoice" | "contract" | "other";
+  kind: "photo" | "quote" | "invoice" | "contract" | "other";
   onUploaded: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
@@ -302,8 +304,11 @@ export function UploadDocument({
           "Le nom doit contenir au maximum 200 caractères, sans barre oblique ni caractère de contrôle."
         );
       if (file.size > 5 * 1024 * 1024)
-        throw new Error("Le PDF doit faire au maximum 5 Mo.");
-      if (
+        throw new Error("Le fichier doit faire au maximum 5 Mo.");
+      if (kind === "photo") {
+        if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
+          throw new Error("Choisissez une photo JPG, PNG ou WebP.");
+      } else if (
         !file.name.toLowerCase().endsWith(".pdf") ||
         (file.type && file.type !== "application/pdf")
       )
@@ -317,9 +322,10 @@ export function UploadDocument({
       });
       await upload.mutateAsync({
         reference,
+        token,
         organizationId,
         name: documentName,
-        mimeType: "application/pdf",
+        mimeType: kind === "photo" ? file.type : "application/pdf",
         base64,
         kind,
       });
@@ -344,13 +350,21 @@ export function UploadDocument({
     >
       <div className="form-grid">
         <Field
-          label="Document PDF"
-          hint="PDF réel, 5 Mo maximum. Transfert privé avec contrôle serveur."
+          label={kind === "photo" ? "Photo demandée par MDS" : "Document PDF"}
+          hint={
+            kind === "photo"
+              ? "JPG, PNG ou WebP, 5 Mo maximum."
+              : "PDF, 5 Mo maximum. Transfert privé."
+          }
         >
           <input
             ref={inputRef}
             type="file"
-            accept="application/pdf,.pdf"
+            accept={
+              kind === "photo"
+                ? "image/jpeg,image/png,image/webp"
+                : "application/pdf,.pdf"
+            }
             required
             onChange={e => {
               const next = e.target.files?.[0] ?? null;
@@ -360,14 +374,16 @@ export function UploadDocument({
             }}
           />
         </Field>
-        <Field label="Nom du document">
-          <input
-            value={name}
-            maxLength={200}
-            onChange={e => setName(e.target.value)}
-            required
-          />
-        </Field>
+        {kind !== "photo" && (
+          <Field label="Nom du document">
+            <input
+              value={name}
+              maxLength={200}
+              onChange={e => setName(e.target.value)}
+              required
+            />
+          </Field>
+        )}
       </div>
       <ErrorNotice error={error} />
       {success && (
@@ -381,7 +397,11 @@ export function UploadDocument({
         disabled={!file || reading || upload.isPending}
       >
         <Upload size={18} aria-hidden="true" />
-        {reading || upload.isPending ? "Dépôt en cours…" : "Déposer le PDF"}
+        {reading || upload.isPending
+          ? "Dépôt en cours…"
+          : kind === "photo"
+            ? "Ajouter la photo"
+            : "Déposer le PDF"}
       </ActionButton>
     </form>
   );

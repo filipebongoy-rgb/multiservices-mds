@@ -4,18 +4,17 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  ImagePlus,
   Mic,
   MicOff,
-  ImagePlus,
   Copy,
-  CalendarDays,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { createRequestSchema } from "@shared/mds";
-import { calculatePricing } from "@shared/pricing";
+import { createRequestSchema, dateTime } from "@shared/mds";
 import { PriceDetails } from "@/components/mds/PriceDetails";
-import { ApiError, Loading } from "@/components/mds/Layout";
+import { Qualification } from "@/components/mds/Qualification";
+import { ApiError } from "@/components/mds/Layout";
 
 type Draft = {
   description: string;
@@ -30,6 +29,7 @@ type Draft = {
   phone: string;
   answers: Record<string, string>;
   key: string;
+  serviceId: number | null;
 };
 const blank: Draft = {
   description: "",
@@ -38,25 +38,35 @@ const blank: Draft = {
   postcode: "",
   city: "",
   date: "",
-  time: "09:00",
+  time: "",
   name: "",
   email: "",
   phone: "",
   answers: {},
   key: "",
+  serviceId: null,
 };
 function initialDraft(): Draft {
   try {
-    const saved = sessionStorage.getItem("mds-request-draft");
-    return saved
-      ? { ...blank, ...JSON.parse(saved) }
-      : { ...blank, key: crypto.randomUUID() };
+    const saved = JSON.parse(
+      sessionStorage.getItem("mds-request-draft") || "null"
+    );
+    return { ...blank, ...saved, key: saved?.key || crypto.randomUUID() };
   } catch {
     return { ...blank, key: crypto.randomUUID() };
   }
 }
-function readFile(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
+function initialStep() {
+  try {
+    const ready = sessionStorage.getItem("mds-description-ready");
+    sessionStorage.removeItem("mds-description-ready");
+    return ready && initialDraft().description.trim().length >= 10 ? 1 : 0;
+  } catch {
+    return 0;
+  }
+}
+function readFile(file: File) {
+  return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result).split(",")[1]);
     reader.onerror = reject;
@@ -64,119 +74,57 @@ function readFile(file: File): Promise<string> {
   });
 }
 export default function Request() {
-  const params = new URLSearchParams(window.location.search);
-  const serviceId = params.has("service")
-    ? Number(params.get("service"))
-    : null;
-  const organizationId = params.has("org") ? Number(params.get("org")) : null;
-  const siteId = params.has("site") ? Number(params.get("site")) : null;
-  const catalog = trpc.mds.catalog.list.useQuery({});
-  const service = catalog.data?.find(s => s.id === serviceId);
-  const { user } = useAuth();
-  const [draft, setDraft] = useState<Draft>(initialDraft);
-  const [step, setStep] = useState(0);
-  const [known, setKnown] = useState({
-    address: false,
-    name: false,
-    email: false,
-    phone: false,
+  const params = new URLSearchParams(window.location.search),
+    orgParam = Number(params.get("org")),
+    siteParam = Number(params.get("site"));
+  const organizationId =
+      Number.isSafeInteger(orgParam) && orgParam > 0 ? orgParam : null,
+    siteId =
+      Number.isSafeInteger(siteParam) && siteParam > 0 ? siteParam : null;
+  const [draft, setDraft] = useState<Draft>(initialDraft),
+    [step, setStep] = useState(initialStep);
+  const [selected, setSelected] = useState<number | null>(() => {
+    if (params.get("libre") === "1") return null;
+    const id = Number(params.get("service"));
+    return Number.isSafeInteger(id) && id > 0 ? id : initialDraft().serviceId;
   });
+  const { user } = useAuth();
+  const catalog = trpc.mds.catalog.list.useQuery({});
+  const service = catalog.data?.find(s => s.id === selected);
   const organization = trpc.mds.organizations.detail.useQuery(
     { id: organizationId || 0 },
     { enabled: !!organizationId && !!user, retry: false }
   );
-  const [error, setError] = useState("");
-  const [consent, setConsent] = useState(false);
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState("");
-  const [recording, setRecording] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(false);
-  const speechRef = useRef<any>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
+  const [error, setError] = useState(""),
+    [consent, setConsent] = useState(false),
+    [photo, setPhoto] = useState<File | null>(null),
+    [photoPreview, setPhotoPreview] = useState(""),
+    [recording, setRecording] = useState(false),
+    [speechSupported, setSpeechSupported] = useState(false);
   const [receipt, setReceipt] = useState<{
-    id: number;
-    reference: string;
-    trackingToken: string;
-  } | null>(null);
-  const [uploadError, setUploadError] = useState("");
-  const create = trpc.mds.requests.create.useMutation();
-  const upload = trpc.mds.documents.upload.useMutation();
-  const questionSteps = (service?.questions || []).map((question, index) => ({
-    key: "question:" + index,
-    title: question,
-  }));
-  const steps = [
-    { key: "description", title: "Que se passe-t-il ?" },
-    ...questionSteps,
-    ...(!known.address
-      ? [{ key: "address", title: "Où faut-il intervenir ?" }]
-      : []),
-    { key: "date", title: "Quand seriez-vous disponible ?" },
-    ...(!known.name
-      ? [{ key: "name", title: "Comment vous appelez-vous ?" }]
-      : []),
-    ...(!known.email
-      ? [{ key: "email", title: "À quelle adresse vous contacter ?" }]
-      : []),
-    ...(!known.phone
-      ? [{ key: "phone", title: "Quel est votre numéro de téléphone ?" }]
-      : []),
-    { key: "review", title: "Tout est prêt pour envoyer votre demande." },
-  ];
-  const current = steps[Math.min(step, steps.length - 1)];
-  const pricing = trpc.mds.catalog.pricing.useQuery(
-    {
-      serviceId: service?.id ?? null,
-      postcode: /^\d{5}$/.test(draft.postcode) ? draft.postcode : undefined,
-    },
-    {
-      enabled: current.key === "review" && (!serviceId || !catalog.isLoading),
-      retry: false,
-      refetchOnWindowFocus: false,
-    }
-  );
-  const fingerprintSeen = useRef<string | null>(null);
-  useEffect(() => {
-    const fingerprint = pricing.data?.fingerprint;
-    if (fingerprint && fingerprint !== fingerprintSeen.current) {
-      fingerprintSeen.current = fingerprint;
-      setConsent(false);
-    }
-  }, [pricing.data?.fingerprint]);
-  useEffect(() => {
-    if (step !== 0 || !user) return;
-    setKnown(k => ({
-      ...k,
-      name: !!(user.name && user.name.trim().length >= 2),
-      email: !!user.email,
-    }));
-  }, [user?.id]);
-  useEffect(() => {
-    const site = organization.data?.sites.find(site => site.id === siteId);
-    if (!site || step !== 0) return;
-    setDraft(d => ({
-      ...d,
-      address: site.address,
-      postcode: site.postcode,
-      city: site.city,
-      name: site.contactName || d.name || user?.name || "",
-      phone: site.contactPhone || d.phone,
-    }));
-    setKnown(k => ({
-      ...k,
-      address: true,
-      name: site.contactName.trim().length >= 2 || k.name,
-      phone: site.contactPhone.replace(/\D/g, "").length >= 8,
-    }));
-  }, [organization.data, siteId]);
-  const set = (key: keyof Draft, value: string) =>
+      id: number;
+      reference: string;
+      trackingToken: string;
+    } | null>(null),
+    [uploadError, setUploadError] = useState("");
+  const speechRef = useRef<any>(null),
+    headingRef = useRef<HTMLHeadingElement>(null),
+    fingerprintSeen = useRef<string | null>(null);
+  const create = trpc.mds.requests.create.useMutation(),
+    upload = trpc.mds.documents.upload.useMutation();
+  const set = (key: keyof Draft, value: string) => {
     setDraft(d => ({ ...d, [key]: value }));
+    setConsent(false);
+  };
   useEffect(() => {
     if (!receipt)
       try {
-        sessionStorage.setItem("mds-request-draft", JSON.stringify(draft));
+        sessionStorage.setItem(
+          "mds-request-draft",
+          JSON.stringify({ ...draft, serviceId: selected })
+        );
       } catch {}
-  }, [draft, receipt]);
+  }, [draft, selected, receipt]);
   useEffect(() => {
     if (user)
       setDraft(d => ({
@@ -185,6 +133,18 @@ export default function Request() {
         email: d.email || user.email || "",
       }));
   }, [user?.id]);
+  useEffect(() => {
+    const site = organization.data?.sites.find(s => s.id === siteId);
+    if (site)
+      setDraft(d => ({
+        ...d,
+        address: site.address,
+        postcode: site.postcode,
+        city: site.city,
+        name: site.contactName || d.name,
+        phone: site.contactPhone || d.phone,
+      }));
+  }, [organization.data, siteId]);
   useEffect(() => {
     const w = window as any;
     setSpeechSupported(!!(w.SpeechRecognition || w.webkitSpeechRecognition));
@@ -200,112 +160,137 @@ export default function Request() {
     return () => URL.revokeObjectURL(url);
   }, [photo]);
   useEffect(() => {
-    if (step > 0) headingRef.current?.focus();
+    headingRef.current?.focus();
+    setError("");
   }, [step]);
+  const pricing = trpc.mds.catalog.pricing.useQuery(
+    {
+      serviceId: service?.id ?? null,
+      postcode: /^\d{5}$/.test(draft.postcode) ? draft.postcode : undefined,
+    },
+    {
+      enabled: step === 2 && (!selected || !!service),
+      retry: false,
+      refetchOnWindowFocus: false,
+    }
+  );
+  useEffect(() => {
+    const fingerprint = pricing.data?.fingerprint;
+    if (fingerprint !== fingerprintSeen.current) {
+      fingerprintSeen.current = fingerprint || null;
+      setConsent(false);
+    }
+  }, [pricing.data?.fingerprint]);
+  const slots = trpc.mds.calendar.slots.useQuery(
+    {
+      serviceId: service?.id ?? null,
+      postcode: draft.postcode,
+      date: draft.date,
+    },
+    {
+      enabled:
+        step === 1 &&
+        /^\d{5}$/.test(draft.postcode) &&
+        /^\d{4}-\d{2}-\d{2}$/.test(draft.date),
+      retry: false,
+    }
+  );
   function dictate() {
     if (recording) {
       speechRef.current?.stop();
       return;
     }
-    const w = window as any;
-    const Recognition = w.SpeechRecognition || w.webkitSpeechRecognition;
-    if (!Recognition) return;
-    const recognition = new Recognition();
+    const w = window as any,
+      R = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (!R) return;
+    const recognition = new R();
     recognition.lang = "fr-FR";
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.onresult = (event: any) => {
-      const text = event.results[0][0].transcript;
+    recognition.onresult = (e: any) =>
       setDraft(d => ({
         ...d,
-        description: (d.description + " " + text).trim(),
+        description: (d.description + " " + e.results[0][0].transcript).trim(),
       }));
-    };
+    recognition.onend = () => setRecording(false);
     recognition.onerror = () => {
       setRecording(false);
-      setError(
-        "La dictée n’a pas abouti. Vous pouvez écrire votre problème ou réessayer."
-      );
+      setError("La dictée est indisponible. Vous pouvez écrire.");
     };
-    recognition.onend = () => setRecording(false);
     speechRef.current = recognition;
     try {
       recognition.start();
       setRecording(true);
-      setError("");
     } catch {
-      setError("Le microphone est indisponible dans ce navigateur.");
+      setError("Le microphone est indisponible.");
     }
   }
-  function validate() {
-    if (current.key === "description" && draft.description.trim().length < 10)
-      return "Décrivez votre problème en au moins 10 caractères.";
-    if (
-      current.key.startsWith("question:") &&
-      !draft.answers[current.title]?.trim()
-    )
-      return "Répondez à cette question pour aider MDS à analyser le besoin.";
-    if (current.key === "address") {
-      if (draft.address.trim().length < 5)
-        return "Indiquez le numéro et le nom de la rue.";
-      if (!/^\d{5}$/.test(draft.postcode))
-        return "Indiquez un code postal à 5 chiffres.";
-      if (draft.city.trim().length < 2) return "Indiquez la ville.";
+  function validateStage() {
+    if (selected && !service)
+      return "Cette prestation n’est pas disponible. Choisissez une offre active ou décrivez votre problème librement.";
+    if (step === 0 && draft.description.trim().length < 10)
+      return "Décrivez votre problème en quelques mots (10 caractères minimum).";
+    if (step === 1) {
+      if (
+        draft.address.trim().length < 5 ||
+        !/^\d{5}$/.test(draft.postcode) ||
+        draft.city.trim().length < 2
+      )
+        return "Complétez l’adresse, le code postal et la ville.";
+      if (
+        draft.date &&
+        (!draft.time ||
+          !Number.isFinite(new Date(draft.date + "T" + draft.time).getTime()) ||
+          new Date(draft.date + "T" + draft.time) <= new Date())
+      )
+        return "Choisissez une heure future, ou laissez le créneau à convenir.";
     }
-    if (current.key === "date" && draft.date) {
-      const date = new Date(draft.date + "T" + draft.time);
-      if (!Number.isFinite(date.getTime()) || date.getTime() <= Date.now())
-        return "Choisissez une date et une heure à venir.";
-    }
-    if (current.key === "name" && draft.name.trim().length < 2)
-      return "Indiquez votre nom.";
-    if (
-      current.key === "email" &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email)
-    )
-      return "Indiquez une adresse e-mail valide.";
-    if (current.key === "phone" && draft.phone.replace(/\D/g, "").length < 8)
-      return "Indiquez un numéro de téléphone valide.";
     return "";
   }
-  async function attach(r: { reference: string; trackingToken: string }) {
-    if (!photo) return;
+  function next() {
+    const issue = validateStage();
+    if (issue) {
+      setError(issue);
+      return;
+    }
+    setStep(s => Math.min(s + 1, 2));
+  }
+  async function uploadPhoto(key = receipt) {
+    if (!key || !photo) return;
+    setUploadError("");
     try {
       await upload.mutateAsync({
-        reference: r.reference,
-        token: r.trackingToken,
+        reference: key.reference,
+        token: key.trackingToken,
         name: photo.name,
-        mimeType: photo.type as "image/jpeg" | "image/png" | "image/webp",
-        base64: await readFile(photo),
+        mimeType: photo.type,
         kind: "photo",
+        base64: await readFile(photo),
       });
-      setUploadError("");
+      setPhoto(null);
     } catch (e: any) {
       setUploadError(
-        "Votre demande est enregistrée, mais la photo n’a pas pu être jointe. " +
-          e.message
+        e.message ||
+          "La photo n’a pas été ajoutée. Votre demande est bien conservée."
       );
     }
   }
-  async function send() {
+  async function submit() {
     setError("");
     if (!consent) {
-      setError(
-        "Confirmez que MDS peut utiliser ces informations pour traiter votre demande."
-      );
+      setError("Acceptez les conditions de la demande avant l’envoi.");
       return;
     }
-    if (!pricing.data || pricing.isFetching || pricing.error) {
-      setError(
-        "Le tarif doit être vérifié avant l’envoi. Actualisez les conditions ci-dessous."
-      );
+    if (!pricing.data) {
+      setError("Le prix et les conditions doivent être relus avant l’envoi.");
       return;
     }
-    const desiredStart = draft.date
-      ? new Date(draft.date + "T" + draft.time).toISOString()
-      : null;
+    const desiredStart =
+      draft.date && draft.time
+        ? new Date(draft.date + "T" + draft.time).toISOString()
+        : null;
     const input = {
-      serviceId: service?.id || null,
+      serviceId: service?.id ?? null,
       pricingFingerprint: pricing.data.fingerprint,
       problemType: draft.problemType,
       description: draft.description,
@@ -325,344 +310,252 @@ export default function Request() {
     const parsed = createRequestSchema.safeParse(input);
     if (!parsed.success) {
       setError(
-        parsed.error.issues[0]?.message ||
-          "Vérifiez les informations de votre demande."
+        parsed.error.issues[0]?.message || "Vérifiez les informations saisies."
       );
       return;
     }
     try {
-      const r = await create.mutateAsync(parsed.data);
-      setReceipt(r);
-      sessionStorage.removeItem("mds-request-draft");
-      sessionStorage.setItem("mds-tracking:" + r.reference, r.trackingToken);
-      await attach(r);
+      const result = await create.mutateAsync(parsed.data);
+      setReceipt(result);
+      try {
+        sessionStorage.removeItem("mds-request-draft");
+        sessionStorage.setItem(
+          "mds-tracking:" + result.reference,
+          result.trackingToken
+        );
+      } catch {}
+      await uploadPhoto(result);
     } catch (e: any) {
-      if (
-        e.data?.code === "CONFLICT" &&
-        /tarif|conditions|règles/i.test(e.message)
-      ) {
+      setError(
+        e.message ||
+          "La demande n’a pas été envoyée. Votre saisie est conservée."
+      );
+      if (e?.data?.code === "CONFLICT") {
         setConsent(false);
         await pricing.refetch();
       }
-      setError(
-        e.message ||
-          "Votre demande n’a pas pu être envoyée. Vos informations sont conservées."
-      );
     }
   }
-  const followLink = receipt
-    ? "/suivi?ref=" +
-      encodeURIComponent(receipt.reference) +
-      "#cle=" +
-      encodeURIComponent(receipt.trackingToken)
+  const tracking = receipt
+    ? `/suivi?ref=${encodeURIComponent(receipt.reference)}#cle=${receipt.trackingToken}`
     : "";
   if (receipt)
     return (
-      <main id="main-content" className="page-shell">
-        <div className="wizard-wrap">
-          <div className="success-icon">
-            <Check size={28} />
-          </div>
-          <div className="eyebrow">DEMANDE ENREGISTRÉE</div>
-          <h1 className="page-title">Merci, votre demande est transmise.</h1>
-          <p className="lead muted">
-            MDS va l’analyser. Aucun rendez-vous n’est confirmé : vous devrez
-            accepter la proposition de votre artisan.
+      <main id="main-content" className="page-shell standard-page">
+        <section
+          className="panel stack request-simple"
+          style={{ maxWidth: 650, margin: "0 auto" }}
+        >
+          <span className="eyebrow">{receipt.reference}</span>
+          <h1 className="page-title">Demande envoyée.</h1>
+          <p>
+            MDS doit encore l’accepter. Vous confirmerez ensuite la proposition.
           </p>
-          <div className="panel stack" style={{ marginTop: 25 }}>
-            <div>
-              <span className="eyebrow">VOTRE RÉFÉRENCE</span>
-              <strong style={{ fontSize: 25 }}>{receipt.reference}</strong>
-            </div>
-            <p className="small-text muted">
-              Conservez le lien de suivi ci-dessous. Il donne accès à votre
-              dossier : ne le partagez qu’avec une personne autorisée. Aucun
-              e-mail automatique n’est envoyé pour le moment.
-            </p>
-            <Link className="btn primary" href={followLink}>
-              Suivre ma demande
-              <ArrowRight size={18} />
-            </Link>
-            <button
-              className="btn secondary"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(
-                    window.location.origin + followLink
-                  );
-                  setError("Lien copié.");
-                } catch {
-                  setError(
-                    "Copie indisponible. Ouvrez le suivi et conservez le lien dans votre navigateur."
-                  );
-                }
-              }}
-            >
-              <Copy size={16} />
-              Copier mon lien de suivi
-            </button>
-            {error && <p role="status">{error}</p>}
-          </div>
-          {upload.isPending && (
-            <p role="status">Ajout de votre photo en cours…</p>
-          )}
+          <Link className="btn primary" href={tracking}>
+            Suivre ma demande
+            <ArrowRight size={18} />
+          </Link>
+          <button
+            className="btn secondary"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(
+                  window.location.origin + tracking
+                );
+                setError("Lien privé copié.");
+              } catch {
+                setError(
+                  "Copie indisponible. Conservez ce lien dans vos favoris."
+                );
+              }
+            }}
+          >
+            <Copy size={17} />
+            Copier le lien privé
+          </button>
+          <small className="muted">
+            Conservez ce lien. Il donne accès à votre dossier.
+          </small>
           {uploadError && (
-            <div className="notice error-message" role="alert">
-              <p>{uploadError}</p>
+            <>
+              <p role="alert" className="notice">
+                Demande conservée, photo non ajoutée : {uploadError}
+              </p>
               <button
                 className="btn secondary"
                 disabled={upload.isPending}
-                onClick={() => attach(receipt)}
+                onClick={() => uploadPhoto()}
               >
-                Réessayer l’ajout de la photo
+                Réessayer la photo
               </button>
-            </div>
+            </>
           )}
-          <Link className="text-link" href="/">
-            Revenir à l’accueil
-          </Link>
-        </div>
-      </main>
-    );
-  if (catalog.isLoading && serviceId)
-    return (
-      <main id="main-content" className="page-shell">
-        <Loading />
+          {error && <p role="status">{error}</p>}
+        </section>
       </main>
     );
   return (
-    <main id="main-content" className="page-shell">
-      <div className="wizard-wrap">
-        <div className="wizard-top">
-          <button
-            className="wizard-back"
-            onClick={() => {
-              if (step) {
-                setStep(step - 1);
-                setError("");
-              } else window.history.back();
-            }}
-          >
-            <ArrowLeft size={16} />
-            Retour
-          </button>
-          <span>
-            Votre demande · {step + 1} / {steps.length}
-          </span>
-        </div>
-        <div
-          className="wizard-progress"
-          aria-label={"Étape " + (step + 1) + " sur " + steps.length}
-        >
-          {steps.map((s, i) => (
-            <span key={s.key} className={i <= step ? "done" : ""} />
+    <main id="main-content" className="page-shell standard-page">
+      <div
+        className="request-simple"
+        style={{ maxWidth: 720, margin: "0 auto" }}
+      >
+        <ol className="request-progress" aria-label="Étapes de la demande">
+          {["Besoin", "Adresse et créneau", "Envoyer"].map((title, i) => (
+            <li
+              key={title}
+              className={step === i ? "current" : step > i ? "done" : ""}
+              aria-current={step === i ? "step" : undefined}
+            >
+              <span>{i + 1}</span>
+              {title}
+            </li>
           ))}
-        </div>
-        <form
-          className="wizard"
-          onSubmit={e => {
-            e.preventDefault();
-            const msg = validate();
-            setError(msg);
-            if (msg) return;
-            if (current.key === "review") send();
-            else {
-              speechRef.current?.stop();
-              setStep(step + 1);
+        </ol>
+        <section className="panel stack">
+          <h1 ref={headingRef} tabIndex={-1} className="page-title">
+            {
+              ["Que se passe-t-il ?", "Où et quand ?", "Envoyer ma demande"][
+                step
+              ]
             }
-          }}
-        >
-          <div className="eyebrow">
-            {service
-              ? service.name
-              : organizationId
-                ? "DEMANDE PROFESSIONNELLE"
-                : "DEMANDE LIBRE · À ANALYSER"}
-          </div>
-          <h1 ref={headingRef} tabIndex={-1}>
-            {current.title}
           </h1>
-          {current.key === "description" && (
+          {catalog.error && selected && (
+            <ApiError
+              message={catalog.error.message}
+              retry={() => catalog.refetch()}
+            />
+          )}
+          {organization.error && (
+            <ApiError
+              message={organization.error.message}
+              retry={() => organization.refetch()}
+            />
+          )}
+          {step === 0 && (
             <>
-              <p className="wizard-subtitle">
-                Décrivez simplement ce qui ne fonctionne pas ou ce que vous
-                souhaitez réaliser.
-              </p>
               {service && (
-                <PriceDetails snapshot={calculatePricing(service)} compact />
-              )}
-              {organization.error && (
-                <ApiError
-                  message={organization.error.message}
-                  retry={() => organization.refetch()}
-                />
-              )}
-              {serviceId && !service && !catalog.isLoading && (
-                <div className="notice">
-                  Cette prestation n’est plus ouverte. Vous pouvez quand même
-                  envoyer votre demande libre.
-                </div>
-              )}
-              {catalog.error && (
-                <ApiError
-                  message={catalog.error.message}
-                  retry={() => catalog.refetch()}
-                />
-              )}
-              <div className="field">
-                <label htmlFor="description">Votre problème</label>
-                <textarea
-                  id="description"
-                  value={draft.description}
-                  onChange={e => set("description", e.target.value)}
-                  placeholder="Par exemple : l’eau coule sous l’évier depuis ce matin…"
-                  maxLength={5000}
-                  aria-describedby="description-help"
-                  autoFocus
-                />
-                <small id="description-help">
-                  Votre demande est conservée même si le problème n’existe pas
-                  dans le catalogue.
-                </small>
-              </div>
-              {service && service.problemTypes.length > 0 && (
-                <div className="field">
-                  <label htmlFor="problem-type">
-                    Le problème le plus proche (facultatif)
-                  </label>
-                  <select
-                    id="problem-type"
-                    value={draft.problemType}
-                    onChange={e => set("problemType", e.target.value)}
+                <div className="row">
+                  <strong>{service.name}</strong>
+                  <button
+                    type="button"
+                    className="text-link"
+                    onClick={() => {
+                      setSelected(null);
+                      setConsent(false);
+                    }}
                   >
-                    <option value="">Je préfère décrire avec mes mots</option>
-                    {service.problemTypes.map(p => (
-                      <option key={p}>{p}</option>
-                    ))}
-                  </select>
+                    Changer
+                  </button>
                 </div>
               )}
-              <button
-                type="button"
-                className="text-link"
-                disabled={!speechSupported}
-                onClick={dictate}
-              >
-                {recording ? <MicOff size={17} /> : <Mic size={17} />}{" "}
-                {recording
-                  ? "Arrêter la dictée"
-                  : speechSupported
-                    ? "Dicter mon problème"
-                    : "Dictée indisponible sur ce navigateur"}
-              </button>
-              {recording && (
-                <p role="status" className="small-text muted">
-                  Vous pouvez parler. La dictée utilise le service vocal de
-                  votre navigateur ; MDS ne conserve pas l’audio.
+              {selected && !service && !catalog.isLoading && (
+                <p className="notice">
+                  Cette offre n’est pas disponible.{" "}
+                  <button
+                    type="button"
+                    className="text-link"
+                    onClick={() => setSelected(null)}
+                  >
+                    Envoyer une demande libre
+                  </button>
                 </p>
               )}
-            </>
-          )}
-          {current.key.startsWith("question:") && (
-            <>
-              <p className="wizard-subtitle">
-                Cette précision aide votre artisan à préparer la proposition.
-              </p>
               <div className="field">
-                <label htmlFor="specific-answer">Votre réponse</label>
+                <label htmlFor="description">Décrivez votre problème</label>
                 <textarea
-                  id="specific-answer"
-                  maxLength={1000}
-                  value={draft.answers[current.title] || ""}
-                  onChange={e =>
-                    setDraft(d => ({
-                      ...d,
-                      answers: {
-                        ...d.answers,
-                        [current.title]: e.target.value,
-                      },
-                    }))
-                  }
+                  id="description"
+                  rows={4}
+                  value={draft.description}
+                  maxLength={5000}
+                  placeholder="Mon robinet fuit…"
+                  onChange={e => set("description", e.target.value)}
                 />
               </div>
-            </>
-          )}
-          {current.key === "description" && (
-            <details className="optional-photo">
-              <summary>Joindre une photo (facultatif)</summary>
-              <p className="wizard-subtitle">
-                C’est facultatif. Évitez de photographier des personnes ou des
-                documents personnels.
-              </p>
-              <div className="field">
-                <label htmlFor="photo">
-                  <ImagePlus size={18} />
-                  Ajouter une photo
+              <div className="row" style={{ flexWrap: "wrap" }}>
+                {speechSupported && (
+                  <button
+                    type="button"
+                    className="btn secondary"
+                    onClick={dictate}
+                  >
+                    {recording ? <MicOff size={17} /> : <Mic size={17} />}{" "}
+                    {recording ? "Arrêter" : "Dicter"}
+                  </button>
+                )}
+                <label className="btn secondary" htmlFor="photo">
+                  <ImagePlus size={17} />
+                  {photo ? "Changer la photo" : "Ajouter une photo"}
                 </label>
                 <input
                   id="photo"
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
+                  className="visually-hidden"
                   onChange={e => {
-                    const f = e.target.files?.[0];
-                    setError("");
-                    if (!f) {
-                      setPhoto(null);
-                      return;
-                    }
-                    if (f.size > 5 * 1024 * 1024) {
-                      setError("La photo doit faire moins de 5 Mo.");
-                      return;
-                    }
+                    const f = e.target.files?.[0] || null;
                     if (
-                      !["image/jpeg", "image/png", "image/webp"].includes(
-                        f.type
-                      )
+                      f &&
+                      (f.size > 5 * 1024 * 1024 ||
+                        !["image/jpeg", "image/png", "image/webp"].includes(
+                          f.type
+                        ))
                     ) {
-                      setError("Choisissez une photo JPG, PNG ou WebP.");
+                      setError("Photo JPG, PNG ou WebP de 5 Mo maximum.");
+                      e.target.value = "";
                       return;
                     }
                     setPhoto(f);
+                    setError("");
                   }}
                 />
-                <small>
-                  JPG, PNG ou WebP · 5 Mo maximum. Pièce jointe chiffrée,
-                  accessible aux personnes autorisées au dossier.
-                </small>
               </div>
               {photoPreview && (
-                <>
+                <div className="row">
                   <img
-                    className="upload-preview"
                     src={photoPreview}
-                    alt="Photo sélectionnée pour votre demande"
+                    alt="Photo que vous allez joindre"
+                    style={{
+                      width: 110,
+                      height: 90,
+                      objectFit: "cover",
+                      borderRadius: 6,
+                    }}
                   />
                   <button
                     type="button"
                     className="text-link"
                     onClick={() => setPhoto(null)}
                   >
-                    Retirer la photo
+                    Retirer
                   </button>
-                </>
+                </div>
               )}
-            </details>
+              <Qualification
+                description={draft.description}
+                serviceId={service?.id ?? null}
+                answers={draft.answers}
+                questions={service?.questions || []}
+                onAnswer={(q, a) =>
+                  setDraft(d => ({ ...d, answers: { ...d.answers, [q]: a } }))
+                }
+                onService={id => {
+                  setSelected(id);
+                  setConsent(false);
+                }}
+              />
+            </>
           )}
-          {current.key === "address" && (
+          {step === 1 && (
             <>
-              <p className="wizard-subtitle">
-                L’adresse permet à MDS de vérifier la zone d’intervention.
-                Aucune disponibilité n’est garantie à ce stade.
-              </p>
               <div className="field">
-                <label htmlFor="address">Numéro et rue</label>
+                <label htmlFor="address">Adresse de l’intervention</label>
                 <input
                   id="address"
                   autoComplete="street-address"
                   value={draft.address}
-                  onChange={e => set("address", e.target.value)}
                   maxLength={250}
-                  placeholder="12 rue des Lilas"
+                  onChange={e => set("address", e.target.value)}
                 />
               </div>
               <div className="form-grid">
@@ -670,14 +563,13 @@ export default function Request() {
                   <label htmlFor="postcode">Code postal</label>
                   <input
                     id="postcode"
-                    inputMode="numeric"
                     autoComplete="postal-code"
-                    maxLength={5}
+                    inputMode="numeric"
                     value={draft.postcode}
+                    maxLength={5}
                     onChange={e =>
                       set("postcode", e.target.value.replace(/\D/g, ""))
                     }
-                    placeholder="75000"
                   />
                 </div>
                 <div className="field">
@@ -686,242 +578,215 @@ export default function Request() {
                     id="city"
                     autoComplete="address-level2"
                     value={draft.city}
-                    onChange={e => set("city", e.target.value)}
                     maxLength={100}
+                    onChange={e => set("city", e.target.value)}
                   />
                 </div>
               </div>
-            </>
-          )}
-          {current.key === "date" && (
-            <>
-              <p className="wizard-subtitle">
-                Proposez un créneau souhaité, ou laissez MDS vous en proposer
-                un. Ce n’est pas une réservation définitive.
-              </p>
               <div className="field">
-                <label htmlFor="desired-date">
-                  <CalendarDays size={17} />
-                  Date souhaitée (facultative)
-                </label>
+                <label htmlFor="date">Date souhaitée (facultative)</label>
                 <input
-                  id="desired-date"
+                  id="date"
                   type="date"
-                  min={new Date().toLocaleDateString("en-CA")}
                   value={draft.date}
+                  min={new Date().toLocaleDateString("en-CA")}
                   onChange={e => set("date", e.target.value)}
                 />
               </div>
               {draft.date && (
-                <div className="field">
-                  <label htmlFor="desired-time">Heure souhaitée</label>
-                  <input
-                    id="desired-time"
-                    type="time"
-                    value={draft.time}
-                    onChange={e => set("time", e.target.value)}
-                    required
-                  />
-                  <small>
-                    Heure locale de votre appareil. MDS vous confirmera les
-                    conditions.
-                  </small>
-                </div>
-              )}
-              <button
-                type="button"
-                className="text-link"
-                onClick={() => {
-                  set("date", "");
-                  setStep(step + 1);
-                }}
-              >
-                Je laisse MDS me proposer un créneau
-              </button>
-            </>
-          )}
-          {current.key === "name" && (
-            <>
-              <p className="wizard-subtitle">
-                Pour que votre artisan sache à qui s’adresser.
-              </p>
-              <div className="field">
-                <label htmlFor="name">Votre nom et prénom</label>
-                <input
-                  id="name"
-                  autoComplete="name"
-                  value={draft.name}
-                  onChange={e => set("name", e.target.value)}
-                  maxLength={120}
-                />
-              </div>
-            </>
-          )}
-          {current.key === "email" && (
-            <>
-              <p className="wizard-subtitle">
-                Votre adresse sera jointe au dossier pour permettre à MDS de
-                vous contacter.
-              </p>
-              <div className="field">
-                <label htmlFor="email">Votre adresse e-mail</label>
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  value={draft.email}
-                  onChange={e => set("email", e.target.value)}
-                  maxLength={320}
-                />
-              </div>
-            </>
-          )}
-          {current.key === "phone" && (
-            <>
-              <p className="wizard-subtitle">
-                MDS pourra vous appeler si une précision est nécessaire.
-              </p>
-              <div className="field">
-                <label htmlFor="phone">Votre numéro de téléphone</label>
-                <input
-                  id="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  value={draft.phone}
-                  onChange={e => set("phone", e.target.value)}
-                  maxLength={30}
-                  placeholder="06 12 34 56 78"
-                />
-              </div>
-            </>
-          )}
-          {current.key === "review" && (
-            <>
-              <p className="wizard-subtitle">
-                Vérifiez ces informations. MDS vous proposera ensuite des
-                conditions à confirmer.
-              </p>
-              <dl className="review-summary">
-                <div>
-                  <dt>Votre besoin</dt>
-                  <dd>
-                    {service?.name || "Demande libre"} — {draft.description}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Adresse d’intervention</dt>
-                  <dd>
-                    {draft.address}
-                    <br />
-                    {draft.postcode} {draft.city}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Créneau souhaité</dt>
-                  <dd>
-                    {draft.date
-                      ? draft.date + " à " + draft.time
-                      : "À proposer par MDS"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Vos coordonnées</dt>
-                  <dd>
-                    {draft.name}
-                    <br />
-                    {draft.email}
-                    <br />
-                    {draft.phone}
-                  </dd>
-                </div>
-                {photo && (
-                  <div>
-                    <dt>Photo à joindre</dt>
-                    <dd>{photo.name}</dd>
+                <>
+                  {slots.data?.slots.length ? (
+                    <div
+                      className="slot-list"
+                      aria-label="Créneaux actuellement possibles"
+                    >
+                      {slots.data.slots.map(slot => (
+                        <button
+                          key={slot.startAt}
+                          type="button"
+                          className={`btn secondary ${new Date(draft.date + "T" + draft.time).getTime() === new Date(slot.startAt).getTime() ? "selected" : ""}`}
+                          onClick={() => {
+                            const date = new Date(slot.startAt);
+                            const local = new Date(
+                              date.getTime() - date.getTimezoneOffset() * 60000
+                            )
+                              .toISOString()
+                              .slice(0, 16)
+                              .split("T");
+                            setDraft(d => ({
+                              ...d,
+                              date: local[0],
+                              time: local[1],
+                            }));
+                            setConsent(false);
+                          }}
+                        >
+                          {dateTime(slot.startAt)}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    slots.data?.reason && (
+                      <p className="muted small-text">{slots.data.reason}</p>
+                    )
+                  )}
+                  <div className="field">
+                    <label htmlFor="time">
+                      Heure souhaitée (heure de votre navigateur)
+                    </label>
+                    <input
+                      id="time"
+                      type="time"
+                      value={draft.time}
+                      onChange={e => set("time", e.target.value)}
+                    />
                   </div>
-                )}
-              </dl>
-              {pricing.isLoading || pricing.isFetching ? (
-                <Loading />
+                  {slots.error && (
+                    <p className="muted">
+                      Créneaux indisponibles. Vous pouvez proposer une heure à
+                      MDS.
+                    </p>
+                  )}
+                </>
+              )}
+              <p className="muted small-text">
+                Ce créneau reste un souhait, pas une réservation.
+              </p>
+            </>
+          )}
+          {step === 2 && (
+            <>
+              <p>
+                <strong>{service?.name || "Votre problème"}</strong> ·{" "}
+                {draft.postcode} {draft.city}
+              </p>
+              {pricing.data ? (
+                <PriceDetails snapshot={pricing.data.snapshot} />
               ) : pricing.error ? (
                 <ApiError
                   message={pricing.error.message}
                   retry={() => pricing.refetch()}
                 />
               ) : (
-                pricing.data && (
-                  <PriceDetails snapshot={pricing.data.snapshot} />
-                )
+                <p role="status">Vérification du tarif…</p>
               )}
-              <button
-                type="button"
-                className="text-link"
-                onClick={() => {
-                  setKnown({
-                    address: false,
-                    name: false,
-                    email: false,
-                    phone: false,
-                  });
-                  setConsent(false);
-                  setStep(0);
-                }}
-              >
-                Modifier les informations avant envoi
-              </button>
-              <label className="consent-label">
+              <div className="field">
+                <label htmlFor="name">Nom</label>
+                <input
+                  id="name"
+                  autoComplete="name"
+                  value={draft.name}
+                  maxLength={120}
+                  onChange={e => set("name", e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="email">E-mail</label>
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={draft.email}
+                  maxLength={320}
+                  onChange={e => set("email", e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="phone">Téléphone</label>
+                <input
+                  id="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  value={draft.phone}
+                  maxLength={30}
+                  onChange={e => set("phone", e.target.value)}
+                  placeholder="+33…"
+                />
+              </div>
+              <details>
+                <summary className="simple-summary">
+                  Vérifier les détails
+                </summary>
+                <p>{draft.description}</p>
+                <p>
+                  {draft.address}, {draft.postcode} {draft.city}
+                </p>
+                <p>
+                  {draft.date && draft.time
+                    ? dateTime(new Date(draft.date + "T" + draft.time))
+                    : "Créneau à convenir avec MDS"}
+                </p>
+              </details>
+              <label className="row small-text" style={{ alignItems: "start" }}>
                 <input
                   type="checkbox"
                   checked={consent}
                   onChange={e => setConsent(e.target.checked)}
+                  style={{ marginTop: 4 }}
                 />
                 <span>
-                  J’autorise MDS à utiliser ces informations pour traiter ma
-                  demande et me contacter. J’ai lu les{" "}
-                  <Link
-                    className="text-link"
-                    href="/confidentialite"
-                    target="_blank"
-                  >
-                    informations de confidentialité
+                  J’accepte les conditions et{" "}
+                  {pricing.data?.snapshot.totalCents != null
+                    ? "le prix affiché"
+                    : "une analyse sur devis"}
+                  . MDS validera ma demande ; je confirmerai ensuite sa
+                  proposition.{" "}
+                  <Link href="/confidentialite" className="text-link">
+                    Confidentialité
                   </Link>
-                  . Aucune intervention n’est confirmée sans mon accord.
                 </span>
               </label>
             </>
           )}
           {error && (
-            <p className="notice error-message" role="alert">
+            <p role="alert" className="notice error-message">
               {error}
             </p>
           )}
-          <button
-            className="btn primary"
-            type="submit"
-            disabled={
-              create.isPending ||
-              upload.isPending ||
-              (current.key === "review" &&
-                (!pricing.data || pricing.isFetching || !!pricing.error))
-            }
-          >
-            {create.isPending
-              ? "Envoi de votre demande…"
-              : current.key === "review"
-                ? pricing.data?.snapshot.totalCents !== null &&
-                  !pricing.data?.snapshot.requiresQuote
-                  ? "Envoyer au tarif annoncé"
-                  : "Envoyer ma demande de devis"
-                : current.key === "photo" && !photo
-                  ? "Continuer sans photo"
-                  : "Continuer"}
-            <ArrowRight size={18} />
-          </button>
-          <p className="small-text muted" style={{ marginTop: 16 }}>
-            Sans compte obligatoire · Votre saisie est conservée dans cette
-            session.
-          </p>
-        </form>
+          <div className="row" style={{ flexWrap: "wrap" }}>
+            {step > 0 && (
+              <button
+                type="button"
+                className="btn secondary"
+                disabled={create.isPending}
+                onClick={() => setStep(s => s - 1)}
+              >
+                <ArrowLeft size={17} />
+                Retour
+              </button>
+            )}
+            {step < 2 ? (
+              <button
+                type="button"
+                className="btn primary"
+                disabled={
+                  (!!selected && catalog.isLoading) ||
+                  (!!organizationId && organization.isLoading)
+                }
+                onClick={next}
+              >
+                Continuer
+                <ArrowRight size={17} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn primary"
+                disabled={
+                  create.isPending ||
+                  !consent ||
+                  !pricing.data ||
+                  (!!organizationId &&
+                    (!user || organization.isLoading || !!organization.error))
+                }
+                onClick={() => submit()}
+              >
+                {create.isPending ? "Envoi…" : "Envoyer ma demande"}
+                <Check size={17} />
+              </button>
+            )}
+          </div>
+        </section>
       </div>
     </main>
   );

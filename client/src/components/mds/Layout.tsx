@@ -10,6 +10,7 @@ import {
   FileText,
   House,
   UserRound,
+  Wrench,
 } from "lucide-react";
 import { HeaderCallButton, NotificationBell } from "./HeaderActions";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -71,6 +72,16 @@ export function Header() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="simple-space-menu">
+        <DropdownMenuItem asChild>
+          <Link
+            href="/artisan"
+            className={
+              user?.role === "admin" ? "simple-artisan-item" : undefined
+            }
+          >
+            Espace artisan
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/professionnels">Professionnel</Link>
         </DropdownMenuItem>
@@ -147,6 +158,15 @@ export function Header() {
                 >
                   Suivre
                 </Link>
+                {user?.role === "admin" && (
+                  <Link
+                    href="/artisan"
+                    className={`simple-nav-link simple-artisan-nav ${location === "/artisan" ? "active" : ""}`}
+                    aria-current={location === "/artisan" ? "page" : undefined}
+                  >
+                    Artisan
+                  </Link>
+                )}
               </>
             )}
             {spaces}
@@ -166,23 +186,36 @@ export function Footer() {
   return (
     <footer className="site-footer simple-footer">
       <div className="simple-footer-inner">
-        <span>MULTISERVICES MDS</span>
+        <div className="simple-footer-brand-block">
+          <span className="simple-footer-name">
+            MULTISERVICES MDS — Rennes et alentours
+          </span>
+          <span className="simple-footer-tagline">
+            La qualité au service de votre confort ! · 06 04 15 99 16
+          </span>
+        </div>
         <nav aria-label="Informations légales">
           <Link href="/confidentialite">Confidentialité</Link>
           <Link href="/mentions-legales">Mentions légales</Link>
+          <Link href="/artisan" className="simple-footer-artisan">
+            Accès artisan
+          </Link>
         </nav>
       </div>
     </footer>
   );
 }
-
 export function MobileBottomNav() {
   const [location] = useLocation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const items = [
     { href: "/", label: "Accueil", Icon: House },
     { href: "/suivi", label: "Mes demandes", Icon: CalendarDays },
     { href: "/paiements", label: "Mes documents", Icon: FileText },
-    { href: "/profil", label: "Mon espace", Icon: UserRound },
+    isAdmin
+      ? { href: "/artisan", label: "Artisan", Icon: Wrench }
+      : { href: "/profil", label: "Mon espace", Icon: UserRound },
   ];
   return (
     <nav className="mobile-bottom-nav" aria-label="Navigation mobile">

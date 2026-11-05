@@ -20,3 +20,30 @@ describe("formulaire artisan lié à son contexte d’ouverture", () => {
     expect(form).not.toContain("version: request.version");
   });
 });
+
+describe("accès artisan et cohérence du pied de page", () => {
+  const home = readFileSync(
+    new URL("../../client/src/pages/Home.tsx", import.meta.url),
+    "utf8"
+  );
+  const layout = readFileSync(
+    new URL("../../client/src/components/mds/Layout.tsx", import.meta.url),
+    "utf8"
+  );
+  const profile = readFileSync(
+    new URL("../../client/src/pages/Profile.tsx", import.meta.url),
+    "utf8"
+  );
+  it("la page d’accueil ne duplique pas le pied de page global", () => {
+    expect(home).not.toContain("<footer");
+  });
+  it("l’accès artisan est exposé depuis l’accueil, le header, le footer et le profil", () => {
+    expect(home).toContain('href="/artisan"');
+    expect(layout).toContain('href="/artisan"');
+    expect(profile).toContain('href="/artisan"');
+  });
+  it("le footer global diffuse le téléphone officiel et la signature MDS sur toutes les pages", () => {
+    expect(layout).toContain("06 04 15 99 16");
+    expect(layout).toContain("La qualité au service de votre confort !");
+  });
+});

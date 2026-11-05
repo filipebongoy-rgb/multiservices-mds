@@ -110,4 +110,11 @@ Le trajet suit désormais `Démarrer le trajet` → position réellement autoris
 - Cycle complet d'intervention vérifié de bout en bout en base avec vraies données.
 
 ## Vérification globale
+
 - 265 tests automatisés passants (13 suites), TypeScript strict sans erreur, build production OK.
+
+## Correctif accès artisan et dédoublonnage du pied de page — 5 novembre 2026 (fin de passe)
+
+- Dédoublonnage du pied de page : suppression du footer redondant de `Home.tsx`, enrichissement du `Footer` global de `Layout.tsx` (signature MDS, numéro officiel, accès artisan) appliqué à toutes les pages de façon unique.
+- Accès artisan rendu visible : lien direct sur la page d'accueil, dans le menu des espaces, dans la navigation desktop (pour l'admin) et dans la barre mobile (onglet « Artisan » pour l'artisan) ; panneau « Espace artisan » au sommet de `/profil` avec raccourcis demandes, et aide à la connexion pour les utilisateurs déconnectés.
+- 268 tests automatisés passants (3 tests de non-régression ajoutés).

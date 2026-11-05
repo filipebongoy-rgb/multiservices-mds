@@ -24,22 +24,26 @@ L'écran de sélection de la demande affiche de vraies vignettes photo locales p
 
 ## 2. Ce qui reste simulé (honnêteté technique)
 
-| Fonction | État réel |
-|----------|-----------|
-| Stripe | Mode test — capture réelle des motifs d'échec, sans virement bancaire véritable |
-| Transferts artisan | Règlements déclaratifs — un prestataire de paiement est requis pour les paiements différés réels |
-| GPS en arrière-plan | Limité par les navigateurs mobiles — installation PWA recommandée |
-| Alertes propriétaire | Actives dès la configuration du canal `notifyOwner` de la plateforme |
+| Fonction             | État réel                                                                                        |
+| -------------------- | ------------------------------------------------------------------------------------------------ |
+| Stripe               | Mode test — capture réelle des motifs d'échec, sans virement bancaire véritable                  |
+| Transferts artisan   | Règlements déclaratifs — un prestataire de paiement est requis pour les paiements différés réels |
+| GPS en arrière-plan  | Limité par les navigateurs mobiles — installation PWA recommandée                                |
+| Alertes propriétaire | Actives dès la configuration du canal `notifyOwner` de la plateforme                             |
 
 ## 3. Chiffres clés
 
-La suite complète compte 265 tests automatisés passants (13 suites), le parcours de demande illustré comporte 6 étapes avec plus de 30 photos réalistes locales, et aucune régression n'a été détectée sur les parcours particuliers et professionnels.
+La suite complète compte 268 tests automatisés passants (13 suites), le parcours de demande illustré comporte 6 étapes avec plus de 30 photos réalistes locales, et aucune régression n'a été détectée sur les parcours particuliers et professionnels.
 
 ## 4. Documentation disponible
 
-| Fichier | Contenu |
-|---------|---------|
-| `docs/CONTINUITE.md` | Invariants et historique complet du projet |
-| `docs/ANALYSE-UBER-EATS.md` | Transposition sourcée d'Uber Eats dans MDS |
-| `docs/GUIDE-ARTISAN.md` | Mode d'emploi artisan (notifications, réception des demandes, réponses) |
-| `docs/AUDIT-EXPERIENCE-CLIENT.md` | Audit de l'expérience client MDS |
+| Fichier                           | Contenu                                                                 |
+| --------------------------------- | ----------------------------------------------------------------------- |
+| `docs/CONTINUITE.md`              | Invariants et historique complet du projet                              |
+| `docs/ANALYSE-UBER-EATS.md`       | Transposition sourcée d'Uber Eats dans MDS                              |
+| `docs/GUIDE-ARTISAN.md`           | Mode d'emploi artisan (notifications, réception des demandes, réponses) |
+| `docs/AUDIT-EXPERIENCE-CLIENT.md` | Audit de l'expérience client MDS                                        |
+
+## 5. Correctifs complémentaires (5 novembre 2026, fin de passe)
+
+Le pied de page dupliqué sur la page d'accueil a été retiré (suppression du footer redondant propre à la page d'accueil) et le pied de page global a été enrichi avec la signature de marque MDS, le numéro officiel 06 04 15 99 16 et un lien « Accès artisan ». L'accès artisan est désormais visible et unifié : lien direct sur l'accueil, dans le menu des espaces, dans la navigation de tête (visible pour l'administrateur), dans la barre mobile (onglet « Artisan » pour l'artisan), et au sommet du profil sous forme de panneau d'accès avec raccourcis vers les demandes. Les utilisateurs déconnectés sont guidés vers ce même point d'entrée pour se connecter avec le compte propriétaire.

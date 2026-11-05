@@ -57,6 +57,16 @@ export default function Profile() {
               J’ai déjà une demande à suivre
             </Link>
           </div>
+          <div className="profile-artisan-hint">
+            <strong>Vous êtes l’artisan MDS ?</strong>
+            <p className="muted">
+              Le même bouton de connexion sert à retrouver vos dossiers. Une
+              fois connecté, vous accédez directement à votre atelier.
+            </p>
+            <Link className="text-link" href="/artisan">
+              Aller directement à l’espace artisan →
+            </Link>
+          </div>
         </section>
       </main>
     );
@@ -74,6 +84,24 @@ export default function Profile() {
         </p>
       </header>
       <div className="stack" style={{ maxWidth: 760 }}>
+        {auth.user.role === "admin" && (
+          <section className="panel stack profile-artisan-panel">
+            <span className="eyebrow">Accès administrateur</span>
+            <h2 className="simple-panel-title">Espace artisan MDS</h2>
+            <p>
+              Votre atelier : demandes reçues, planning, devis, interventions,
+              règlements et activité.
+            </p>
+            <div className="row" style={{ flexWrap: "wrap", gap: 12 }}>
+              <Link href="/artisan" className="button primary">
+                Ouvrir l’espace artisan
+              </Link>
+              <Link href="/artisan" className="button secondary">
+                Voir les demandes
+              </Link>
+            </div>
+          </section>
+        )}
         <section className="panel stack">
           <h2 className="simple-panel-title">Informations personnelles</h2>
           <form

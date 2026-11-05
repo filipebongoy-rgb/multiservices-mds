@@ -136,18 +136,15 @@ export default function Home() {
           <ArrowRight size={18} aria-hidden="true" />
         </Link>
       </section>
-      <footer className="home-footer" aria-label="Pied de page">
-        <p className="home-footer-brand">
-          MULTISERVICES MDS — Rennes et alentours
-        </p>
-        <p className="home-footer-tagline">
-          La qualité au service de votre confort ! — 06 04 15 99 16
-        </p>
-        <div className="home-footer-links">
-          <Link href="/confidentialite">Confidentialité</Link>
-          <Link href="/mentions-legales">Mentions légales</Link>
-        </div>
-      </footer>
+      <section className="simple-home-artisan" aria-label="Espace artisan">
+        <Link href="/artisan" className="home-artisan-link">
+          <strong>Vous êtes l’artisan MDS ?</strong>
+          <span>
+            Accéder à votre atelier : demandes, planning, interventions.
+          </span>
+          <ArrowRight size={18} aria-hidden="true" />
+        </Link>
+      </section>
     </main>
   );
 }

@@ -9,10 +9,13 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { registerAutomationRoutes } from "../mds/automation";
 import { registerPaymentWebhook } from "../mds/payment-webhook";
+import { registerStorageProxy } from "./storageProxy";
 
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  registerStorageProxy(app);
+
   // Verify exact request bytes before the JSON body parser changes them.
   registerPaymentWebhook(app);
   // Configure body parser with larger size limit for file uploads

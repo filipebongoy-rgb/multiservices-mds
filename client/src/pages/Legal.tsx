@@ -45,15 +45,6 @@ export function Privacy() {
         réussi. Une photo sélectionnée n’est pas conservée dans le brouillon
         après le rechargement de la page.
       </p>
-      <h2>L’aide à la description</h2>
-      <p>
-        Si vous activez l’aide IA, votre description et les réponses utiles sont
-        transmises au service de modèles intégré à Manus pour proposer un métier
-        et une question. Les champs de contact et d’adresse ne sont pas envoyés
-        avec cet appel ; évitez d’écrire des coordonnées dans votre description.
-        Cette aide ne pose aucun diagnostic et ne confirme aucune intervention.
-        Vous pouvez toujours continuer sans elle.
-      </p>
       <h2>Les évaluations et notifications</h2>
       <p>
         Une évaluation exige une identité authentifiée et une intervention

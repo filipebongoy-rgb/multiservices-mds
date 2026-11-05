@@ -13,7 +13,6 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { createRequestSchema, dateTime } from "@shared/mds";
 import { PriceDetails } from "@/components/mds/PriceDetails";
-import { Qualification } from "@/components/mds/Qualification";
 import { ApiError } from "@/components/mds/Layout";
 
 type Draft = {
@@ -531,19 +530,6 @@ export default function Request() {
                   </button>
                 </div>
               )}
-              <Qualification
-                description={draft.description}
-                serviceId={service?.id ?? null}
-                answers={draft.answers}
-                questions={service?.questions || []}
-                onAnswer={(q, a) =>
-                  setDraft(d => ({ ...d, answers: { ...d.answers, [q]: a } }))
-                }
-                onService={id => {
-                  setSelected(id);
-                  setConsent(false);
-                }}
-              />
             </>
           )}
           {step === 1 && (

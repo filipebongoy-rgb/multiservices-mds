@@ -1,7 +1,6 @@
 import { calendarRouter } from "./calendar";
 import { operationsRouter } from "./operations";
 import { quoteBuilderRouter } from "./quote-builder";
-import { qualificationRouter } from "./qualification";
 import { automationRouter } from "./automation";
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -140,15 +139,13 @@ export const mdsRouter = router({
           "user",
           ctx.user.id
         );
-        await tx
-          .insert(s.notifications)
-          .values({
-            userId: ctx.user.id,
-            audience: "artisan",
-            title: "Espace artisan activé",
-            message:
-              "Votre identité OAuth est désormais l’unique artisan MDS. Configurez vos coordonnées et vos prestations avant de les activer.",
-          });
+        await tx.insert(s.notifications).values({
+          userId: ctx.user.id,
+          audience: "artisan",
+          title: "Espace artisan activé",
+          message:
+            "Votre identité OAuth est désormais l’unique artisan MDS. Configurez vos coordonnées et vos prestations avant de les activer.",
+        });
         return { success: true as const };
       });
     }),
@@ -235,15 +232,13 @@ export const mdsRouter = router({
               .where(
                 and(eq(s.tariffs.serviceId, id), isNull(s.tariffs.validUntil))
               );
-            await tx
-              .insert(s.tariffs)
-              .values({
-                serviceId: id,
-                priceCents: values.priceCents,
-                rule: values.pricingRule,
-                configuration,
-                validFrom: revisedAt,
-              });
+            await tx.insert(s.tariffs).values({
+              serviceId: id,
+              priceCents: values.priceCents,
+              rule: values.pricingRule,
+              configuration,
+              validFrom: revisedAt,
+            });
           }
         } else {
           const [created] = await tx
@@ -251,14 +246,12 @@ export const mdsRouter = router({
             .values({ ...values, pricingVersion: 1 })
             .$returningId();
           serviceId = created.id;
-          await tx
-            .insert(s.tariffs)
-            .values({
-              serviceId: created.id,
-              priceCents: values.priceCents,
-              rule: values.pricingRule,
-              configuration: pricingConfiguration(values),
-            });
+          await tx.insert(s.tariffs).values({
+            serviceId: created.id,
+            priceCents: values.priceCents,
+            rule: values.pricingRule,
+            configuration: pricingConfiguration(values),
+          });
         }
         await recordAudit(
           tx,
@@ -267,14 +260,12 @@ export const mdsRouter = router({
           "service",
           serviceId!
         );
-        await tx
-          .insert(s.notifications)
-          .values({
-            userId: ctx.user.id,
-            audience: "artisan",
-            title: "Catalogue mis à jour",
-            message: `La prestation « ${input.name} » est ${input.active ? "active" : "inactive"}. Les dossiers existants restent inchangés.`,
-          });
+        await tx.insert(s.notifications).values({
+          userId: ctx.user.id,
+          audience: "artisan",
+          title: "Catalogue mis à jour",
+          message: `La prestation « ${input.name} » est ${input.active ? "active" : "inactive"}. Les dossiers existants restent inchangés.`,
+        });
         const [saved] = await tx
           .select()
           .from(s.services)
@@ -302,15 +293,13 @@ export const mdsRouter = router({
           "service",
           input.id
         );
-        await tx
-          .insert(s.notifications)
-          .values({
-            userId: ctx.user.id,
-            audience: "artisan",
-            title: "Prestation retirée",
-            message:
-              "La prestation a été retirée du catalogue sans supprimer ses anciens dossiers.",
-          });
+        await tx.insert(s.notifications).values({
+          userId: ctx.user.id,
+          audience: "artisan",
+          title: "Prestation retirée",
+          message:
+            "La prestation a été retirée du catalogue sans supprimer ses anciens dossiers.",
+        });
         return { success: true as const };
       });
     }),
@@ -328,15 +317,13 @@ export const mdsRouter = router({
         await principal(tx, true);
         await tx.update(s.settings).set(input).where(eq(s.settings.id, 1));
         await recordAudit(tx, ctx.user.id, "settings.save", "settings", 1);
-        await tx
-          .insert(s.notifications)
-          .values({
-            userId: ctx.user.id,
-            audience: "artisan",
-            title: "Paramètres enregistrés",
-            message:
-              "Les coordonnées et règles de proposition MDS ont été enregistrées.",
-          });
+        await tx.insert(s.notifications).values({
+          userId: ctx.user.id,
+          audience: "artisan",
+          title: "Paramètres enregistrés",
+          message:
+            "Les coordonnées et règles de proposition MDS ont été enregistrées.",
+        });
         return { success: true as const };
       });
     }),
@@ -344,7 +331,6 @@ export const mdsRouter = router({
   calendar: calendarRouter,
   operations: operationsRouter,
   quoteBuilder: quoteBuilderRouter,
-  qualification: qualificationRouter,
   automation: automationRouter,
   requests: requestsRouter,
   organizations: organizationsRouter,
@@ -483,7 +469,9 @@ export const mdsRouter = router({
   audit: router({
     list: artisan.query(async () =>
       (
-        await (await dbRequired())
+        await (
+          await dbRequired()
+        )
           .select({
             id: s.audit.id,
             action: s.audit.action,

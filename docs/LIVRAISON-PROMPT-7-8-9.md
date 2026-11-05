@@ -54,3 +54,13 @@ Le pied de page dupliqué sur la page d'accueil a été retiré (suppression du 
 - Grands boutons-cartes pour le type de bien avec descriptions contextualisées.
 - Sous-titres descriptifs sous chaque métier de la page d’accueil et indices sous chaque problème du formulaire.
 - Écran vide du suivi épuré : une seule action principale mise en valeur (saisie de référence) avec accès direct aux demandes enregistrées et à la connexion.
+
+## 7. Simplification de l’espace artisan réservé (5 novembre 2026, fin de passe)
+
+- Header compact à titre dynamique (« Demandes », « Planning », etc.) + chip « X à traiter », suppression du titre doublon « Votre atelier ».
+- Onglets pilules discrets + barre mobile fixe en bas sur smartphone.
+- Retrait des doublons : bannière d’alerte redondante, panneau « 3 clics », TodaySummary, phrase d’exemple.
+- Filtres compacts en une ligne (recherche + état du dossier).
+- Footer et barre mobile publique masqués sur `/artisan` et `/professionnels`.
+- Liens d’échappement sur les écrans de connexion/activation.
+- Page 404 localisée en français avec l’identité MDS.

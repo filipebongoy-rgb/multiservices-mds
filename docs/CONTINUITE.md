@@ -125,3 +125,14 @@ Le trajet suit désormais `Démarrer le trajet` → position réellement autoris
 - **Suivi client** : écran vide épuré, centré sur une seule action principale (saisie de référence) avec raccourci de connexion et accès aux demandes enregistrées.
 - **Catalogue & accueil** : sous-titres descriptifs sous chaque métier de l’accueil (« Fuites, robinetterie… ») et placeholder de recherche simplifié.
 - Suite de tests : 268 passants, build production OK.
+
+## Simplification de l’espace artisan (page réservée) — 5 novembre 2026 (fin de passe)
+
+- **Header compact** : titre dynamique de l’onglet actif (ex. « Demandes ») avec chip « X à traiter », suppression du grand titre doublon « Votre atelier ».
+- **Onglets pilules discrets** : navigation principale masquée sur mobile au profit d’une barre fixe en bas de l’écran.
+- **Retrait des doublons visuels** : bannière d’alerte orange redondante, panneau « Comment répondre en 3 clics », résumé TodaySummary et phrase d’exemple supprimés.
+- **Vue Demandes immédiate** : chips de filtrage « À traiter (N) / Toutes (N) » à la place du bouton bascule « Historique ».
+- **Filtres compacts** : recherche et sélecteur d’état regroupés sur une seule ligne ; sous-titre verbeux de section retiré.
+- **Espaces privés sanctuarisés** : le footer public et la barre mobile publique sont masqués sur `/artisan` et `/professionnels` pour ne plus encombrer l’écran de travail.
+- **Liens d’échappement** sur les écrans de connexion et d’activation (« Revenir à l’accueil », « Accéder à mon espace professionnel »).
+- **Page 404** refaite en français avec l’identité MULTISERVICES MDS (auparavant en anglais).

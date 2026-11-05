@@ -2216,3 +2216,136 @@ input[type="checkbox"] {
   color: #5b6462;
   font-size: 14px;
 }
+
+/* Dossier artisan : boutons de trajet (maquette écran 6). */
+.btn.trip-btn {
+  min-height: 54px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+}
+.btn.trip-depart {
+  background: var(--mds-ink);
+}
+.btn.trip-arrived {
+  background: var(--mds-blue);
+}
+.btn.trip-start {
+  background: var(--mds-green);
+}
+.btn.trip-finish {
+  background: #2b3d4f;
+}
+.btn.trip-btn:hover:not(:disabled),
+.btn.trip-btn:focus-visible {
+  filter: brightness(1.08);
+  color: #fff;
+}
+.btn.trip-btn:disabled {
+  background: #9aa4a2;
+  color: #fff;
+  cursor: not-allowed;
+}
+
+/* Dossier artisan : avancement de l'intervention (maquette écran 7). */
+.artisan-work-panel {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--mds-border);
+  border-radius: 14px;
+  background: #fff;
+}
+.artisan-stepper {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.artisan-stepper li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #7a8381;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+.artisan-stepper li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 13px;
+  left: calc(50% + 16px);
+  right: calc(-50% + 16px);
+  height: 2px;
+  background: #d9dedc;
+}
+.artisan-stepper li.is-done:not(:last-child)::after {
+  background: var(--mds-green);
+}
+.artisan-stepper li > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #c3c9c7;
+  border-radius: 50%;
+  background: #fff;
+  color: #7a8381;
+  font-size: 13px;
+}
+.artisan-stepper li.is-done {
+  color: var(--mds-ink);
+}
+.artisan-stepper li.is-done > span {
+  border-color: var(--mds-green);
+  background: var(--mds-green);
+  color: #fff;
+}
+.artisan-stepper li.is-active {
+  color: var(--mds-blue);
+}
+.artisan-stepper li.is-active > span {
+  border-color: var(--mds-blue);
+  color: var(--mds-blue);
+}
+.artisan-photo-counters {
+  display: grid;
+  gap: 8px;
+}
+.artisan-photo-counters p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  font-size: 15px;
+}
+.artisan-photo-counters span {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #eef0ef;
+  color: #4d5553;
+  font-size: 13px;
+  font-weight: 700;
+}
+.artisan-photo-counters span.is-ok {
+  background: #e6f4ec;
+  color: #1d7a45;
+}
+.artisan-photo-counters span.is-missing {
+  background: #fdecea;
+  color: #b42318;
+}
+.artisan-photo-hint {
+  margin: 0;
+  color: #5b6462;
+  font-size: 14px;
+  line-height: 1.45;
+}

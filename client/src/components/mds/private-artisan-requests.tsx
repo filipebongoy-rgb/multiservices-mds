@@ -381,6 +381,32 @@ export function RequestDetail({
     document => document.kind === "photo" && document.photoStage === "after"
   );
   const hasQuote = documents.some(document => document.kind === "quote");
+  const beforeCount = documents.filter(
+    document => document.kind === "photo" && document.photoStage === "before"
+  ).length;
+  const afterCount = documents.filter(
+    document => document.kind === "photo" && document.photoStage === "after"
+  ).length;
+  const workStatuses = [
+    "in_progress",
+    "completed",
+    "invoiced",
+    "paid",
+    "closed",
+  ];
+  const hasArrived =
+    !!detail.data?.intervention?.arrivedAt ||
+    workStatuses.includes(request.status);
+  const interventionSteps = [
+    { label: "Arrivé", done: hasArrived },
+    { label: "Travaux", done: workStatuses.includes(request.status) },
+    { label: "Photos", done: hasAfterPhoto },
+    {
+      label: "Validation",
+      done: !!detail.data?.intervention?.clientConfirmedAt,
+    },
+  ];
+  const activeStep = interventionSteps.findIndex(step => !step.done);
   return (
     <section
       className="panel stack"
@@ -568,6 +594,54 @@ export function RequestDetail({
           </small>
         </section>
       )}
+      {hasArrived && (
+        <section
+          className="artisan-work-panel"
+          aria-label="Avancement de l’intervention"
+        >
+          <ol className="artisan-stepper">
+            {interventionSteps.map((step, index) => (
+              <li
+                key={step.label}
+                className={
+                  step.done
+                    ? "is-done"
+                    : index === activeStep
+                      ? "is-active"
+                      : ""
+                }
+                aria-current={index === activeStep ? "step" : undefined}
+              >
+                <span aria-hidden="true">
+                  {step.done ? <Check size={14} strokeWidth={3} /> : index + 1}
+                </span>
+                {step.label}
+              </li>
+            ))}
+          </ol>
+          <div className="artisan-photo-counters">
+            <p>
+              <strong>Photos avant travaux</strong>
+              <span className={beforeCount ? "is-ok" : ""}>
+                {beforeCount} {beforeCount ? "✓" : ""}
+              </span>
+            </p>
+            <p>
+              <strong>Photos après travaux *</strong>
+              <span className={afterCount ? "is-ok" : "is-missing"}>
+                {afterCount ? `${afterCount} ✓` : "0 · obligatoire"}
+              </span>
+            </p>
+          </div>
+          {!hasAfterPhoto && workStatuses.includes(request.status) && (
+            <p className="artisan-photo-hint">
+              Ajoutez au moins une photo après travaux dans « Documents et
+              photos » ci-dessous, vérifiez l’aperçu, puis terminez
+              l’intervention.
+            </p>
+          )}
+        </section>
+      )}
       <section className="stack" aria-label="Répondre à la demande">
         {editable && needsAcceptedQuote && (
           <p className="notice">
@@ -614,17 +688,18 @@ export function RequestDetail({
           )}
           {["confirmed", "planned"].includes(request.status) && (
             <ActionButton
-              className="primary"
+              className="trip-btn trip-depart"
               disabled={mutation.isPending}
               onClick={() => setAction("depart")}
             >
+              <Play size={17} aria-hidden="true" />
               Démarrer le trajet
             </ActionButton>
           )}
           {request.status === "en_route" &&
             !detail.data?.intervention?.arrivedAt && (
               <ActionButton
-                className="primary"
+                className="trip-btn trip-arrived"
                 disabled={mutation.isPending}
                 onClick={() => setAction("arrived")}
               >
@@ -635,7 +710,7 @@ export function RequestDetail({
           {request.status === "en_route" &&
             detail.data?.intervention?.arrivedAt && (
               <ActionButton
-                className="primary"
+                className="trip-btn trip-start"
                 disabled={mutation.isPending}
                 onClick={() => setAction("start")}
               >
@@ -646,7 +721,7 @@ export function RequestDetail({
           {request.status === "in_progress" && (
             <div className="stack">
               <ActionButton
-                className="primary"
+                className="trip-btn trip-finish"
                 disabled={mutation.isPending || !hasAfterPhoto}
                 onClick={() => setAction("complete")}
               >

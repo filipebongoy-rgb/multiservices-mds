@@ -383,6 +383,7 @@ export default function Request() {
           )}
         </ol>
         <section className="panel stack">
+          <p className="request-kicker">Demande d’intervention</p>
           <h1 ref={headingRef} tabIndex={-1} className="page-title">
             {
               [

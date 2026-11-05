@@ -1997,8 +1997,16 @@ details[open] > .simple-summary::before {
   border-color: var(--foreground);
 }
 .request-simple .page-title {
+  font-family: "Trebuchet MS", Arial, sans-serif;
   font-size: clamp(26px, 5vw, 36px);
   margin-bottom: 4px;
+}
+.request-kicker {
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 .request-simple .panel {
   padding: clamp(20px, 4vw, 32px);

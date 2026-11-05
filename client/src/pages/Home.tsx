@@ -28,8 +28,12 @@ export default function Home() {
               Un problème <span className="home-title-rest">chez vous ?</span>
             </h1>
             <p className="home-lead">
-              Nous nous occupons de vos travaux et dépannages.
+              Décrivez votre besoin. MDS vous accompagne jusqu’à la fin des
+              travaux.
             </p>
+            <Link className="home-hero-action" href="/demande">
+              Faire une demande <ArrowRight size={18} aria-hidden="true" />
+            </Link>
           </div>
           <figcaption>
             Photo illustrative — intervention de dépannage
@@ -39,14 +43,51 @@ export default function Home() {
           <Link className="home-access-card active" href="/demande">
             <House size={27} strokeWidth={1.7} aria-hidden="true" />
             <strong>Particulier</strong>
-            <span>Pour votre domicile</span>
+            <span>Faire réparer mon domicile</span>
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
           <Link className="home-access-card" href="/professionnels">
             <Building2 size={27} strokeWidth={1.7} aria-hidden="true" />
             <strong>Professionnel</strong>
-            <span>Entreprise, mairie, HLM, syndic et collectivité</span>
+            <span>Gérer mes bâtiments et interventions</span>
             <ArrowRight size={18} aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
+      <section className="home-next-steps" aria-labelledby="home-steps-title">
+        <div>
+          <span className="eyebrow">Simple, en trois étapes</span>
+          <h2 id="home-steps-title">Que va-t-il se passer ?</h2>
+        </div>
+        <ol>
+          <li>
+            <b>1</b>
+            <span>
+              <strong>Choisissez votre besoin</strong>
+              <small>Plomberie, électricité, chauffage et plus.</small>
+            </span>
+          </li>
+          <li>
+            <b>2</b>
+            <span>
+              <strong>Expliquez et ajoutez vos photos</strong>
+              <small>MDS comprend le problème sur place.</small>
+            </span>
+          </li>
+          <li>
+            <b>3</b>
+            <span>
+              <strong>Choisissez un créneau</strong>
+              <small>Uniquement parmi les disponibilités MDS.</small>
+            </span>
+          </li>
+        </ol>
+        <div className="home-primary-actions">
+          <Link className="btn primary" href="/demande">
+            Commencer maintenant <ArrowRight size={18} />
+          </Link>
+          <Link className="text-link" href="/suivi">
+            J’ai déjà une demande
           </Link>
         </div>
       </section>

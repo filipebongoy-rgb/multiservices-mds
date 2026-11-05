@@ -159,6 +159,22 @@
   font-size: clamp(16px, 2vw, 20px);
   line-height: 1.35;
 }
+.home-hero-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  margin-top: 14px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: #bc4c23;
+  color: #fff;
+  font-weight: 700;
+}
+.home-hero-action:hover {
+  background: #9f3d1c;
+  color: #fff;
+}
 .simple-hero figcaption {
   position: absolute;
   width: 1px;
@@ -244,6 +260,61 @@
 .home-access-card.active {
   border-color: #bc4c23;
   background: #fff4e9;
+}
+.home-next-steps {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.8fr) minmax(0, 1.6fr) auto;
+  gap: 20px;
+  align-items: center;
+  margin-top: 28px;
+  padding: 20px 22px;
+  border-left: 4px solid #bc4c23;
+  background: #faf3ec;
+}
+.home-next-steps h2 {
+  margin: 4px 0 0;
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  font-size: 22px;
+}
+.home-next-steps ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.home-next-steps li {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+}
+.home-next-steps li b {
+  display: inline-flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #bc4c23;
+  color: #fff;
+}
+.home-next-steps li span {
+  display: grid;
+  gap: 3px;
+}
+.home-next-steps li small {
+  color: #626762;
+  line-height: 1.35;
+}
+.home-primary-actions {
+  display: grid;
+  gap: 8px;
+  min-width: 180px;
+}
+.home-primary-actions .btn {
+  white-space: nowrap;
 }
 .simple-services {
   margin-top: 32px;
@@ -587,6 +658,21 @@
   .home-access-card {
     min-height: 148px;
     padding: 14px 12px;
+  }
+  .home-next-steps {
+    display: block;
+    padding: 18px;
+  }
+  .home-next-steps ol {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .home-primary-actions {
+    margin-top: 18px;
+  }
+  .home-primary-actions .btn {
+    justify-content: center;
   }
   .home-access-card span {
     font-size: 13px;

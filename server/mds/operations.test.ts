@@ -150,8 +150,14 @@ describe("réponses rapides et départ réel", () => {
     running();
     db.put(s.documents, []);
     await expect(
-      owner().requests.artisanAction({ id: 1, version: 0, action: "complete" })
-    ).rejects.toThrow("photo après travaux");
+      owner().requests.artisanAction({
+        id: 1,
+        version: 0,
+        action: "complete",
+        message:
+          "Travaux terminés, résultat propre et zone entièrement nettoyée.",
+      })
+    ).rejects.toThrow("Un commentaire ne peut pas remplacer cette preuve");
   });
   it("enregistre la validation client sans la déduire d’une absence de réponse", async () => {
     running();

@@ -74,6 +74,11 @@ export function Header() {
         <DropdownMenuItem asChild>
           <Link href="/professionnels">Professionnel</Link>
         </DropdownMenuItem>
+        {user && (
+          <DropdownMenuItem asChild>
+            <Link href="/profil">Mon profil</Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => void accountAction()}>
           {user && <LogOut size={17} aria-hidden="true" />}
@@ -180,7 +185,7 @@ export function MobileBottomNav() {
     { href: "/", label: "Accueil", Icon: House },
     { href: "/suivi", label: "Mes demandes", Icon: CalendarDays },
     { href: "/paiements", label: "Mes documents", Icon: FileText },
-    { href: "/professionnels", label: "Mon espace", Icon: UserRound },
+    { href: "/profil", label: "Mon profil", Icon: UserRound },
   ];
   return (
     <nav className="mobile-bottom-nav" aria-label="Navigation mobile">

@@ -318,6 +318,9 @@ export function RequestDetail({
     editable || ["confirmed", "planned", "en_route"].includes(request.status);
   const documents = detail.data?.documents ?? [];
   const hasInvoice = documents.some(document => document.kind === "invoice");
+  const hasAfterPhoto = documents.some(
+    document => document.kind === "photo" && document.photoStage === "after"
+  );
   const hasQuote = documents.some(document => document.kind === "quote");
   return (
     <section
@@ -546,14 +549,22 @@ export function RequestDetail({
             </ActionButton>
           )}
           {request.status === "in_progress" && (
-            <ActionButton
-              className="primary"
-              disabled={mutation.isPending}
-              onClick={() => setAction("complete")}
-            >
-              <SquareCheck size={17} aria-hidden="true" />
-              Terminer l’intervention
-            </ActionButton>
+            <div className="stack">
+              <ActionButton
+                className="primary"
+                disabled={mutation.isPending || !hasAfterPhoto}
+                onClick={() => setAction("complete")}
+              >
+                <SquareCheck size={17} aria-hidden="true" />
+                Terminer l’intervention
+              </ActionButton>
+              {!hasAfterPhoto && (
+                <small className="muted">
+                  Ajoutez d’abord au moins une photo après travaux. Un
+                  commentaire ne suffit pas.
+                </small>
+              )}
+            </div>
           )}
           {request.status === "completed" && hasInvoice && (
             <ActionButton

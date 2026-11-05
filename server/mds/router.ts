@@ -94,6 +94,44 @@ async function notificationFilter(db: SqlDb, user: s.User) {
   )!;
 }
 export const mdsRouter = router({
+  profile: router({
+    me: authenticated.query(async ({ ctx }) => {
+      const db = await dbRequired();
+      const [user] = await db
+        .select({
+          id: s.users.id,
+          name: s.users.name,
+          email: s.users.email,
+          role: s.users.role,
+          createdAt: s.users.createdAt,
+        })
+        .from(s.users)
+        .where(eq(s.users.id, ctx.user.id));
+      if (!user) fail("Votre profil est introuvable.", "NOT_FOUND");
+      return user;
+    }),
+    update: authenticated
+      .input(z.object({ name: z.string().trim().min(2).max(120) }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await dbRequired();
+        return db.transaction(async tx => {
+          const [changed] = await tx
+            .update(s.users)
+            .set({ name: input.name })
+            .where(eq(s.users.id, ctx.user.id));
+          if (changed.affectedRows !== 1)
+            fail("Votre profil est introuvable.", "NOT_FOUND");
+          await recordAudit(
+            tx,
+            ctx.user.id,
+            "profile.update",
+            "user",
+            ctx.user.id
+          );
+          return { success: true as const, name: input.name };
+        });
+      }),
+  }),
   claimArtisan: authenticated
     .input(z.object({ code: z.string().regex(/^[a-f0-9]{64}$/) }))
     .mutation(async ({ input, ctx }) => {

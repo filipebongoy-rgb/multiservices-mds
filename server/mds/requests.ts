@@ -707,14 +707,12 @@ export const requestsRouter = router({
                 )
               )
               .limit(1);
-            if (!afterPhoto && (message || "").trim().length < 10)
+            if (!afterPhoto)
               fail(
-                "Ajoutez une photo après travaux ou indiquez une justification précise de son absence.",
+                "Ajoutez au moins une photo réelle après travaux avant de terminer l’intervention. Un commentaire ne peut pas remplacer cette preuve.",
                 "CONFLICT"
               );
-            const completionSummary = afterPhoto
-              ? message || null
-              : `Absence de photo après travaux justifiée : ${message!.trim()}`;
+            const completionSummary = message || null;
             await tx
               .update(s.interventions)
               .set({ completedAt: new Date(), summary: completionSummary })
@@ -726,9 +724,8 @@ export const requestsRouter = router({
             patch.status = "completed";
             await emit(
               "completed",
-              afterPhoto
-                ? message || "L’artisan a déclaré l’intervention terminée."
-                : "L’artisan a déclaré l’intervention terminée avec une absence de photo après travaux justifiée."
+              message ||
+                "L’artisan a déclaré l’intervention terminée après dépôt d’une preuve photo après travaux."
             );
             await tx.insert(s.notifications).values({
               userId: r.organizationId ? null : r.userId,

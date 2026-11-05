@@ -1435,3 +1435,111 @@ input[type="checkbox"] {
 input[type="checkbox"] {
   border-radius: 4px;
 }
+
+/* Parcours de demande : reproduction de la structure blanche/orange de la référence. */
+.request-simple {
+  width: 100%;
+}
+.request-simple .request-progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+.request-simple .request-progress li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  color: #6b7170;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.request-simple .request-progress li span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+  border: 1px solid #bfc5c3;
+  border-radius: 50%;
+  color: #636a68;
+  background: #fff;
+}
+.request-simple .request-progress li.current,
+.request-simple .request-progress li.done {
+  color: var(--mds-orange-dark);
+}
+.request-simple .request-progress li.current span,
+.request-simple .request-progress li.done span {
+  border-color: var(--mds-orange);
+  background: var(--mds-orange);
+  color: #fff;
+}
+.request-simple > .panel {
+  padding: 26px 24px 28px;
+  border-color: #d9dddb;
+  border-radius: 3px;
+  box-shadow: 0 2px 10px rgb(18 43 62 / 4%);
+}
+.request-simple .request-kicker {
+  display: none;
+}
+.request-simple .page-title {
+  margin-top: 0;
+  font-size: clamp(24px, 6vw, 30px);
+  line-height: 1.2;
+}
+.request-simple .request-next-action {
+  margin: 0 0 24px;
+  padding: 16px 18px;
+  border-left: 4px solid var(--mds-orange);
+  background: #fff5e9;
+  color: #4f5654;
+  font-size: 17px;
+}
+.request-simple .choice-list .btn {
+  min-height: 62px;
+  border-color: #cbd1cf;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: none;
+  color: #1e2928;
+  font-size: 17px;
+}
+.request-simple .choice-list .btn:hover,
+.request-simple .choice-list .btn:focus-visible,
+.request-simple .choice-list .btn.selected {
+  border-color: var(--mds-orange);
+  background: #fff5eb;
+}
+.request-simple .request-actions,
+.request-simple .request-actions-single {
+  gap: 12px;
+  margin-top: 24px;
+}
+.request-simple .request-actions .btn,
+.request-simple .request-actions-single .btn {
+  min-height: 52px;
+  border-radius: 8px;
+  font-size: 17px;
+}
+@media (max-width: 520px) {
+  .request-simple .request-progress li {
+    gap: 3px;
+    font-size: 11px;
+  }
+  .request-simple .request-progress li span {
+    width: 24px;
+    height: 24px;
+    flex-basis: 24px;
+  }
+  .request-simple > .panel {
+    padding: 22px 18px 24px;
+  }
+}

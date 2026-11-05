@@ -406,7 +406,9 @@ export default function Request() {
         </section>
       </main>
     );
-  const progressStep = step;
+  // Le type de bâtiment reste obligatoire côté métier, mais il est présenté
+  // dans le premier écran visuel « Service » de la maquette.
+  const progressStep = step <= 1 ? 0 : step === 2 ? 1 : step === 3 ? 2 : 3;
   return (
     <main id="main-content" className="page-shell standard-page">
       <div
@@ -414,7 +416,7 @@ export default function Request() {
         style={{ maxWidth: 720, margin: "0 auto" }}
       >
         <ol className="request-progress" aria-label="Étapes de la demande">
-          {["Lieu", "Service", "Détails", "Disponibilité", "Validation"].map(
+          {["Service", "Détails", "Disponibilité", "Validation"].map(
             (title, i) => (
               <li
                 key={title}

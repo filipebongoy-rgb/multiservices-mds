@@ -141,6 +141,7 @@ export default function Request() {
     [consent, setConsent] = useState(false),
     [photos, setPhotos] = useState<File[]>([]),
     [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<string>("");
   const [receipt, setReceipt] = useState<{
       id: number;
       reference: string;
@@ -215,13 +216,10 @@ export default function Request() {
     {
       serviceId: service?.id ?? null,
       postcode: draft.postcode,
-      date: draft.date,
+      date: draft.date || new Date().toLocaleDateString("en-CA"),
     },
     {
-      enabled:
-        step === 3 &&
-        /^\d{5}$/.test(draft.postcode) &&
-        /^\d{4}-\d{2}-\d{2}$/.test(draft.date),
+      enabled: step === 3 && /^\d{5}$/.test(draft.postcode),
       retry: false,
     }
   );
@@ -242,6 +240,8 @@ export default function Request() {
       )
         return "Complétez l’adresse, le code postal et la ville.";
     }
+    if (step === 3 && slots.data?.configured && !selectedSlot)
+      return "Choisissez l’un des créneaux disponibles avant de continuer.";
     if (step === 3 && draft.date) {
       if (
         !draft.time ||
@@ -293,8 +293,9 @@ export default function Request() {
       setError("Le prix et les conditions doivent être relus avant l’envoi.");
       return;
     }
-    const desiredStart =
-      draft.date && draft.time
+    const desiredStart = selectedSlot
+      ? new Date(selectedSlot).toISOString()
+      : draft.date && draft.time
         ? new Date(draft.date + "T" + draft.time).toISOString()
         : null;
     const input = {
@@ -699,17 +700,26 @@ export default function Request() {
                 </div>
               </div>
               <div className="field">
-                <label htmlFor="date">Date souhaitée (facultative)</label>
+                <label htmlFor="date">
+                  {slots.data?.configured
+                    ? "Choisir une date"
+                    : "Date souhaitée (facultative)"}
+                </label>
                 <p className="action-example">
-                  Exemple : choisissez une date si vous avez une préférence ;
-                  MDS confirmera ensuite.
+                  {slots.data?.configured
+                    ? "Les horaires affichés correspondent aux disponibilités configurées par MDS."
+                    : "Exemple : choisissez une date si vous avez une préférence ; MDS vous proposera ensuite un créneau."}
                 </p>
                 <input
                   id="date"
                   type="date"
                   value={draft.date}
                   min={new Date().toLocaleDateString("en-CA")}
-                  onChange={e => set("date", e.target.value)}
+                  onChange={e => {
+                    set("date", e.target.value);
+                    setSelectedSlot("");
+                    setDraft(d => ({ ...d, time: "" }));
+                  }}
                 />
               </div>
               {draft.date && (
@@ -723,7 +733,7 @@ export default function Request() {
                         <button
                           key={slot.startAt}
                           type="button"
-                          className={`btn secondary ${new Date(draft.date + "T" + draft.time).getTime() === new Date(slot.startAt).getTime() ? "selected" : ""}`}
+                          className={`btn secondary ${selectedSlot === slot.startAt ? "selected" : ""}`}
                           onClick={() => {
                             const date = new Date(slot.startAt);
                             const local = new Date(
@@ -737,6 +747,7 @@ export default function Request() {
                               date: local[0],
                               time: local[1],
                             }));
+                            setSelectedSlot(slot.startAt);
                             setConsent(false);
                           }}
                         >
@@ -749,17 +760,20 @@ export default function Request() {
                       <p className="muted small-text">{slots.data.reason}</p>
                     )
                   )}
-                  <div className="field">
-                    <label htmlFor="time">
-                      Heure souhaitée (heure de votre navigateur)
-                    </label>
-                    <input
-                      id="time"
-                      type="time"
-                      value={draft.time}
-                      onChange={e => set("time", e.target.value)}
-                    />
-                  </div>
+                  {!slots.data?.configured && (
+                    <div className="field">
+                      <label htmlFor="time">Heure souhaitée</label>
+                      <input
+                        id="time"
+                        type="time"
+                        value={draft.time}
+                        onChange={e => {
+                          set("time", e.target.value);
+                          setSelectedSlot("");
+                        }}
+                      />
+                    </div>
+                  )}
                   {slots.error && (
                     <p className="muted">
                       Créneaux indisponibles. Vous pouvez proposer une heure à
@@ -769,7 +783,9 @@ export default function Request() {
                 </>
               )}
               <p className="muted small-text">
-                Ce créneau reste un souhait, pas une réservation.
+                {slots.data?.configured
+                  ? "Le créneau choisi sera contrôlé une dernière fois par MDS avant confirmation du rendez-vous."
+                  : "MDS vous proposera un créneau après analyse de la demande."}
               </p>
             </>
           )}

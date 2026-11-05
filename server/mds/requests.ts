@@ -48,8 +48,8 @@ import {
   invoiceTotalCents,
 } from "./operations";
 import { quoteValidityEnd, validateQuoteContent } from "./quote-builder";
-import { commercialPaidCents } from "./payments";
 import { checkCalendar } from "./calendar";
+import { commercialPaidCents } from "./payments";
 import { findOrCreateClient } from "./clients";
 
 export async function expireRequest(tx: Tx, request: s.MdsRequest) {
@@ -232,6 +232,27 @@ export const requestsRouter = router({
           input.serviceId,
           input.postcode
         );
+        if (p.calendarEnabled) {
+          if (!input.desiredStart)
+            fail(
+              "Choisissez un créneau disponible avant d’envoyer la demande.",
+              "CONFLICT"
+            );
+          if (!service)
+            fail(
+              "Une demande libre doit d’abord être évaluée par MDS avant de réserver un créneau.",
+              "CONFLICT"
+            );
+          const startAt = new Date(input.desiredStart);
+          await checkCalendar(
+            tx,
+            {
+              startAt,
+              endAt: new Date(+startAt + service.durationMinutes * 60_000),
+            },
+            { id: 0, postcode: input.postcode }
+          );
+        }
         if (service && input.pricingFingerprint !== fingerprint)
           fail(
             "Les règles tarifaires ont changé ou n’ont pas été relues. Relisez le prix et les conditions avant d’envoyer la demande.",

@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, ArrowRight, Check, ImagePlus, Copy } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  Check,
+  Copy,
+  Home,
+  ImagePlus,
+} from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { createRequestSchema, dateTime, trades } from "@shared/mds";
@@ -67,8 +75,8 @@ function initialDraftForRoute(params: URLSearchParams): Draft {
 }
 function initialStep() {
   try {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("metier") || params.get("service")) return 1;
+    const saved = initialDraft();
+    if (saved.answers.__buildingType) return 1;
     const ready = sessionStorage.getItem("mds-description-ready");
     sessionStorage.removeItem("mds-description-ready");
     return ready && initialDraft().description.trim().length >= 10 ? 1 : 0;
@@ -88,7 +96,8 @@ export default function Request() {
   const params = new URLSearchParams(window.location.search),
     orgParam = Number(params.get("org")),
     siteParam = Number(params.get("site")),
-    tradeParam = params.get("metier") || "";
+    tradeParam = params.get("metier") || "",
+    isFreeRequest = params.get("libre") === "1";
   const organizationId =
       Number.isSafeInteger(orgParam) && orgParam > 0 ? orgParam : null,
     siteId =
@@ -219,6 +228,8 @@ export default function Request() {
   function validateStage() {
     if (step === 0 && !selectedTrade)
       return "Choisissez le métier qui correspond à votre besoin.";
+    if (step === 1 && !selectedTrade && !isFreeRequest)
+      return "Choisissez le service qui correspond à votre besoin.";
     if (step === 1 && !draft.problemType)
       return "Choisissez le type de problème qui correspond le mieux.";
     if (step === 2 && draft.description.trim().length < 10)
@@ -394,7 +405,7 @@ export default function Request() {
         </section>
       </main>
     );
-  const progressStep = step <= 1 ? 0 : step === 2 ? 1 : step === 3 ? 2 : 3;
+  const progressStep = step;
   return (
     <main id="main-content" className="page-shell standard-page">
       <div
@@ -402,7 +413,7 @@ export default function Request() {
         style={{ maxWidth: 720, margin: "0 auto" }}
       >
         <ol className="request-progress" aria-label="Étapes de la demande">
-          {["Service", "Détails", "Disponibilité", "Validation"].map(
+          {["Lieu", "Service", "Détails", "Disponibilité", "Validation"].map(
             (title, i) => (
               <li
                 key={title}
@@ -424,15 +435,15 @@ export default function Request() {
         <section className="panel stack">
           <p className="request-kicker">Demande d’intervention</p>
           <h1 ref={headingRef} tabIndex={-1} className="page-title">
-            {
-              [
-                "Que souhaitez-vous faire ?",
-                "Quel est votre problème ?",
-                "Où se trouve le problème ?",
-                "Quand souhaitez-vous intervenir ?",
-                "Vérifiez votre demande",
-              ][step]
-            }
+            {step === 1 && !selectedTrade && !isFreeRequest
+              ? "Quel service vous faut-il ?"
+              : [
+                  "Quel type de logement ou bâtiment ?",
+                  "Quel est votre problème ?",
+                  "Décrivez votre problème",
+                  "Quand souhaitez-vous intervenir ?",
+                  "Vérifiez votre demande",
+                ][step]}
           </h1>
           {catalog.error && selected && (
             <ApiError
@@ -447,49 +458,78 @@ export default function Request() {
             />
           )}
           {step === 0 && (
-            <div className="choice-list" aria-label="Choisir un métier">
-              {trades.map(trade => (
-                <button
-                  key={trade.slug}
-                  type="button"
-                  className="btn secondary"
-                  onClick={() => {
-                    setTradeChoice(trade.slug);
-                    setDraft(d => ({
-                      ...d,
-                      problemType: "",
-                      answers: { ...d.answers, __trade: trade.slug },
-                    }));
-                    setSelected(null);
-                    setStep(1);
-                  }}
-                >
-                  <strong>{trade.name}</strong>
-                  <span className="muted">{trade.short}</span>
-                  <ArrowRight size={17} aria-hidden="true" />
-                </button>
-              ))}
-              <button
-                type="button"
-                className="btn secondary"
-                onClick={() => {
-                  setTradeChoice("");
-                  setDraft(d => ({
-                    ...d,
-                    problemType: "Autre problème",
-                    answers: { ...d.answers, __trade: "" },
-                  }));
-                  setSelected(null);
-                  setStep(1);
-                }}
-              >
-                <strong>Je ne sais pas</strong>
-                <ArrowRight size={17} aria-hidden="true" />
-              </button>
+            <div className="choice-list" aria-label="Choisir un type de lieu">
+              {[
+                { value: "appartement", label: "Appartement", icon: Home },
+                { value: "maison", label: "Maison", icon: Home },
+                {
+                  value: "immeuble",
+                  label: "Immeuble ou copropriété",
+                  icon: Building2,
+                },
+                {
+                  value: "local-professionnel",
+                  label: "Local professionnel",
+                  icon: Building2,
+                },
+                {
+                  value: "batiment-public",
+                  label: "Bâtiment public ou collectivité",
+                  icon: Building2,
+                },
+                { value: "autre", label: "Autre bâtiment", icon: Home },
+              ].map(building => {
+                const Icon = building.icon;
+                return (
+                  <button
+                    key={building.value}
+                    type="button"
+                    className="btn secondary"
+                    onClick={() => {
+                      setDraft(d => ({
+                        ...d,
+                        answers: {
+                          ...d.answers,
+                          __buildingType: building.value,
+                        },
+                      }));
+                      setStep(1);
+                    }}
+                  >
+                    <Icon size={20} aria-hidden="true" />
+                    <strong>{building.label}</strong>
+                    <ArrowRight size={17} aria-hidden="true" />
+                  </button>
+                );
+              })}
             </div>
           )}
           {step === 1 && (
             <>
+              {!selectedTrade && !isFreeRequest && (
+                <div className="choice-list" aria-label="Choisir un service">
+                  {trades.map(trade => (
+                    <button
+                      key={trade.slug}
+                      type="button"
+                      className="btn secondary"
+                      onClick={() => {
+                        setTradeChoice(trade.slug);
+                        setDraft(d => ({
+                          ...d,
+                          problemType: "",
+                          answers: { ...d.answers, __trade: trade.slug },
+                        }));
+                        setSelected(null);
+                      }}
+                    >
+                      <strong>{trade.name}</strong>
+                      <span className="muted">{trade.short}</span>
+                      <ArrowRight size={17} aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+              )}
               {selectedTrade && (
                 <div className="selected-context">
                   <strong>{selectedTrade.name}</strong>
@@ -534,11 +574,11 @@ export default function Request() {
                     Autre problème
                   </button>
                 </div>
-              ) : (
+              ) : isFreeRequest ? (
                 <p className="notice">
                   Décrivez votre besoin librement ; MDS vous orientera ensuite.
                 </p>
-              )}
+              ) : null}
             </>
           )}
           {step === 2 && (

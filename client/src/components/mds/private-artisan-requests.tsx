@@ -177,36 +177,30 @@ export function ArtisanRequests({
     });
   return (
     <div className="stack">
-      <div className="section-heading">
-        <h2>Demandes</h2>
-        <p className="muted">
-          Analysez un dossier puis proposez une réponse. Le client confirme
-          ensuite.
-        </p>
-      </div>
-      <div className="form-grid">
-        <Field label="Rechercher" hint="Référence, client, prestation ou ville">
-          <div className="row">
-            <Search size={18} aria-hidden="true" />
-            <input
-              type="search"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher une demande"
-              style={{ width: "100%" }}
-            />
-          </div>
-        </Field>
-        <Field label="État du dossier">
-          <select value={status} onChange={e => setStatus(e.target.value)}>
-            <option value="">Tous les états</option>
-            {Object.entries(statusLabels).map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </Field>
+      <div className="artisan-filter-bar">
+        <div className="artisan-search-box">
+          <Search size={16} aria-hidden="true" />
+          <input
+            type="search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Rechercher (référence, client, ville)…"
+            aria-label="Rechercher une demande"
+          />
+        </div>
+        <select
+          value={status}
+          onChange={e => setStatus(e.target.value)}
+          aria-label="Filtrer par état du dossier"
+          className="artisan-status-select"
+        >
+          <option value="">Tous les états</option>
+          {Object.entries(statusLabels).map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </select>
       </div>
       <QueryState loading={loading} error={error} retry={retry} />
       {!loading && !error && (

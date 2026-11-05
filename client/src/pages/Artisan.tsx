@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import {
   Activity,
   AlertTriangle,
@@ -81,6 +82,13 @@ export default function Artisan() {
           <h1 className="page-title">L’atelier de l’artisan</h1>
           <p className="muted">Connectez-vous pour accéder à vos dossiers.</p>
           <LoginButton />
+          <Link
+            className="text-link"
+            href="/"
+            style={{ alignSelf: "center", marginTop: 8 }}
+          >
+            Revenir à l’accueil
+          </Link>
         </section>
       </main>
     );
@@ -159,6 +167,9 @@ function ArtisanActivation({
         >
           Accéder à mon espace professionnel
         </a>
+        <Link className="text-link" href="/">
+          Revenir à l’accueil
+        </Link>
       </section>
     </main>
   );
@@ -186,6 +197,16 @@ function ArtisanWorkspace() {
   const pending = requests.filter(request =>
     activeRequestStatuses.includes(request.status)
   );
+  const todayAppointments = appointments.filter(
+    a => a.status !== "cancelled" && dayKey(a.startAt) === dayKey(new Date())
+  );
+  const tabTitle: Record<Tab, string> = {
+    requests: "Demandes",
+    planning: "Planning",
+    interventions: "Interventions",
+    settlements: "Mes règlements",
+    activity: "Activité",
+  };
   const openRequest = (id: number) => {
     setSelectedId(id);
     setTab("requests");
@@ -200,160 +221,77 @@ function ArtisanWorkspace() {
       className="page-shell private-workspace"
       style={{ paddingTop: 24, paddingBottom: 64 }}
     >
-      <header
-        className="row"
-        style={{
-          justifyContent: "space-between",
-          marginBottom: 20,
-          flexWrap: "wrap",
-          gap: 12,
-        }}
-      >
+      <header className="artisan-ws-head">
         <div>
-          <span className="eyebrow">Artisan MDS</span>
-          <h1 className="page-title" style={{ marginBottom: 0 }}>
-            Votre atelier
+          <span className="eyebrow">Espace artisan privé</span>
+          <h1 className="page-title artisan-ws-title">
+            {tabTitle[tab]}
+            {tab === "requests" && pending.length > 0 && (
+              <span className="artisan-pending-chip">
+                {pending.length} à traiter
+              </span>
+            )}
           </h1>
         </div>
-        <span className="badge row">
-          <Wrench size={16} aria-hidden="true" /> Accès privé
-        </span>
+        <div className="artisan-ws-meta">
+          {todayAppointments.length > 0 && (
+            <button
+              type="button"
+              className="text-link"
+              onClick={() => setTab("planning")}
+            >
+              {todayAppointments.length} rendez-vous aujourd’hui
+            </button>
+          )}
+        </div>
       </header>
-      <nav
-        className="row"
-        aria-label="Espace artisan"
-        style={{ flexWrap: "wrap", gap: 8, marginBottom: 24 }}
-      >
+      <nav className="artisan-tabs" aria-label="Espace artisan">
         {navigation.map(item => (
-          <ActionButton
+          <button
             key={item.id}
-            className={tab === item.id ? "primary" : "secondary"}
+            type="button"
+            className={`artisan-tab ${tab === item.id ? "active" : ""}`}
             onClick={() => {
               setTab(item.id);
               setSelectedId(null);
             }}
             aria-current={tab === item.id ? "page" : undefined}
-            style={{ flex: "1 1 140px", minHeight: 48 }}
           >
-            <item.icon size={19} aria-hidden="true" />
+            <item.icon size={16} aria-hidden="true" />
             {item.name}
             {item.id === "requests" && pending.length > 0 && (
-              <span
-                style={{
-                  background: "#bc4c23",
-                  color: "#fff",
-                  borderRadius: 12,
-                  padding: "1px 8px",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  marginLeft: 4,
-                }}
-              >
-                {pending.length}
-              </span>
+              <span className="artisan-tab-badge">{pending.length}</span>
             )}
-          </ActionButton>
+          </button>
         ))}
       </nav>
-      <p className="action-example workspace-example">
-        Exemple : ouvrez « Demandes » pour traiter un nouveau dossier, «
-        Planning » pour voir vos créneaux, ou « Interventions » pour clôturer un
-        chantier.
-      </p>
       <div className="stack" style={{ minWidth: 0 }}>
         {tab === "requests" && (
           <>
-            {pending.length > 0 && (
-              <aside
-                role="status"
-                aria-live="polite"
-                style={{
-                  background: "#fff5ee",
-                  border: "2px solid #bc4c23",
-                  borderRadius: 10,
-                  padding: "14px 18px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  flexWrap: "wrap",
-                }}
+            <div className="artisan-requests-toolbar">
+              <div
+                className="artisan-chip-group"
+                role="radiogroup"
+                aria-label="Filtrer les demandes"
               >
-                <AlertTriangle size={24} color="#bc4c23" aria-hidden="true" />
-                <div style={{ flex: 1, minWidth: 240 }}>
-                  <strong style={{ color: "#bc4c23" }}>
-                    {pending.length} demande{pending.length > 1 ? "s" : ""} en
-                    attente de votre réponse
-                  </strong>
-                  <p className="small-text muted" style={{ margin: "2px 0 0" }}>
-                    Traitez-les dès aujourd’hui : un retour rapide évite de
-                    perdre des clients.
-                  </p>
-                </div>
-                <span
-                  style={{
-                    background: "#bc4c23",
-                    color: "#fff",
-                    borderRadius: 999,
-                    padding: "4px 12px",
-                    fontWeight: 700,
-                    fontSize: 14,
-                  }}
+                <button
+                  type="button"
+                  className={`artisan-chip ${!showHistory ? "active" : ""}`}
+                  onClick={() => setShowHistory(false)}
+                  aria-pressed={!showHistory}
                 >
-                  {pending.length} à traiter
-                </span>
-              </aside>
-            )}
-            <details
-              className="panel"
-              style={{ background: "#f8f7f5", border: "1px solid #e7e5e2" }}
-            >
-              <summary
-                className="row"
-                style={{ minHeight: 40, cursor: "pointer", fontWeight: 600 }}
-              >
-                <HelpCircle size={18} aria-hidden="true" color="#bc4c23" />
-                Comment répondre à une demande en 3 clics
-              </summary>
-              <ol
-                className="small-text stack"
-                style={{ marginTop: 10, paddingLeft: 20 }}
-              >
-                <li>
-                  <strong>Ouvrez</strong> la demande dans la liste ci-dessous.
-                </li>
-                <li>
-                  <strong>Vérifiez</strong> le problème décrit et le créneau
-                  souhaité par le client.
-                </li>
-                <li>
-                  <strong>Choisissez</strong> : <em>Accepter</em> (1 clic,
-                  confirmation envoyée au client), <em>Autre créneau</em> si
-                  vous êtes indisponible, ou <em>Refuser</em> poliment.
-                </li>
-              </ol>
-              <p className="small-text muted" style={{ marginTop: 8 }}>
-                💡 Vous recevez automatiquement une notification pour chaque
-                nouvelle demande. Répondez au plus vite depuis cet atelier.
-              </p>
-            </details>
-            <TodaySummary
-              pending={pending.length}
-              appointments={appointments}
-              requestsLoading={requestsQuery.isLoading}
-              requestsError={requestsQuery.error}
-              appointmentsLoading={appointmentsQuery.isLoading}
-              appointmentsError={appointmentsQuery.error}
-              onPlanning={() => setTab("planning")}
-            />
-            <ActionButton
-              aria-pressed={showHistory}
-              onClick={() => setShowHistory(value => !value)}
-              style={{ alignSelf: "flex-start" }}
-            >
-              {showHistory
-                ? "Voir les demandes à traiter"
-                : "Historique des demandes"}
-            </ActionButton>
+                  À traiter ({pending.length})
+                </button>
+                <button
+                  type="button"
+                  className={`artisan-chip ${showHistory ? "active" : ""}`}
+                  onClick={() => setShowHistory(true)}
+                  aria-pressed={showHistory}
+                >
+                  Toutes ({requests.length})
+                </button>
+              </div>
+            </div>
             <ArtisanRequests
               requests={requests.filter(
                 request =>
@@ -425,6 +363,26 @@ function ArtisanWorkspace() {
           />
         )}
       </div>
+      <nav className="artisan-mobile-bar" aria-label="Navigation artisan">
+        {navigation.map(item => (
+          <button
+            key={item.id}
+            type="button"
+            className={`artisan-mobile-btn ${tab === item.id ? "active" : ""}`}
+            onClick={() => {
+              setTab(item.id);
+              setSelectedId(null);
+            }}
+            aria-current={tab === item.id ? "page" : undefined}
+          >
+            <item.icon size={20} aria-hidden="true" />
+            <span>{item.name}</span>
+            {item.id === "requests" && pending.length > 0 && (
+              <span className="artisan-mobile-badge">{pending.length}</span>
+            )}
+          </button>
+        ))}
+      </nav>
     </main>
   );
 }
@@ -496,44 +454,6 @@ function Settlements() {
   );
 }
 
-function TodaySummary({
-  pending,
-  appointments,
-  requestsLoading,
-  requestsError,
-  appointmentsLoading,
-  appointmentsError,
-  onPlanning,
-}: {
-  pending: number;
-  appointments: Appointment[];
-  requestsLoading: boolean;
-  requestsError: unknown;
-  appointmentsLoading: boolean;
-  appointmentsError: unknown;
-  onPlanning: () => void;
-}) {
-  const today = dayKey(new Date());
-  const count = appointments.filter(
-    a => a.status !== "cancelled" && dayKey(a.startAt) === today
-  ).length;
-  return (
-    <div
-      className="row"
-      style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}
-    >
-      <p>
-        <strong>{requestsLoading || requestsError ? "—" : pending}</strong>{" "}
-        demande{pending !== 1 ? "s" : ""} à traiter
-      </p>
-      <ActionButton onClick={onPlanning}>
-        <CalendarDays size={18} aria-hidden="true" />{" "}
-        {appointmentsLoading || appointmentsError ? "—" : count} rendez-vous
-        aujourd’hui
-      </ActionButton>
-    </div>
-  );
-}
 const runningStates: RequestRecord["status"][] = [
   "confirmed",
   "planned",

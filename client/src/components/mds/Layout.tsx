@@ -183,6 +183,8 @@ export function Header() {
 }
 
 export function Footer() {
+  const [location] = useLocation();
+  if (location === "/artisan" || location === "/professionnels") return null;
   return (
     <footer className="site-footer simple-footer">
       <div className="simple-footer-inner">
@@ -207,6 +209,7 @@ export function Footer() {
 }
 export function MobileBottomNav() {
   const [location] = useLocation();
+  if (location === "/artisan" || location === "/professionnels") return null;
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const items = [

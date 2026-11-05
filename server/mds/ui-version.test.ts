@@ -87,3 +87,51 @@ describe("espace artisan mobile : l'ouverture d'un dossier masque la liste pour 
     expect(source).toMatch(/Retour\s+à\s+la\s+liste\s+des\s+demandes/);
   });
 });
+
+describe("espace professionnel : offre dédiée avec contrats mensuels/annuels et tarifs adaptés", () => {
+  const pro = readFileSync(
+    new URL("../../client/src/pages/Professional.tsx", import.meta.url),
+    "utf8"
+  );
+  const home = readFileSync(
+    new URL("../../client/src/pages/Home.tsx", import.meta.url),
+    "utf8"
+  );
+  const artisan = readFileSync(
+    new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
+    "utf8"
+  );
+  it("la page pro cible explicitement tous les secteurs demandés", () => {
+    expect(pro).toContain("Mairies & collectivités territoriales");
+    expect(pro).toContain("Bailleurs sociaux & organismes HLM");
+    expect(pro).toContain("Syndics & gestionnaires de copropriétés");
+    expect(pro).toContain("Hôpitaux, cliniques & établissements de santé");
+    expect(pro).toContain("Écoles, crèches & établissements scolaires");
+    expect(pro).toContain("Centres commerciaux, galeries & commerces");
+    expect(pro).toContain("Entreprises, bureaux & locaux professionnels");
+  });
+  it("l'offre présente des formules d'abonnement mensuelle/annuelle avec tarif réduit", () => {
+    expect(pro).toContain("Formule Mensuelle");
+    expect(pro).toContain("Formule Annuelle");
+    expect(pro).toContain("tarif réduit");
+    expect(pro).toContain("réduction");
+  });
+  it("la page sépare l'offre publique et l'espace organisation connecté", () => {
+    expect(pro).toContain("Offre professionnels &amp; contrats");
+    expect(pro).toContain("Mon espace organisation");
+    expect(pro).toContain("OrganizationDetail");
+  });
+  it("la page propose un formulaire de demande de contrat et les contacts directs", () => {
+    expect(pro).toContain("Demander une proposition de contrat");
+    expect(pro).toContain("06 04 15 99 16");
+    expect(pro).toContain("contact@multiservices-mds.fr");
+  });
+  it("les écrans pro et artisan se renvoient l'un vers l'autre pour éviter toute confusion", () => {
+    expect(pro).toContain('href="/artisan"');
+    expect(artisan).toContain('href="/professionnels"');
+  });
+  it("l'accueil met en avant les secteurs et contrats sur ses deux cartes professionnelles", () => {
+    expect(home).toContain("Espace professionnel — mairie, HLM");
+    expect(home).toContain("Contrats d’entretien");
+  });
+});

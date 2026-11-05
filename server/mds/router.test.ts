@@ -757,3 +757,91 @@ describe("signature client en fin de travaux (confirmCompletion)", () => {
     expect(intervention.clientConfirmationMessage).toBe("Tout est parfait");
   });
 });
+
+describe("création de demande libre (sans prestation du catalogue)", () => {
+  it("accepte une demande libre sans créneau même lorsque le calendrier est activé", async () => {
+    db.put(s.settings, [
+      {
+        ...db.rows(s.settings)[0],
+        calendarEnabled: true,
+      },
+    ]);
+    const res = await caller().requests.create({
+      serviceId: null,
+      pricingFingerprint: null,
+      problemType:
+        "Contrat d'entretien professionnel (abonnement mensuel/annuel)",
+      description:
+        "Organisation HLM Rennes : 12 immeubles, 480 logements. Formule Annuelle avec tarif réduit.",
+      name: "M. Directeur HLM",
+      email: "direction@hlm.fr",
+      phone: "0299123456",
+      address: "5 rue des Peupliers",
+      postcode: "35000",
+      city: "Rennes",
+      desiredStart: null,
+      consent: true,
+      idempotencyKey: "freeform0123456789abcde",
+    });
+    expect(res.reference).toMatch(/^MDS-/);
+    const created = db.rows(s.requests).find(r => r.id === res.id)!;
+    expect(created.status).toBe("to_analyze");
+    expect(created.serviceId).toBeNull();
+  });
+  it("impose toujours un créneau pour une prestation tarifée du catalogue", async () => {
+    db.put(s.settings, [
+      {
+        ...db.rows(s.settings)[0],
+        calendarEnabled: true,
+      },
+    ]);
+    db.put(s.services, [
+      {
+        id: 1,
+        name: "Robinette",
+        slug: "robinette",
+        tradeSlug: "plomberie",
+        tradeName: "Plomberie",
+        description: "",
+        priceCents: 9000,
+        durationMinutes: 60,
+        requiresQuote: false,
+        questions: [],
+        problemTypes: [],
+        active: true,
+        sortOrder: 0,
+        heroUrl: null,
+        heroWidth: null,
+        heroHeight: null,
+        heroThumbUrl: null,
+        priceNote: null,
+        zoneNote: null,
+        conditions: null,
+        quoteNote: null,
+        inclusions: null,
+        exclusions: null,
+        pricingMode: "standard",
+        distancePriceTiers: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
+    await expect(
+      caller().requests.create({
+        serviceId: 1,
+        pricingFingerprint: null,
+        problemType: "",
+        description: "robinet qui fuit dans la cuisine",
+        name: "Client",
+        email: "client@example.com",
+        phone: "0299123456",
+        address: "5 rue des Peupliers",
+        postcode: "35000",
+        city: "Rennes",
+        desiredStart: null,
+        consent: true,
+        idempotencyKey: "freeform0123456789abcdef",
+      })
+    ).rejects.toThrow(/Choisissez un créneau/);
+  });
+});

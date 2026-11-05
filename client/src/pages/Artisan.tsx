@@ -82,6 +82,15 @@ export default function Artisan() {
           <h1 className="page-title">L’atelier de l’artisan</h1>
           <p className="muted">Connectez-vous pour accéder à vos dossiers.</p>
           <LoginButton />
+          <p
+            className="muted small-text"
+            style={{ textAlign: "center", margin: 0 }}
+          >
+            Vous êtes une entreprise, mairie ou bailleur ?{" "}
+            <Link href="/professionnels">
+              Accéder à l’espace professionnel →
+            </Link>
+          </p>
           <Link
             className="text-link"
             href="/"

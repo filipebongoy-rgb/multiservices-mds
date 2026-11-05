@@ -50,8 +50,11 @@ export default function Home() {
           </Link>
           <Link className="home-access-card" href="/professionnels">
             <Building2 size={27} strokeWidth={1.7} aria-hidden="true" />
-            <strong>Professionnel</strong>
-            <span>Entreprise, mairie, HLM, syndic…</span>
+            <strong>Espace professionnel</strong>
+            <span>
+              Mairie, HLM, syndic, hôpital, école, centre commercial · Contrats
+              mensuels ou annuels
+            </span>
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
         </div>
@@ -135,14 +138,20 @@ export default function Home() {
       </section>
       <section className="simple-home-pro" aria-label="Espace professionnel">
         <Link href="/professionnels" className="home-professional-link">
-          <strong>Vous êtes une entreprise ou une collectivité ?</strong>
-          <span>Gérer vos bâtiments et vos interventions avec MDS.</span>
+          <strong>
+            Espace professionnel — mairie, HLM, syndic, bailleur, hôpital,
+            école, commerce, entreprise
+          </strong>
+          <span>
+            Contrats d’entretien sous forme d’abonnement mensuel ou annuel,
+            tarifs adaptés et réduction annuelle pour vos parcs de bâtiments.
+          </span>
           <ArrowRight size={18} aria-hidden="true" />
         </Link>
       </section>
       <section className="simple-home-artisan" aria-label="Espace artisan">
         <Link href="/artisan" className="home-artisan-link">
-          <strong>Vous êtes l’artisan MDS ?</strong>
+          <strong>Accès réservé : vous êtes l’artisan MDS ?</strong>
           <span>
             Accéder à votre atelier : demandes, planning, interventions.
           </span>

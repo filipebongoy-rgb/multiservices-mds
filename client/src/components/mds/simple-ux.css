@@ -714,8 +714,9 @@
   max-width: 620px;
   margin-top: 28px;
   padding: 16px 18px;
-  border-left: 4px solid #262a27;
-  background: #f4ede4;
+  border-left: 4px solid #bc4c23;
+  background: #fffaf5;
+  box-shadow: 0 4px 14px rgb(38 42 39 / 6%);
 }
 .home-professional-link strong,
 .home-professional-link span {
@@ -2449,7 +2450,7 @@ input[type="checkbox"] {
   margin: 0 0 8px;
 }
 .simple-home-artisan {
-  margin: 8px 0 0;
+  margin: 28px 0 0;
 }
 .home-artisan-link {
   display: flex;
@@ -2458,8 +2459,8 @@ input[type="checkbox"] {
   gap: 12px;
   padding: 14px 18px;
   border-radius: 10px;
-  background: #fbf5ee;
-  border-left: 4px solid #bc4c23;
+  background: #f3f3f0;
+  border-left: 4px solid #8c9086;
   color: inherit;
   text-decoration: none;
   font-size: 14px;
@@ -2878,4 +2879,164 @@ input[type="checkbox"] {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Espace professionnel — offre contrats d'entretien & abonnements */
+.simple-pro-lead {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #555852;
+  max-width: 860px;
+  margin: 10px 0 0;
+}
+.pro-tab-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 20px 0 28px;
+}
+.pro-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 11px 18px;
+  border: 1px solid #dcdad4;
+  border-radius: 9px;
+  background: #fff;
+  color: #262a27;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pro-tab:hover {
+  border-color: #bc4c23;
+}
+.pro-tab.active {
+  background: #bc4c23;
+  border-color: #bc4c23;
+  color: #fff;
+}
+.pro-tab-hint {
+  font-size: 12px;
+  opacity: 0.8;
+  font-weight: 400;
+}
+.pro-highlights {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.pro-highlight-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 6px 12px;
+}
+.pro-sectors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.pro-sector-card {
+  padding: 16px 18px;
+}
+.pro-sector-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #bc4c23;
+  font-size: 16px;
+}
+.pro-sector-head strong {
+  color: #262a27;
+}
+.pro-plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+.pro-plan-card {
+  padding: 22px 20px;
+  border-radius: 12px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.pro-plan-highlight {
+  border-color: #bc4c23;
+  box-shadow: 0 0 0 2px #bc4c23;
+  background: #fffdf9;
+}
+.pro-plan-badge {
+  background: #bc4c23;
+  color: #fff;
+  font-size: 11px;
+}
+.pro-plan-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #a33f1d;
+  margin: 6px 0 0;
+}
+.pro-plan-points {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  color: #4f514c;
+}
+.pro-plan-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.pro-plan-points svg {
+  color: #1f7a40;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.pro-inclusions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+}
+.pro-inclusion-card {
+  padding: 16px 18px;
+}
+.pro-form-panel {
+  max-width: 760px;
+}
+.pro-consent-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: #5e625b;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.pro-consent-label input {
+  margin-top: 3px;
+}
+.pro-cta-card {
+  padding: 22px 24px;
+  background: #fffaf5;
+  border: 1px solid #eadfd7;
+  border-radius: 12px;
+  max-width: 760px;
+}
+.pro-footer-switch {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid #e7e5e2;
+  text-align: center;
+}
+.pro-workspace-tab {
+  animation: artisanPanelIn 0.18s ease-out;
 }

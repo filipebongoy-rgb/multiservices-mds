@@ -246,15 +246,10 @@ export const requestsRouter = router({
           input.serviceId,
           input.postcode
         );
-        if (p.calendarEnabled) {
+        if (p.calendarEnabled && service) {
           if (!input.desiredStart)
             fail(
               "Choisissez un créneau disponible avant d’envoyer la demande.",
-              "CONFLICT"
-            );
-          if (!service)
-            fail(
-              "Une demande libre doit d’abord être évaluée par MDS avant de réserver un créneau.",
               "CONFLICT"
             );
           const startAt = new Date(input.desiredStart);

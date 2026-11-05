@@ -45,6 +45,10 @@ export default function Payments() {
         Consultez les montants et confirmations liés à vos vraies factures. Les
         essais de paiement sont identifiés séparément.
       </p>
+      <p className="action-example">
+        Exemple : ouvrez le lien de suivi d’une demande, puis vérifiez la
+        facture avant de payer.
+      </p>
       {returned && (
         <div className="notice" role="status">
           <strong>
@@ -94,6 +98,10 @@ export default function Payments() {
       ) : user ? (
         <section className="panel stack" style={{ marginTop: 24 }}>
           <h2>Historique de votre compte</h2>
+          <p className="action-example">
+            Exemple : ouvrez une ligne pour retrouver la facture et le suivi
+            associés.
+          </p>
           {history.isLoading ? (
             <Loading />
           ) : history.error ? (

@@ -163,6 +163,10 @@ export default function Tracking() {
             Utilisez le lien privé reçu à la fin de votre demande, ou retrouvez
             vos dossiers dans votre compte.
           </p>
+          <p className="action-example">
+            Exemple : copiez la référence reçue par e-mail, puis la clé privée
+            si elle est demandée.
+          </p>
           <form
             className="panel stack"
             style={{ maxWidth: 560, marginTop: 28 }}
@@ -422,6 +426,10 @@ export default function Tracking() {
                         ? "Votre réponse"
                         : "Un message (facultatif)"}
                     </label>
+                    <p className="action-example">
+                      Exemple : « Je serai disponible mardi matin. » ou « La
+                      fuite est maintenant plus importante. »
+                    </p>
                     <textarea
                       id="reply"
                       maxLength={3000}

@@ -35,6 +35,10 @@ export default function Catalog() {
       <p className="muted">
         Choisissez une prestation ou décrivez votre problème.
       </p>
+      <p className="action-example">
+        Exemple : recherchez « fuite » ou choisissez Plomberie, puis cliquez sur
+        « Demander cette prestation ».
+      </p>
       <div className="catalog-search">
         <Search size={20} />
         <label className="sr-only" htmlFor="catalog-search">

@@ -89,6 +89,7 @@ select {
 }
 button {
   cursor: pointer;
+  border-radius: 2px;
 }
 button:disabled {
   cursor: not-allowed;
@@ -251,40 +252,54 @@ select:focus-visible {
 }
 .btn {
   min-height: 48px;
-  padding: 12px 21px;
+  padding: 11px 19px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 13px;
+  gap: 9px;
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: 2px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 650;
+  letter-spacing: 0.01em;
   line-height: 1.4;
   text-align: center;
+  box-shadow: none;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
 }
 .btn.primary {
   background: #bc4c23;
   color: #fff;
+  border-color: #bc4c23;
 }
 .btn.primary:hover {
   background: #a53f1d;
+  border-color: #a53f1d;
 }
 .btn.secondary {
   background: transparent;
-  border-color: #d2d5cf;
+  border-color: #aeb3aa;
   color: #262a27;
 }
 .btn.secondary:hover {
-  background: #f4f3f0;
+  background: #eeeee9;
+  border-color: #262a27;
 }
 .btn.dark {
   background: #262a27;
   color: #fff;
+  border-color: #262a27;
+}
+.btn.dark:hover {
+  background: #111411;
+  border-color: #111411;
 }
 .btn.small {
   min-height: 44px;
-  padding: 11px 17px;
+  padding: 10px 15px;
   font-size: 12px;
 }
 .text-link {
@@ -299,6 +314,7 @@ select:focus-visible {
   text-decoration: underline;
   text-underline-offset: 4px;
   text-decoration-color: #bcbeb9;
+  border-radius: 0;
 }
 .eyebrow {
   font-size: 10px;

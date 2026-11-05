@@ -21,6 +21,15 @@ export const locationRouter = router({
           "Le partage GPS est accepté uniquement pendant le trajet vers le client.",
           "CONFLICT"
         );
+      const [intervention] = await db
+        .select({ arrivedAt: s.interventions.arrivedAt })
+        .from(s.interventions)
+        .where(eq(s.interventions.requestId, input.requestId));
+      if (intervention?.arrivedAt)
+        fail(
+          "Le partage GPS est arrêté après l’arrivée sur place.",
+          "CONFLICT"
+        );
       await db.insert(s.locationUpdates).values({
         requestId: input.requestId,
         artisanUserId: ctx.user.id,
@@ -39,6 +48,11 @@ export const locationRouter = router({
     if (!request) fail("Cette demande est introuvable.", "NOT_FOUND");
     await authorizeRequest(db, request, ctx.user, input.token);
     if (request.status !== "en_route") return null;
+    const [intervention] = await db
+      .select({ arrivedAt: s.interventions.arrivedAt })
+      .from(s.interventions)
+      .where(eq(s.interventions.requestId, request.id));
+    if (intervention?.arrivedAt) return null;
     const [point] = await db
       .select()
       .from(s.locationUpdates)

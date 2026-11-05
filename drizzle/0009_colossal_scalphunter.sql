@@ -1,0 +1,1 @@
+ALTER TABLE `mds_interventions` ADD `arrivedAt` timestamp;

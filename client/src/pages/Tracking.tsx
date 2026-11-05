@@ -8,6 +8,7 @@ import {
   RefreshCw,
   Star,
   LockKeyhole,
+  Phone,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -186,24 +187,28 @@ export default function Tracking() {
     ? ""
     : liveTracking?.finished
       ? "Intervention terminée"
-      : liveTracking?.moving
-        ? "MDS intervient actuellement"
-        : liveTracking?.confirmed
-          ? "Votre intervention est confirmée"
-          : liveTracking?.awaiting
-            ? "Votre demande est bien reçue"
-            : statusLabels[r.status as keyof typeof statusLabels] || r.status;
+      : r.status === "en_route" && details.data?.intervention?.arrivedAt
+        ? "Votre artisan est arrivé"
+        : liveTracking?.moving
+          ? "MDS intervient actuellement"
+          : liveTracking?.confirmed
+            ? "Votre intervention est confirmée"
+            : liveTracking?.awaiting
+              ? "Votre demande est bien reçue"
+              : statusLabels[r.status as keyof typeof statusLabels] || r.status;
   const liveDescription = !r
     ? ""
     : liveTracking?.finished
       ? "Les photos après travaux et les documents de fin sont disponibles dans ce dossier."
-      : liveTracking?.moving
-        ? "L’intervention est en cours. MDS mettra le dossier à jour dès qu’une nouvelle étape est enregistrée."
-        : liveTracking?.confirmed
-          ? "Vous serez informé si MDS ajoute une précision ou modifie le rendez-vous."
-          : liveTracking?.awaiting
-            ? "MDS analyse votre demande et vous répondra dans ce même suivi."
-            : "Consultez les actions disponibles plus bas dans votre dossier.";
+      : r.status === "en_route" && details.data?.intervention?.arrivedAt
+        ? "MDS est arrivé à votre adresse. Vous pouvez l’accueillir pour commencer l’intervention."
+        : liveTracking?.moving
+          ? "L’intervention est en cours. MDS mettra le dossier à jour dès qu’une nouvelle étape est enregistrée."
+          : liveTracking?.confirmed
+            ? "Vous serez informé si MDS ajoute une précision ou modifie le rendez-vous."
+            : liveTracking?.awaiting
+              ? "MDS analyse votre demande et vous répondra dans ce même suivi."
+              : "Consultez les actions disponibles plus bas dans votre dossier.";
   const beforePhotos =
     details.data?.documents.filter(
       document => document.kind === "photo" && document.photoStage === "before"
@@ -363,6 +368,14 @@ export default function Tracking() {
             </div>
             <h2>{liveTitle}</h2>
             <p>{liveDescription}</p>
+            {r.status === "en_route" && (
+              <a
+                className="btn secondary tracking-call-button"
+                href={`tel:${r.phone}`}
+              >
+                <Phone size={17} /> Appeler MDS
+              </a>
+            )}
             {details.data?.appointment && (
               <div className="tracking-live-appointment">
                 <strong>Prochain rendez-vous</strong>
@@ -393,22 +406,23 @@ export default function Tracking() {
               </p>
             )}
           </section>
-          {r.status === "en_route" && (
-            <Suspense
-              fallback={
-                <div className="trip-map-state">Chargement de la carte…</div>
-              }
-            >
-              <TripMap
-                reference={r.reference}
-                token={lookup?.token}
-                status={r.status}
-                address={r.address}
-                postcode={r.postcode}
-                city={r.city}
-              />
-            </Suspense>
-          )}
+          {r.status === "en_route" &&
+            !details.data?.intervention?.arrivedAt && (
+              <Suspense
+                fallback={
+                  <div className="trip-map-state">Chargement de la carte…</div>
+                }
+              >
+                <TripMap
+                  reference={r.reference}
+                  token={lookup?.token}
+                  status={r.status}
+                  address={r.address}
+                  postcode={r.postcode}
+                  city={r.city}
+                />
+              </Suspense>
+            )}
           {isFinished && (
             <section
               className="tracking-proof-card"
@@ -666,6 +680,18 @@ export default function Tracking() {
                   <p className="small-text">
                     {r.address}, {r.postcode} {r.city}
                   </p>
+                </section>
+              )}
+              {r.status === "en_route" && (
+                <section className="notice tracking-contact-card">
+                  <strong>Besoin de joindre MDS ?</strong>
+                  <p className="small-text">
+                    Appelez directement l’artisan pendant son trajet ou à son
+                    arrivée.
+                  </p>
+                  <a className="btn secondary" href={`tel:${r.phone}`}>
+                    <Phone size={17} /> Appeler MDS
+                  </a>
                 </section>
               )}
               {details.data && (

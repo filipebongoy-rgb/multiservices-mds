@@ -56,6 +56,7 @@ const actionLabels: Record<ArtisanAction, string> = {
   photo: "Demander une photo",
   diagnostic: "Organiser un diagnostic",
   depart: "Déclarer mon départ réel",
+  arrived: "Confirmer mon arrivée",
   quote: "Soumettre un devis",
   start: "Commencer l’intervention",
   complete: "Terminer l’intervention",
@@ -620,16 +621,28 @@ export function RequestDetail({
               Déclarer mon départ
             </ActionButton>
           )}
-          {request.status === "en_route" && (
-            <ActionButton
-              className="primary"
-              disabled={mutation.isPending}
-              onClick={() => setAction("start")}
-            >
-              <Play size={17} aria-hidden="true" />
-              Commencer sur place
-            </ActionButton>
-          )}
+          {request.status === "en_route" &&
+            !detail.data?.intervention?.arrivedAt && (
+              <ActionButton
+                className="primary"
+                disabled={mutation.isPending}
+                onClick={() => setAction("arrived")}
+              >
+                <MapPin size={17} aria-hidden="true" />
+                Je suis arrivé
+              </ActionButton>
+            )}
+          {request.status === "en_route" &&
+            detail.data?.intervention?.arrivedAt && (
+              <ActionButton
+                className="primary"
+                disabled={mutation.isPending}
+                onClick={() => setAction("start")}
+              >
+                <Play size={17} aria-hidden="true" />
+                Commencer l’intervention
+              </ActionButton>
+            )}
           {request.status === "in_progress" && (
             <div className="stack">
               <ActionButton
@@ -1061,6 +1074,13 @@ function ActionForm({
           <p className="notice">
             Je confirme que je pars maintenant vers ce rendez-vous. Le client
             verra « Artisan en route » après cette déclaration.
+          </p>
+        )}
+        {action === "arrived" && (
+          <p className="notice">
+            Je confirme être arrivé à l’adresse. Le client recevra
+            automatiquement une notification et le partage GPS s’arrêtera. Vous
+            pouvez ajouter un message ci-dessous.
           </p>
         )}
         {action === "diagnostic" && (

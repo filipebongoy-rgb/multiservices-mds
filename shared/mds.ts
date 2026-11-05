@@ -180,6 +180,7 @@ export const artisanActionSchema = z.object({
     "photo",
     "diagnostic",
     "depart",
+    "arrived",
     "quote",
     "start",
     "complete",

@@ -671,6 +671,42 @@ export const requestsRouter = router({
             );
             break;
           }
+          case "arrived": {
+            requireState(r, ["en_route"]);
+            await assertNoOperationalBlock(tx, r);
+            const [intervention] = await tx
+              .select()
+              .from(s.interventions)
+              .where(eq(s.interventions.requestId, r.id));
+            if (!intervention)
+              fail(
+                "L’intervention liée au rendez-vous est introuvable.",
+                "CONFLICT"
+              );
+            if (intervention.arrivedAt)
+              fail(
+                "L’arrivée est déjà enregistrée pour cette intervention.",
+                "CONFLICT"
+              );
+            await tx
+              .update(s.interventions)
+              .set({ arrivedAt: new Date() })
+              .where(eq(s.interventions.id, intervention.id));
+            await emit(
+              "en_route",
+              message || "L’artisan est arrivé à l’adresse du rendez-vous."
+            );
+            await tx.insert(s.notifications).values({
+              userId: r.userId,
+              organizationId: r.organizationId,
+              requestId: r.id,
+              audience: "client",
+              title: "Artisan arrivé",
+              message:
+                "L’artisan MDS est arrivé à votre adresse. Vous pouvez maintenant l’accueillir pour commencer l’intervention.",
+            });
+            break;
+          }
           case "start": {
             requireState(r, ["confirmed", "planned", "en_route"]);
             await assertNoOperationalBlock(tx, r);

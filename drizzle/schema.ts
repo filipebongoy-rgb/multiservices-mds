@@ -324,6 +324,7 @@ export const interventions = mysqlTable("mds_interventions", {
     .unique()
     .references(() => appointments.id),
   startedAt: timestamp("startedAt"),
+  arrivedAt: timestamp("arrivedAt"),
   completedAt: timestamp("completedAt"),
   summary: text("summary"),
   clientConfirmedAt: timestamp("clientConfirmedAt"),

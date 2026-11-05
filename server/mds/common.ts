@@ -266,6 +266,7 @@ export async function detailData(
   const [intervention] = await db
     .select({
       startedAt: s.interventions.startedAt,
+      arrivedAt: s.interventions.arrivedAt,
       completedAt: s.interventions.completedAt,
       summary: s.interventions.summary,
       clientConfirmedAt: s.interventions.clientConfirmedAt,

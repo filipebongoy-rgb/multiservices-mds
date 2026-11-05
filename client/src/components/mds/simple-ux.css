@@ -221,6 +221,96 @@
   padding-top: 14px;
   border-top: 1px solid #eadfd7;
 }
+.tracking-live-updated {
+  display: block;
+  margin-top: 13px;
+  color: #74776f;
+}
+.tracking-proof-card {
+  display: grid;
+  gap: 17px;
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px solid #eadfd7;
+  border-radius: 12px;
+  background: #fff;
+}
+.tracking-proof-card h2 {
+  margin: 5px 0 6px;
+  font-size: 23px;
+}
+.tracking-proof-card p {
+  max-width: 720px;
+  margin: 0;
+  color: #555852;
+  line-height: 1.5;
+}
+.tracking-proof-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.tracking-proof-columns > div {
+  display: grid;
+  gap: 4px;
+  padding: 13px;
+  border-radius: 8px;
+  background: #f6f5f2;
+}
+.tracking-proof-columns span {
+  color: #666a62;
+  font-size: 14px;
+}
+.tracking-proof-columns .is-ready {
+  border: 1px solid #b9d8bd;
+  background: #f1faf2;
+}
+.tracking-proof-columns .is-missing {
+  border: 1px solid #efc5b0;
+  background: #fff4ed;
+}
+.request-tracking-card {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid #e5e2de;
+  border-radius: 10px;
+  background: #fff;
+  color: #262a27;
+  cursor: pointer;
+}
+.request-tracking-card:hover,
+.request-tracking-card:focus-visible {
+  border-color: #bc4c23;
+  box-shadow: 0 4px 12px rgb(38 42 39 / 8%);
+}
+.request-tracking-card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.request-tracking-card-progress {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+.request-tracking-card-progress i {
+  height: 5px;
+  border-radius: 999px;
+  background: #e5e2de;
+}
+.request-tracking-card-progress i.done {
+  background: #d85b16;
+}
+.request-tracking-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #a33f1d;
+  font-weight: 700;
+}
 .simple-home-intro {
   max-width: 800px;
 }

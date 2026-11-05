@@ -199,6 +199,14 @@ export default function Tracking() {
           : liveTracking?.awaiting
             ? "MDS analyse votre demande et vous répondra dans ce même suivi."
             : "Consultez les actions disponibles plus bas dans votre dossier.";
+  const beforePhotos =
+    details.data?.documents.filter(
+      document => document.kind === "photo" && document.photoStage === "before"
+    ) ?? [];
+  const afterPhotos =
+    details.data?.documents.filter(
+      document => document.kind === "photo" && document.photoStage === "after"
+    ) ?? [];
   return (
     <main id="main-content" className="page-shell standard-page">
       <div className="eyebrow">VOTRE DOSSIER, ÉTAPE PAR ÉTAPE</div>
@@ -361,6 +369,12 @@ export default function Tracking() {
                 </small>
               </div>
             )}
+            {details.data?.events.length ? (
+              <small className="tracking-live-updated">
+                Dernière mise à jour :{" "}
+                {dateTime(details.data.events.at(-1)?.createdAt)}
+              </small>
+            ) : null}
             {!isFinished && !isTerminal && (
               <p className="tracking-live-next">
                 <strong>Prochaine étape :</strong>{" "}
@@ -374,6 +388,40 @@ export default function Tracking() {
               </p>
             )}
           </section>
+          {isFinished && (
+            <section
+              className="tracking-proof-card"
+              aria-labelledby="proof-title"
+            >
+              <div>
+                <div className="eyebrow">PREUVE DE FIN D’INTERVENTION</div>
+                <h2 id="proof-title">Le résultat est documenté</h2>
+                <p>
+                  Comparez les photos avant et après. Votre confirmation reste
+                  nécessaire : le dépôt d’une photo ne libère jamais le paiement
+                  automatiquement.
+                </p>
+              </div>
+              <div className="tracking-proof-columns">
+                <div>
+                  <strong>Avant travaux</strong>
+                  <span>{beforePhotos.length} photo(s)</span>
+                </div>
+                <div className={afterPhotos.length ? "is-ready" : "is-missing"}>
+                  <strong>Après travaux</strong>
+                  <span>
+                    {afterPhotos.length
+                      ? `${afterPhotos.length} preuve(s) ajoutée(s)`
+                      : "Preuve manquante"}
+                  </span>
+                </div>
+              </div>
+              <a className="btn primary" href="#client-validation">
+                Vérifier les photos et confirmer la fin
+                <ArrowRight size={17} />
+              </a>
+            </section>
+          )}
           <div className="tracking-layout">
             <div className="stack">
               {r.pricingSnapshot && (
@@ -608,11 +656,13 @@ export default function Tracking() {
                 />
               )}
               {details.data && user?.role !== "admin" && (
-                <ClientOperations
-                  detail={details.data}
-                  token={lookup?.token}
-                  onChanged={() => void details.refetch()}
-                />
+                <div id="client-validation">
+                  <ClientOperations
+                    detail={details.data}
+                    token={lookup?.token}
+                    onChanged={() => void details.refetch()}
+                  />
+                </div>
               )}
               {success && (
                 <p role="status" className="success-message">
@@ -908,19 +958,36 @@ function MyRequests({ onSelect }: { onSelect: (reference: string) => void }) {
           {mine.data.map(r => (
             <button
               key={r.id}
-              className="data-row"
+              className="request-tracking-card"
               style={{ textAlign: "left", width: "100%" }}
               onClick={() => onSelect(r.reference)}
             >
-              <span>
+              <span className="request-tracking-card-heading">
                 <strong>{r.serviceName || "Demande libre"}</strong>
-                <small style={{ display: "block" }}>
-                  {r.reference} · {dateTime(r.createdAt)}
-                </small>
+                <span className="badge">
+                  {statusLabels[r.status as keyof typeof statusLabels] ||
+                    r.status}
+                </span>
               </span>
-              <span className="badge">
-                {statusLabels[r.status as keyof typeof statusLabels] ||
-                  r.status}
+              <span
+                className="request-tracking-card-progress"
+                aria-hidden="true"
+              >
+                {[0, 1, 2, 3].map(index => (
+                  <i
+                    key={index}
+                    className={
+                      index <= requestProgressIndex(r.status) ? "done" : ""
+                    }
+                  />
+                ))}
+              </span>
+              <small>{requestNextAction(r.status)}</small>
+              <small className="muted">
+                {r.reference} · {dateTime(r.createdAt)}
+              </small>
+              <span className="request-tracking-card-link">
+                Ouvrir le suivi <ArrowRight size={16} />
               </span>
             </button>
           ))}
@@ -933,4 +1000,23 @@ function MyRequests({ onSelect }: { onSelect: (reference: string) => void }) {
       )}
     </section>
   );
+}
+
+function requestProgressIndex(status: string) {
+  if (["completed", "invoiced", "paid", "closed"].includes(status)) return 3;
+  if (["en_route", "in_progress"].includes(status)) return 2;
+  if (["confirmed", "planned"].includes(status)) return 1;
+  return 0;
+}
+
+function requestNextAction(status: string) {
+  if (["completed", "invoiced", "paid"].includes(status))
+    return "Vérifier les photos et confirmer la fin";
+  if (["confirmed", "planned"].includes(status))
+    return "Attendre le rendez-vous confirmé";
+  if (["en_route", "in_progress"].includes(status))
+    return "Intervention en cours chez vous";
+  if (["refused", "cancelled", "expired"].includes(status))
+    return "Dossier terminé — ouvrir pour consulter le détail";
+  return "MDS analyse votre demande";
 }

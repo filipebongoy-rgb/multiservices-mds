@@ -66,6 +66,7 @@ export function OrganizationDetail({
   );
   const [tab, setTab] = useState<"declare" | "follow" | "buildings">("declare");
   const [siteId, setSiteId] = useState<number | null>(null);
+  const [siteSearch, setSiteSearch] = useState("");
   const [draftError, setDraftError] = useState<unknown>(null);
   const [modal, setModal] = useState<"site" | "invite" | null>(null);
   const [removing, setRemoving] = useState<{
@@ -247,6 +248,16 @@ export function OrganizationDetail({
                   </ActionButton>
                 )}
               </div>
+              {data.sites.length > 3 && (
+                <Field label="Rechercher un bâtiment">
+                  <input
+                    type="search"
+                    value={siteSearch}
+                    onChange={event => setSiteSearch(event.target.value)}
+                    placeholder="Nom, ville ou code postal"
+                  />
+                </Field>
+              )}
               {data.sites.length === 0 ? (
                 <div className="empty">
                   Aucun bâtiment enregistré.{" "}
@@ -255,44 +266,60 @@ export function OrganizationDetail({
                     : "Un gestionnaire peut ajouter les bâtiments."}
                 </div>
               ) : (
-                data.sites.map(site => (
-                  <article key={site.id} className="data-row stack">
-                    <h4 className="row">
-                      <Building2 size={18} aria-hidden="true" />
-                      {site.name}
-                    </h4>
-                    <p className="row">
-                      <MapPin size={16} aria-hidden="true" />
-                      {site.address}, {site.postcode} {site.city}
-                    </p>
-                    {site.contactName && (
-                      <p className="muted">
-                        Contact sur place : {site.contactName}
-                        {site.contactPhone ? ` · ${site.contactPhone}` : ""}
+                data.sites
+                  .filter(site =>
+                    `${site.name} ${site.address} ${site.postcode} ${site.city}`
+                      .toLocaleLowerCase("fr")
+                      .includes(siteSearch.toLocaleLowerCase("fr"))
+                  )
+                  .map(site => (
+                    <article key={site.id} className="data-row stack">
+                      <h4 className="row">
+                        <Building2 size={18} aria-hidden="true" />
+                        {site.name}
+                      </h4>
+                      <p className="row">
+                        <MapPin size={16} aria-hidden="true" />
+                        {site.address}, {site.postcode} {site.city}
                       </p>
-                    )}
-                    <a
-                      className="btn secondary"
-                      style={{ minHeight: 44, alignSelf: "start" }}
-                      href={`/demande?org=${summary.id}&site=${site.id}`}
-                      onClick={event => {
-                        try {
-                          prepareRequest(site);
-                        } catch {
-                          event.preventDefault();
-                          setDraftError(
-                            new Error(
-                              "Impossible de conserver votre brouillon. Autorisez le stockage de cette session puis réessayez."
-                            )
-                          );
-                        }
-                      }}
-                    >
-                      Déclarer un problème
-                    </a>
-                  </article>
-                ))
+                      {site.contactName && (
+                        <p className="muted">
+                          Contact sur place : {site.contactName}
+                          {site.contactPhone ? ` · ${site.contactPhone}` : ""}
+                        </p>
+                      )}
+                      <a
+                        className="btn secondary"
+                        style={{ minHeight: 44, alignSelf: "start" }}
+                        href={`/demande?org=${summary.id}&site=${site.id}`}
+                        onClick={event => {
+                          try {
+                            prepareRequest(site);
+                          } catch {
+                            event.preventDefault();
+                            setDraftError(
+                              new Error(
+                                "Impossible de conserver votre brouillon. Autorisez le stockage de cette session puis réessayez."
+                              )
+                            );
+                          }
+                        }}
+                      >
+                        Déclarer un problème
+                      </a>
+                    </article>
+                  ))
               )}
+              {data.sites.length > 0 &&
+                !data.sites.some(site =>
+                  `${site.name} ${site.address} ${site.postcode} ${site.city}`
+                    .toLocaleLowerCase("fr")
+                    .includes(siteSearch.toLocaleLowerCase("fr"))
+                ) && (
+                  <div className="empty">
+                    Aucun bâtiment ne correspond à la recherche.
+                  </div>
+                )}
               <ErrorNotice error={draftError} />
             </section>
           )}
@@ -527,21 +554,37 @@ function OrganizationRequests({
   sites: Site[];
 }) {
   const [search, setSearch] = useState("");
-  const filtered = requests.filter(request =>
-    `${request.reference} ${request.serviceName || ""} ${request.description} ${sites.find(site => site.id === request.siteId)?.name || request.city}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
+  const [status, setStatus] = useState("");
+  const filtered = requests.filter(
+    request =>
+      (!status || request.status === status) &&
+      `${request.reference} ${request.serviceName || ""} ${request.description} ${sites.find(site => site.id === request.siteId)?.name || request.city}`
+        .toLowerCase()
+        .includes(search.toLowerCase())
   );
   return (
     <div className="stack">
-      <Field label="Rechercher une intervention">
-        <input
-          type="search"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Référence ou prestation"
-        />
-      </Field>
+      <div className="form-grid">
+        <Field label="Rechercher une intervention">
+          <input
+            type="search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Référence ou prestation"
+          />
+        </Field>
+        <Field label="État du dossier">
+          <select value={status} onChange={e => setStatus(e.target.value)}>
+            <option value="">Tous les états</option>
+            <option value="awaiting_mds">En attente de MDS</option>
+            <option value="awaiting_client">En attente de confirmation</option>
+            <option value="confirmed">Confirmée</option>
+            <option value="in_progress">En cours</option>
+            <option value="completed">Terminée</option>
+            <option value="closed">Clôturée</option>
+          </select>
+        </Field>
+      </div>
       {filtered.length === 0 ? (
         <div className="empty">
           {requests.length

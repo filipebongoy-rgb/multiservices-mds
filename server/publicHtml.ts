@@ -8,6 +8,7 @@ const titles: Record<string, string> = {
   "/paiements": "Mes paiements",
   "/professionnels": "Espace professionnel",
   "/artisan": "Espace artisan",
+  "/profil": "Mon profil",
   "/confidentialite": "Confidentialité",
   "/mentions-legales": "Mentions légales",
 };

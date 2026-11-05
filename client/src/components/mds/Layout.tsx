@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import {
   ArrowLeft,
   ArrowRight,
+  Briefcase,
   ChevronDown,
   CircleHelp,
   LogOut,
@@ -38,7 +39,9 @@ export function Brand({ inverse = false }: { inverse?: boolean }) {
     >
       <img
         className="brand-logo"
-        src="/mds-logo.svg"
+        src="/mds-logo-320.png"
+        srcSet="/mds-logo-180.png 180w, /mds-logo-320.png 320w, /mds-logo.png 1254w"
+        sizes="(max-width: 700px) 110px, 140px"
         alt="MDS Multiservices — dépannage et petits travaux"
       />
     </Link>
@@ -225,7 +228,6 @@ export function Footer() {
   const { user } = useAuth();
   if (
     location === "/artisan" ||
-    location === "/professionnels" ||
     (user?.role === "admin" && location === "/profil")
   )
     return null;
@@ -256,7 +258,6 @@ export function MobileBottomNav() {
   const { user } = useAuth();
   if (
     location === "/artisan" ||
-    location === "/professionnels" ||
     (user?.role === "admin" && location === "/profil")
   )
     return null;
@@ -264,7 +265,7 @@ export function MobileBottomNav() {
   const items = [
     { href: "/", label: "Accueil", Icon: House },
     { href: "/suivi", label: "Mes demandes", Icon: CalendarDays },
-    { href: "/paiements", label: "Mes documents", Icon: FileText },
+    { href: "/professionnels", label: "Contrats", Icon: Briefcase },
     isAdmin
       ? { href: "/artisan", label: "Artisan", Icon: Wrench }
       : { href: "/profil", label: "Mon espace", Icon: UserRound },

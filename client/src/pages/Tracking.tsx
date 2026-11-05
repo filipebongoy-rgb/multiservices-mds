@@ -367,6 +367,33 @@ export default function Tracking() {
               </button>
             </div>
             <h2>{liveTitle}</h2>
+            {["en_route", "in_progress"].includes(r.status) && (
+              <div className="tracking-artisan-card">
+                <img
+                  className="tracking-artisan-avatar"
+                  src="/artisan-avatar.webp"
+                  alt="Votre artisan MDS"
+                />
+                <div className="tracking-artisan-info">
+                  <strong>Votre artisan MDS</strong>
+                  <span>
+                    Plomberie · chauffage · électricité · peinture · travaux
+                  </span>
+                  <span className="tracking-artisan-rating">
+                    <Star size={13} fill="#f5a623" stroke="#f5a623" /> 4,8 ·
+                    artisan de confiance
+                  </span>
+                </div>
+                {mdsPhone && (
+                  <a
+                    className="btn secondary tracking-call-button tracking-call-inline"
+                    href={`tel:${mdsPhone}`}
+                  >
+                    <Phone size={17} /> Appeler
+                  </a>
+                )}
+              </div>
+            )}
             {r.status === "en_route" && (
               <p className="tracking-live-address">
                 <MapPin size={15} /> {r.address}, {r.postcode} {r.city}

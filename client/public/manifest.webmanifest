@@ -10,9 +10,21 @@
   "description": "Espace mobile MDS pour suivre les interventions et préparer le trajet GPS.",
   "icons": [
     {
-      "src": "/mds-logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/mds-logo-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/mds-logo-320.png",
+      "sizes": "320x320",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/mds-logo.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

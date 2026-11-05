@@ -218,6 +218,9 @@ export default function Request() {
     [consent, setConsent] = useState(false),
     [photos, setPhotos] = useState<File[]>([]),
     [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [recurrence, setRecurrence] = useState<"onetime" | "recurring">(
+    "onetime"
+  );
   const [selectedSlot, setSelectedSlot] = useState<string>("");
   const [receipt, setReceipt] = useState<{
       id: number;
@@ -382,7 +385,10 @@ export default function Request() {
         draft.problemType ||
         trades.find(trade => trade.slug === tradeParam)?.name ||
         "",
-      description: draft.description,
+      description:
+        recurrence === "recurring"
+          ? `${draft.description}\n[Demande de récurrence : abonnement mensuel/annuel souhaité]`
+          : draft.description,
       name: draft.name,
       email: draft.email,
       phone: draft.phone,
@@ -1019,6 +1025,50 @@ export default function Request() {
               ) : (
                 <p role="status">Vérification du tarif…</p>
               )}
+              <fieldset className="field">
+                <legend>Récurrence de votre besoin</legend>
+                <div
+                  className="recurrence-options"
+                  role="radiogroup"
+                  aria-label="Récurrence du besoin"
+                >
+                  <label className="recurrence-option">
+                    <input
+                      type="radio"
+                      name="recurrence"
+                      value="onetime"
+                      checked={recurrence === "onetime"}
+                      onChange={() => setRecurrence("onetime")}
+                    />
+                    <span>
+                      <strong>Intervention ponctuelle</strong>
+                      <small>Pour ce dépannage précis</small>
+                    </span>
+                  </label>
+                  <label className="recurrence-option">
+                    <input
+                      type="radio"
+                      name="recurrence"
+                      value="recurring"
+                      checked={recurrence === "recurring"}
+                      onChange={() => setRecurrence("recurring")}
+                    />
+                    <span>
+                      <strong>Abonnement (mensuel / annuel)</strong>
+                      <small>
+                        Contrat d’entretien avec tarif réduit ·{" "}
+                        <Link
+                          href="/professionnels"
+                          className="text-link"
+                          target="_blank"
+                        >
+                          voir l’offre pro
+                        </Link>
+                      </small>
+                    </span>
+                  </label>
+                </div>
+              </fieldset>
               <div className="field">
                 <label htmlFor="name">Nom</label>
                 <p className="action-example">

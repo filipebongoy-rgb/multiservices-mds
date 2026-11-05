@@ -167,3 +167,13 @@ Le trajet suit désormais `Démarrer le trajet` → position réellement autoris
 - **Passerelles anti-confusion** : la carte artisan sur l'accueil est désormais discrète (« Accès réservé : vous êtes l'artisan MDS ? »), la carte pro porte l'identité orange MDS ; l'écran artisan déconnecté renvoie vers `/professionnels` et l'espace pro renvoie vers `/artisan`.
 - **Correction backend** : les demandes libres (serviceId null) et les demandes de contrat pro peuvent désormais être créées sans créneau même lorsque le calendrier est activé (`server/mds/requests.ts`).
 - **Tests** : 16 assertions dans `server/mds/ui-version.test.ts`, 2 nouveaux tests de demande libre dans `server/mds/router.test.ts` (total 281 tests passants sur 13 fichiers), `pnpm check` et `pnpm build` OK.
+
+## Refonte UX/UI Uber : identité officielle MDS, photos réelles, recherche, récurrence, carte artisan et fluidité (2026-11-06)
+
+- **Identité officielle MDS intégrée** : le vrai logo fourni par le propriétaire (`1000065617.png`) remplace le faux logo SVG — versions 180/320 px PNG+WebP avec `srcSet` pour écrans 4K/retina, favicon PNG et icônes du webmanifest PWA mises à jour.
+- **Accueil façon Uber Eats (`client/src/pages/Home.tsx`)** : héro avec photo réelle d'artisan (`hero-artisan.webp`), fiches confiance (« Fiable », « Rapide », « À proximité », « 1 seul artisan »), barre de localisation d'intervention (« Rennes + 30 km »), barre de recherche avec filtrage instantané des métiers/problèmes, « Catégories populaires », séparation stricte Particulier/Professionnel.
+- **Séparation stricte des trois espaces** : Particulier (accueil/demande/suivi), Professionnel (offre pro + espace organisation), Artisan (atelier privé avec connexion admin requise) — aucun lien croisé trompeur.
+- **Récurrence dans la demande (`client/src/pages/Request.tsx`)** : choix « Ponctuelle » vs « Abonnement (mensuel / annuel) » à l'étape 4, inclus dans la description transmise à l'artisan ; passerelle vers l'offre pro.
+- **Suivi live façon Uber (`client/src/pages/Tracking.tsx`)** : carte sombre Mapbox déjà en place enrichie de la **carte d'identité de l'artisan** avec sa vraie photo (`artisan-avatar.webp`), spécialités, note 4,8 ★ et bouton d'appel direct.
+- **Navigation mobile alignée maquette (`Layout.tsx`)** : Accueil, Mes demandes, Contrats (vers `/professionnels`), Mon espace/Artisan ; footer légal restauré sur la page pro.
+- **Vérifications** : 289/289 tests passants (13 fichiers), `pnpm check` OK, `pnpm build` OK, assets statiques HTTP 200, 10 routes HTTP 200.

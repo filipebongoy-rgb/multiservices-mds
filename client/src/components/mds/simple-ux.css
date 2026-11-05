@@ -11,8 +11,10 @@
 }
 .brand-logo {
   display: block;
-  width: 238px;
-  height: auto;
+  height: 62px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
 }
 .simple-request-back,
 .simple-request-title {
@@ -3039,4 +3041,167 @@ input[type="checkbox"] {
 }
 .pro-workspace-tab {
   animation: artisanPanelIn 0.18s ease-out;
+}
+
+/* Récurrence ponctuelle vs abonnement (étape 4 de la demande) */
+.recurrence-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin-top: 6px;
+}
+.recurrence-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #dcdad4;
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  color: #262a27;
+}
+.recurrence-option:hover {
+  border-color: #bc4c23;
+}
+.recurrence-option input {
+  margin-top: 3px;
+  accent-color: #bc4c23;
+}
+.recurrence-option strong {
+  display: block;
+}
+.recurrence-option small {
+  display: block;
+  color: #6a6256;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* Carte d'identité artisan dans le suivi live */
+.tracking-artisan-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #dcdad4;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.tracking-artisan-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #bc4c23;
+  flex-shrink: 0;
+}
+.tracking-artisan-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 180px;
+  font-size: 14px;
+}
+.tracking-artisan-info span {
+  color: #6a6256;
+  font-size: 12px;
+}
+.tracking-artisan-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #8a6a10 !important;
+  font-size: 12px;
+  font-weight: 600;
+}
+.tracking-call-inline {
+  margin: 0 !important;
+}
+
+/* Accueil façon Uber Eats — fiches confiance, adresse, recherche */
+.home-trust-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.home-trust-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 39, 56, 0.7);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 12px;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+.home-location-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #dcdad4;
+  border-radius: 10px;
+  margin: 14px 0 12px;
+  font-size: 14px;
+  color: #3b3a36;
+  max-width: 620px;
+}
+.home-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 14px;
+  background: #fff;
+  border: 2px solid #dcdad4;
+  border-radius: 12px;
+  margin: 0 0 16px;
+  max-width: 620px;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.home-search-bar:focus-within {
+  border-color: #bc4c23;
+  box-shadow: 0 0 0 3px rgba(188, 76, 35, 0.14);
+}
+.home-search-bar input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  color: #262a27;
+  outline: none;
+  min-width: 0;
+}
+.home-search-btn {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #bc4c23;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 40px;
+}
+.home-search-btn:hover {
+  background: #a33f1d;
+}
+@media (max-width: 480px) {
+  .home-search-btn {
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+  .home-location-bar {
+    font-size: 13px;
+  }
 }

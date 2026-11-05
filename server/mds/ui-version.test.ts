@@ -135,3 +135,61 @@ describe("espace professionnel : offre dédiée avec contrats mensuels/annuels e
     expect(home).toContain("Contrats d’entretien");
   });
 });
+
+describe("refonte Uber : identité officielle, photos réelles, recherche et récurrence", () => {
+  const layout = readFileSync(
+    new URL("../../client/src/components/mds/Layout.tsx", import.meta.url),
+    "utf8"
+  );
+  const home = readFileSync(
+    new URL("../../client/src/pages/Home.tsx", import.meta.url),
+    "utf8"
+  );
+  const request = readFileSync(
+    new URL("../../client/src/pages/Request.tsx", import.meta.url),
+    "utf8"
+  );
+  const tracking = readFileSync(
+    new URL("../../client/src/pages/Tracking.tsx", import.meta.url),
+    "utf8"
+  );
+  it("le logo officiel MDS est utilisé avec srcset pour les écrans haute résolution", () => {
+    expect(layout).toContain("mds-logo-320.png");
+    expect(layout).toContain("mds-logo-180.png 180w");
+    expect(layout).toContain("mds-logo.png 1254w");
+  });
+  it("la photo du héro d'accueil est une photo réelle avec srcset et lazy/eager correct", () => {
+    expect(home).toContain("hero-artisan.webp");
+    expect(home).toContain("hero-artisan-700.webp");
+  });
+  it("l'accueil intègre les fiches confiance inspirées du splash Uber", () => {
+    expect(home).toContain("home-trust-chip");
+    expect(home).toContain("Fiable");
+    expect(home).toContain("Rapide");
+    expect(home).toContain("À proximité");
+  });
+  it("l'accueil propose une barre de recherche de services avec filtre instantané", () => {
+    expect(home).toContain('role="search"');
+    expect(home).toContain("home-search-bar");
+    expect(home).toContain("Catégories populaires");
+  });
+  it("la demande d'intervention propose le choix ponctuel vs abonnement (mensuel/annuel)", () => {
+    expect(request).toContain("Récurrence de votre besoin");
+    expect(request).toContain("Intervention ponctuelle");
+    expect(request).toContain("Abonnement (mensuel / annuel)");
+  });
+  it("le suivi live présente la carte d'identité de l'artisan avec sa photo réelle", () => {
+    expect(tracking).toContain("tracking-artisan-avatar");
+    expect(tracking).toContain("artisan-avatar.webp");
+    expect(tracking).toContain("Votre artisan MDS");
+  });
+  it("la navigation mobile s'aligne sur la maquette avec un onglet Contrats", () => {
+    expect(layout).toContain('"Contrats"');
+    expect(layout).toContain('href: "/professionnels"');
+  });
+  it("les trois espaces restent strictement séparés sans lien croisé trompeur", () => {
+    expect(home).toContain('href="/professionnels"');
+    expect(home).toContain('href="/artisan"');
+    expect(layout).toContain('href="/artisan"');
+  });
+});

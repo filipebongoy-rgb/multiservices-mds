@@ -104,7 +104,10 @@
 }
 .simple-home h1 span {
   display: block;
-  color: #bc4c23;
+  color: inherit;
+}
+.simple-home h1 .home-title-rest {
+  display: inline;
 }
 .simple-hero {
   position: relative;
@@ -438,6 +441,9 @@
   }
   .simple-home h1 {
     letter-spacing: -1px;
+  }
+  .simple-home h1 .home-title-rest {
+    display: block;
   }
   .simple-hero img {
     aspect-ratio: 4 / 3;

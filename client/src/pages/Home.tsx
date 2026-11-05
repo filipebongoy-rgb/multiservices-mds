@@ -16,13 +16,15 @@ export default function Home() {
   return (
     <main id="main-content" className="simple-home page-shell">
       <section className="simple-home-intro" aria-labelledby="home-title">
-        <h1 id="home-title">Un problème chez vous ?</h1>
+        <h1 id="home-title">
+          Un problème <span className="home-title-rest">chez vous ?</span>
+        </h1>
         <p className="home-lead">
           Nous nous occupons de vos travaux et dépannages.
         </p>
         <figure className="simple-hero">
           <img
-            src="/manus-storage/async-images/E2NSDrNa3EP19IhLEw8sCq/image-1.webp"
+            src="/manus-storage/async-images/jrMWVnVL5iHffqpYfhEc1x/image-1.webp"
             alt="Photo illustrative d’un artisan en intervention devant une habitation"
           />
           <figcaption>

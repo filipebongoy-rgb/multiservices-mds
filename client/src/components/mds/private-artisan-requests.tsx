@@ -485,6 +485,27 @@ export function RequestDetail({
         version={request.version}
         reference={request.reference}
       />
+      {["confirmed", "planned", "en_route"].includes(request.status) && (
+        <section className="trip-gps-readiness" aria-live="polite">
+          <div>
+            <strong>
+              {request.status === "en_route"
+                ? "Trajet déclaré — suivi GPS en préparation"
+                : "Suivi GPS du trajet"}
+            </strong>
+            <p>
+              {request.status === "en_route"
+                ? "Le client voit le statut de votre trajet. La carte Mapbox sera activée dès que le jeton cartographique sera configuré. Aucune position n’est inventée."
+                : "Au démarrage du trajet, l’autorisation de localisation sera demandée. Le partage sera limité à cette intervention et s’arrêtera à l’arrivée."}
+            </p>
+          </div>
+          <small>
+            {request.status === "en_route"
+              ? "Dernière position : non disponible"
+              : "La carte reste inactive avant votre départ réel."}
+          </small>
+        </section>
+      )}
       <section className="stack" aria-label="Répondre à la demande">
         {editable && needsAcceptedQuote && (
           <p className="notice">

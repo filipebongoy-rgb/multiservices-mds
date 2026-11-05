@@ -311,6 +311,23 @@
   color: #a33f1d;
   font-weight: 700;
 }
+.trip-gps-readiness {
+  display: grid;
+  gap: 5px;
+  margin: 4px 0 8px;
+  padding: 14px 16px;
+  border-left: 3px solid #d85b16;
+  background: #fff5eb;
+}
+.trip-gps-readiness strong {
+  color: #70351e;
+}
+.trip-gps-readiness p,
+.trip-gps-readiness small {
+  margin: 0;
+  color: #5e625a;
+  line-height: 1.45;
+}
 .simple-home-intro {
   max-width: 800px;
 }

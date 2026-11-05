@@ -1,0 +1,19 @@
+{
+  "name": "MULTISERVICES MDS — Espace artisan",
+  "short_name": "MDS Artisan",
+  "lang": "fr-FR",
+  "start_url": "/artisan",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f6f2",
+  "theme_color": "#262a27",
+  "description": "Espace mobile MDS pour suivre les interventions et préparer le trajet GPS.",
+  "icons": [
+    {
+      "src": "/mds-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

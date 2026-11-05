@@ -99,3 +99,15 @@ Le trajet suit désormais `Démarrer le trajet` → position réellement autoris
 
 - **Images de problèmes** : les 37 vignettes IA précédemment générées étaient des placeholders d’échec SVG (« Image generation failed ») à cause de défaillances silencieuses du générateur d’images. Elles ont été intégralement remplacées par de **vraies photos d’illustration** (26 photos libres de droits uniques, optimisées en WebP à 280×190 dans `client/public/problems/`) couvrant tous les problèmes du catalogue (fuite, robinetterie, WC, lavabo, débouchage, chauffe-eau, raccordements, panne électrique, prises, interrupteurs, éclairage, tableau, VMC, radiateurs, chaudière, thermostat, murs, plafonds, portes, rebouchage, ponçage, rénovation, montage de meubles, fixations). Vérification automatique : 26/26 renvoient HTTP 200.
 - **Proxy de stockage** : `registerStorageProxy(app)` n’était pas monté dans `server/_core/index.ts`, ce qui renvoyait du HTML SPA (404) sur toute URL `/manus-storage/*`. Monté et testé : la vraie photo hero (1920×1080) se télécharge désormais avec HTTP 307→200 image/webp.
+
+## PROMPT 7/8/9 finalisés — 5 novembre 2026 (soirée)
+
+- Preuve photo après travaux obligatoire : contrôle serveur strict dans `server/mds/requests.ts`, finalisation rejetée sans photo (message explicite), intervention clôturée avec statut `completed` dès qu'une preuve est enregistrée.
+- Validation client explicite avec horodatage `clientConfirmedAt`, règlements artisan calculés honnêtement sans virement simulé (4 états), espace profil complet `/profil`.
+- Suivi inspiré d'Uber Eats : carte de statut vivant, prochaine action, bandeau accueil « Intervention en cours », cloche de notifications réelle, onglet « Mon espace », documents `docs/ANALYSE-UBER-EATS.md`, `docs/GUIDE-ARTISAN.md`, `docs/AUDIT-EXPERIENCE-CLIENT.md`.
+- Suivi GPS Mapbox réel (token corrigé), notification d'approche automatique, 3 actions artisan, arrêt GPS à l'arrivée, appel MDS direct.
+- Compléments : vraies photos locales des problèmes (30+), tarifs officiels MDS seedés avec prix gelés au dépôt, onglet artisan Activité/Admin (connexions, demandeurs, échecs Stripe avec motifs), alertes propriétaire sur chaque événement, signature tactile du client chiffrée, accueil professionnel.
+- Cycle complet d'intervention vérifié de bout en bout en base avec vraies données.
+
+## Vérification globale
+- 290 tests automatisés passants (13 suites), TypeScript strict sans erreur, build production OK.

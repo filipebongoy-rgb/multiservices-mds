@@ -162,6 +162,43 @@ export default function Tracking() {
     r && ["completed", "invoiced", "paid", "closed"].includes(r.status);
   const isTerminal =
     r && ["refused", "cancelled", "closed", "expired"].includes(r.status);
+  const liveTracking = r
+    ? {
+        awaiting: ["sent", "awaiting_mds", "to_analyze"].includes(r.status),
+        confirmed: [
+          "accepted_mds",
+          "proposed_slot",
+          "needs_information",
+          "awaiting_client",
+          "confirmed",
+          "planned",
+        ].includes(r.status),
+        moving: ["en_route", "in_progress"].includes(r.status),
+        finished: Boolean(isFinished),
+      }
+    : null;
+  const liveTitle = !r
+    ? ""
+    : liveTracking?.finished
+      ? "Intervention terminée"
+      : liveTracking?.moving
+        ? "MDS intervient actuellement"
+        : liveTracking?.confirmed
+          ? "Votre intervention est confirmée"
+          : liveTracking?.awaiting
+            ? "Votre demande est bien reçue"
+            : statusLabels[r.status as keyof typeof statusLabels] || r.status;
+  const liveDescription = !r
+    ? ""
+    : liveTracking?.finished
+      ? "Les photos après travaux et les documents de fin sont disponibles dans ce dossier."
+      : liveTracking?.moving
+        ? "L’intervention est en cours. MDS mettra le dossier à jour dès qu’une nouvelle étape est enregistrée."
+        : liveTracking?.confirmed
+          ? "Vous serez informé si MDS ajoute une précision ou modifie le rendez-vous."
+          : liveTracking?.awaiting
+            ? "MDS analyse votre demande et vous répondra dans ce même suivi."
+            : "Consultez les actions disponibles plus bas dans votre dossier.";
   return (
     <main id="main-content" className="page-shell standard-page">
       <div className="eyebrow">VOTRE DOSSIER, ÉTAPE PAR ÉTAPE</div>
@@ -297,6 +334,46 @@ export default function Tracking() {
               )
             )}
           </ol>
+          <section className="tracking-live-card" aria-live="polite">
+            <div className="tracking-live-topline">
+              <span className="tracking-live-pulse" aria-hidden="true" />
+              <span>Suivi du dossier</span>
+              <button
+                className="text-link"
+                type="button"
+                onClick={() => details.refetch()}
+                disabled={details.isFetching}
+              >
+                <RefreshCw size={15} />
+                {details.isFetching ? "Actualisation…" : "Actualiser"}
+              </button>
+            </div>
+            <h2>{liveTitle}</h2>
+            <p>{liveDescription}</p>
+            {details.data?.appointment && (
+              <div className="tracking-live-appointment">
+                <strong>Prochain rendez-vous</strong>
+                <span>{dateTime(details.data.appointment.startAt)}</span>
+                <small>
+                  {details.data.appointment.status === "in_progress"
+                    ? "Intervention en cours"
+                    : `Fin estimée : ${dateTime(details.data.appointment.endAt)}`}
+                </small>
+              </div>
+            )}
+            {!isFinished && !isTerminal && (
+              <p className="tracking-live-next">
+                <strong>Prochaine étape :</strong>{" "}
+                {liveTracking?.awaiting
+                  ? "attendre la réponse de MDS"
+                  : liveTracking?.confirmed
+                    ? "MDS se présente au créneau confirmé"
+                    : liveTracking?.moving
+                      ? "attendre la mise à jour de fin d’intervention"
+                      : "consulter les actions proposées"}
+              </p>
+            )}
+          </section>
           <div className="tracking-layout">
             <div className="stack">
               {r.pricingSnapshot && (

@@ -65,12 +65,11 @@ export default function Home() {
               </Link>
             );
           })}
+          <Link href="/demande?libre=1" className="simple-trade simple-other">
+            <CircleHelp size={25} strokeWidth={1.7} aria-hidden="true" />
+            <span>Autre besoin</span>
+          </Link>
         </div>
-        <Link href="/demande?libre=1" className="simple-free-request">
-          <CircleHelp size={21} aria-hidden="true" />
-          Je ne trouve pas mon problème
-          <ArrowRight size={18} aria-hidden="true" />
-        </Link>
         <Link href="/professionnels" className="home-professional-link">
           <strong>Vous êtes une entreprise ou une collectivité ?</strong>
           <span>Gérer vos bâtiments et vos interventions avec MDS.</span>

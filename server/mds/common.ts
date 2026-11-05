@@ -186,7 +186,8 @@ export async function event(
   status: RequestStatus,
   message: string,
   actorType: "client" | "artisan" | "system",
-  actorUserId: number | null
+  actorUserId: number | null,
+  notificationTitle?: string
 ) {
   const [createdEvent] = await db
     .insert(s.events)
@@ -197,7 +198,7 @@ export async function event(
     requestId: request.id,
     userId: p.artisanUserId,
     audience: "artisan",
-    title: `${request.reference} — ${statusLabels[status]}`,
+    title: `${request.reference} — ${notificationTitle || statusLabels[status]}`,
     message,
   });
   await db.insert(s.notifications).values({
@@ -205,7 +206,7 @@ export async function event(
     userId: request.userId,
     organizationId: request.organizationId,
     audience: "client",
-    title: statusLabels[status],
+    title: notificationTitle || statusLabels[status],
     message,
   });
   await enqueueEventMessages(

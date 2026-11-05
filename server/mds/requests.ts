@@ -421,8 +421,11 @@ export const requestsRouter = router({
         checkVersion(r, input.version);
         const message = input.message?.trim();
         const actor = ctx.user.id;
-        const emit = (status: RequestStatus, text: string) =>
-          event(tx, r, status, text, "artisan", actor);
+        const emit = (
+          status: RequestStatus,
+          text: string,
+          notificationTitle?: string
+        ) => event(tx, r, status, text, "artisan", actor, notificationTitle);
         let patch: Partial<typeof s.requests.$inferInsert> = {};
         switch (input.action) {
           case "accept":
@@ -694,17 +697,9 @@ export const requestsRouter = router({
               .where(eq(s.interventions.id, intervention.id));
             await emit(
               "en_route",
-              message || "L’artisan est arrivé à l’adresse du rendez-vous."
+              message || "L’artisan est arrivé à l’adresse du rendez-vous.",
+              "Artisan arrivé"
             );
-            await tx.insert(s.notifications).values({
-              userId: r.userId,
-              organizationId: r.organizationId,
-              requestId: r.id,
-              audience: "client",
-              title: "Artisan arrivé",
-              message:
-                "L’artisan MDS est arrivé à votre adresse. Vous pouvez maintenant l’accueillir pour commencer l’intervention.",
-            });
             break;
           }
           case "start": {

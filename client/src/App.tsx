@@ -1,4 +1,5 @@
 import { useEffect, lazy, Suspense } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch, useLocation } from "wouter";
@@ -33,7 +34,8 @@ const titles: Record<string, string> = {
   "/mentions-legales": "Mentions légales",
 };
 function Routes() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { user, loading } = useAuth();
   useEffect(() => {
     window.scrollTo(0, 0);
     document.title =
@@ -57,6 +59,21 @@ function Routes() {
       ? "noindex, nofollow"
       : "index, follow";
   }, [location]);
+  useEffect(() => {
+    if (loading) return;
+    if (user?.role === "admin") {
+      const allowed = [
+        "/artisan",
+        "/profil",
+        "/confidentialite",
+        "/mentions-legales",
+        "/404",
+      ];
+      if (!allowed.includes(location)) {
+        setLocation("/artisan", { replace: true });
+      }
+    }
+  }, [location, user, loading, setLocation]);
   return (
     <>
       <Header />

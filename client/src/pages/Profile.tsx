@@ -76,7 +76,9 @@ export default function Profile() {
   return (
     <main className="page-shell private-workspace">
       <header className="simple-pro-header">
-        <span className="eyebrow">Mon profil</span>
+        <span className="eyebrow">
+          {auth.user.role === "admin" ? "Espace artisan" : "Mon profil"}
+        </span>
         <h1>Vos informations, au même endroit</h1>
         <p className="muted">
           Ces informations servent à vous reconnaître dans vos demandes et vos
@@ -94,10 +96,7 @@ export default function Profile() {
             </p>
             <div className="row" style={{ flexWrap: "wrap", gap: 12 }}>
               <Link href="/artisan" className="button primary">
-                Ouvrir l’espace artisan
-              </Link>
-              <Link href="/artisan" className="button secondary">
-                Voir les demandes
+                Retour à l’atelier
               </Link>
             </div>
           </section>
@@ -145,61 +144,65 @@ export default function Profile() {
             </ActionButton>
           </form>
         </section>
-        <section className="panel stack">
-          <h2 className="simple-panel-title">Mes espaces</h2>
-          {organizations.isLoading ? (
-            <QueryState loading />
-          ) : organizations.error ? (
-            <QueryState
-              error={organizations.error}
-              retry={organizations.refetch}
-            />
-          ) : organizations.data?.length ? (
-            <>
-              <p>Vous avez accès à ces organisations professionnelles :</p>
-              <ul className="stack" style={{ paddingLeft: 20 }}>
-                {organizations.data.map(org => (
-                  <li key={org.id}>
-                    <strong>{org.name}</strong> ·{" "}
-                    {org.role === "owner"
-                      ? "propriétaire"
-                      : org.role === "manager"
-                        ? "gestionnaire"
-                        : "collaborateur"}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/professionnels" className="button secondary">
-                Gérer mes organisations
-              </Link>
-            </>
-          ) : (
-            <>
+        {auth.user.role !== "admin" && (
+          <>
+            <section className="panel stack">
+              <h2 className="simple-panel-title">Mes espaces</h2>
+              {organizations.isLoading ? (
+                <QueryState loading />
+              ) : organizations.error ? (
+                <QueryState
+                  error={organizations.error}
+                  retry={organizations.refetch}
+                />
+              ) : organizations.data?.length ? (
+                <>
+                  <p>Vous avez accès à ces organisations professionnelles :</p>
+                  <ul className="stack" style={{ paddingLeft: 20 }}>
+                    {organizations.data.map(org => (
+                      <li key={org.id}>
+                        <strong>{org.name}</strong> ·{" "}
+                        {org.role === "owner"
+                          ? "propriétaire"
+                          : org.role === "manager"
+                            ? "gestionnaire"
+                            : "collaborateur"}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/professionnels" className="button secondary">
+                    Gérer mes organisations
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p>
+                    Vous utilisez actuellement l’espace particulier. Vous pouvez
+                    envoyer une demande sans créer de dossier administratif.
+                  </p>
+                  <Link href="/demande" className="button primary">
+                    Faire une demande
+                  </Link>
+                </>
+              )}
+            </section>
+            <section className="panel stack">
+              <h2 className="simple-panel-title">Paiements et suivi</h2>
               <p>
-                Vous utilisez actuellement l’espace particulier. Vous pouvez
-                envoyer une demande sans créer de dossier administratif.
+                Retrouvez le prix accepté, le statut du paiement et les preuves
+                de fin directement dans le suivi de chaque dossier.
               </p>
-              <Link href="/demande" className="button primary">
-                Faire une demande
-              </Link>
-            </>
-          )}
-        </section>
-        <section className="panel stack">
-          <h2 className="simple-panel-title">Paiements et suivi</h2>
-          <p>
-            Retrouvez le prix accepté, le statut du paiement et les preuves de
-            fin directement dans le suivi de chaque dossier.
-          </p>
-          <div className="row" style={{ flexWrap: "wrap" }}>
-            <Link href="/suivi" className="button primary">
-              Voir mon suivi
-            </Link>
-            <Link href="/paiements" className="button secondary">
-              Voir les paiements
-            </Link>
-          </div>
-        </section>
+              <div className="row" style={{ flexWrap: "wrap" }}>
+                <Link href="/suivi" className="button primary">
+                  Voir mon suivi
+                </Link>
+                <Link href="/paiements" className="button secondary">
+                  Voir les paiements
+                </Link>
+              </div>
+            </section>
+          </>
+        )}
       </div>
     </main>
   );

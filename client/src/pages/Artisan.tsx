@@ -156,17 +156,6 @@ function ArtisanActivation({
             {claim.isPending ? "Vérification…" : "Activer mon accès artisan"}
           </ActionButton>
         </form>
-        <a
-          className="text-link"
-          style={{
-            minHeight: 44,
-            display: "inline-flex",
-            alignItems: "center",
-          }}
-          href="/professionnels"
-        >
-          Accéder à mon espace professionnel
-        </a>
         <Link className="text-link" href="/">
           Revenir à l’accueil
         </Link>

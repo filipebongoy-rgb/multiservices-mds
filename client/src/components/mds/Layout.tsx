@@ -24,11 +24,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function Brand({ inverse = false }: { inverse?: boolean }) {
+  const { user } = useAuth();
+  const href = user?.role === "admin" ? "/artisan" : "/";
   return (
     <Link
-      href="/"
+      href={href}
       className={`brand ${inverse ? "inverse" : ""}`}
-      aria-label="MULTISERVICES MDS — accueil"
+      aria-label={
+        user?.role === "admin"
+          ? "MULTISERVICES MDS — espace artisan"
+          : "MULTISERVICES MDS — accueil"
+      }
     >
       <img
         className="brand-logo"
@@ -42,6 +48,7 @@ export function Brand({ inverse = false }: { inverse?: boolean }) {
 export function Header() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [error, setError] = useState("");
   const privateWorkspace =
     !!user && ["/artisan", "/professionnels"].includes(location);
@@ -72,19 +79,23 @@ export function Header() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="simple-space-menu">
-        <DropdownMenuItem asChild>
-          <Link
-            href="/artisan"
-            className={
-              user?.role === "admin" ? "simple-artisan-item" : undefined
-            }
-          >
-            Espace artisan
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/professionnels">Professionnel</Link>
-        </DropdownMenuItem>
+        {!isAdmin && (
+          <DropdownMenuItem asChild>
+            <Link
+              href="/artisan"
+              className={
+                user?.role === "admin" ? "simple-artisan-item" : undefined
+              }
+            >
+              Espace artisan
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {!isAdmin && (
+          <DropdownMenuItem asChild>
+            <Link href="/professionnels">Professionnel</Link>
+          </DropdownMenuItem>
+        )}
         {user && (
           <DropdownMenuItem asChild>
             <Link href="/profil">Mon profil</Link>
@@ -126,7 +137,7 @@ export function Header() {
           {!requestPage && (
             <div className="header-quick-actions">
               <NotificationBell />
-              {!privateWorkspace && <HeaderCallButton />}
+              {!privateWorkspace && !isAdmin && <HeaderCallButton />}
             </div>
           )}
           <nav
@@ -137,7 +148,7 @@ export function Header() {
                 : "Navigation principale"
             }
           >
-            {privateWorkspace ? (
+            {isAdmin ? null : privateWorkspace ? (
               <Link href="/" className="simple-nav-link simple-client-return">
                 <ArrowLeft size={17} aria-hidden="true" />
                 Retour client
@@ -158,15 +169,6 @@ export function Header() {
                 >
                   Suivre
                 </Link>
-                {user?.role === "admin" && (
-                  <Link
-                    href="/artisan"
-                    className={`simple-nav-link simple-artisan-nav ${location === "/artisan" ? "active" : ""}`}
-                    aria-current={location === "/artisan" ? "page" : undefined}
-                  >
-                    Artisan
-                  </Link>
-                )}
               </>
             )}
             {spaces}
@@ -184,7 +186,13 @@ export function Header() {
 
 export function Footer() {
   const [location] = useLocation();
-  if (location === "/artisan" || location === "/professionnels") return null;
+  const { user } = useAuth();
+  if (
+    location === "/artisan" ||
+    location === "/professionnels" ||
+    (user?.role === "admin" && location === "/profil")
+  )
+    return null;
   return (
     <footer className="site-footer simple-footer">
       <div className="simple-footer-inner">
@@ -209,8 +217,13 @@ export function Footer() {
 }
 export function MobileBottomNav() {
   const [location] = useLocation();
-  if (location === "/artisan" || location === "/professionnels") return null;
   const { user } = useAuth();
+  if (
+    location === "/artisan" ||
+    location === "/professionnels" ||
+    (user?.role === "admin" && location === "/profil")
+  )
+    return null;
   const isAdmin = user?.role === "admin";
   const items = [
     { href: "/", label: "Accueil", Icon: House },

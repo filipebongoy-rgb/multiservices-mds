@@ -2,9 +2,19 @@
 
 ## Parcours client
 
-Le chemin nominal est désormais : accueil → catégorie de service → demande en trois étapes. L’accueil ne demande plus de décrire le problème avant le formulaire et n’impose plus le détour par le catalogue : la description n’est saisie qu’une seule fois dans la demande.
+Le chemin nominal suit cinq écrans guidés :
 
-Depuis l’accueil, il faut 1 clic sur la catégorie ou sur « Commencer ma demande », puis 2 clics de progression (« Continuer ») et 1 clic d’envoi, hors saisie. Les photos initiales sont sélectionnées en une seule opération, avec aperçu et retrait individuel avant envoi.
+1. **Service** : plomberie, électricité, chauffage, peinture, petits travaux ou besoin non identifié.
+2. **Problème** : la liste dépend du métier choisi ; une demande libre reste possible.
+3. **Adresse** : adresse, code postal et ville.
+4. **Disponibilité** : date et créneau facultatifs, avec proposition de créneaux lorsqu’ils sont disponibles.
+5. **Envoi** : récapitulatif, coordonnées et consentement avant transmission.
+
+Depuis l’accueil, l’utilisateur choisit son métier en un clic. Depuis un métier déjà choisi, il arrive directement à l’écran des problèmes, sans détour par le catalogue. Les photos initiales sont sélectionnées en une seule opération, avec aperçu et retrait individuel.
+
+Les boutons sont masqués ou désactivés tant que l’étape courante n’est pas suffisamment renseignée. Le bouton d’envoi n’apparaît qu’à la validation finale. L’adresse et la disponibilité sont séparées afin que l’utilisateur ne mélange pas le lieu et le créneau.
+
+Le chemin nominal demande quatre passages « Continuer » et un envoi final, hors saisie et choix facultatifs. Les clics réels ont été vérifiés dans le navigateur Sandbox : choix Plomberie, choix Fuite, passage à Adresse, passage à Disponibilité, puis passage à Validation.
 
 ## Suivi
 
@@ -16,4 +26,4 @@ Les confirmations contractuelles et tarifaires restent nécessaires lorsqu’une
 
 ## Validation technique
 
-Le typage, les tests métier et le build de production passent après la refonte. La base de données n’a pas été modifiée pour cette simplification UX.
+Le typage, les 259 tests métier et le build de production passent après la refonte. La base de données n’a pas été modifiée pour cette simplification UX. Les routes publiques déclarées répondent également en HTTP 200 dans la Preview.

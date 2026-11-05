@@ -135,6 +135,38 @@
   min-width: 180px;
   font-size: 17px;
 }
+.home-access {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 260px));
+  gap: 12px;
+  margin-top: 28px;
+}
+.home-access-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 3px 10px;
+  align-items: center;
+  min-height: 82px;
+  padding: 15px 16px;
+  border: 1px solid #dedfd9;
+  background: #fff;
+}
+.home-access-card strong,
+.home-access-card span {
+  grid-column: 1;
+}
+.home-access-card span {
+  color: #626762;
+  font-size: 14px;
+}
+.home-access-card svg {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+.home-access-card.active {
+  border-color: #bc4c23;
+  background: #fff4e9;
+}
 .simple-services {
   margin-top: 32px;
 }
@@ -384,6 +416,9 @@
   }
   .simple-home .simple-continue {
     width: 100%;
+  }
+  .home-access {
+    grid-template-columns: 1fr;
   }
   .simple-pro.private-workspace {
     padding: 24px 20px 32px;

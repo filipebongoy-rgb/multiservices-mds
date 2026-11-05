@@ -26,6 +26,18 @@ export default function Home() {
         <Link className="btn primary simple-continue" href="/demande">
           Commencer ma demande <ArrowRight size={20} aria-hidden="true" />
         </Link>
+        <div className="home-access" aria-label="Choisir un espace">
+          <Link className="home-access-card active" href="/demande">
+            <strong>Particulier</strong>
+            <span>À mon domicile</span>
+            <ArrowRight size={18} aria-hidden="true" />
+          </Link>
+          <Link className="home-access-card" href="/professionnels">
+            <strong>Professionnel</strong>
+            <span>Entreprise, mairie, bailleur, syndic</span>
+            <ArrowRight size={18} aria-hidden="true" />
+          </Link>
+        </div>
       </section>
       <section
         className="simple-services"

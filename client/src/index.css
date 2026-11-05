@@ -2003,6 +2003,33 @@ details[open] > .simple-summary::before {
 .request-simple .panel {
   padding: clamp(20px, 4vw, 32px);
 }
+.choice-list {
+  display: grid;
+  gap: 10px;
+}
+.selected-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fff4e9;
+  border-left: 4px solid var(--primary);
+}
+.choice-list .btn {
+  width: 100%;
+  min-height: 56px;
+  justify-content: space-between;
+  text-align: left;
+}
+.choice-list .btn strong,
+.choice-list .btn .muted {
+  margin-right: auto;
+}
+.choice-list .btn .muted {
+  font-size: 13px;
+  margin-left: 12px;
+}
 .refinement {
   border-top: 1px solid #e2e2df;
   padding-top: 12px;
@@ -2040,14 +2067,16 @@ label.btn:has(+ input:focus-visible) {
 @media (max-width: 480px) {
   .request-progress {
     gap: 6px;
-    font-size: 12px;
+    gap: 3px;
+    font-size: 11px;
   }
   .request-progress li {
-    gap: 5px;
+    gap: 3px;
+    white-space: nowrap;
   }
   .request-progress li span {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
   }
   .request-simple .form-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

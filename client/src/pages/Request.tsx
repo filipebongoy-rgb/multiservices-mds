@@ -49,6 +49,8 @@ function initialDraft(): Draft {
 }
 function initialStep() {
   try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("metier") || params.get("service")) return 1;
     const ready = sessionStorage.getItem("mds-description-ready");
     sessionStorage.removeItem("mds-description-ready");
     return ready && initialDraft().description.trim().length >= 10 ? 1 : 0;
@@ -75,6 +77,9 @@ export default function Request() {
       Number.isSafeInteger(siteParam) && siteParam > 0 ? siteParam : null;
   const [draft, setDraft] = useState<Draft>(initialDraft),
     [step, setStep] = useState(initialStep);
+  const [tradeChoice, setTradeChoice] = useState(
+    () => tradeParam || initialDraft().answers.__trade || ""
+  );
   const [selected, setSelected] = useState<number | null>(() => {
     if (params.get("libre") === "1") return null;
     const id = Number(params.get("service"));
@@ -83,6 +88,10 @@ export default function Request() {
   const { user } = useAuth();
   const catalog = trpc.mds.catalog.list.useQuery({});
   const service = catalog.data?.find(s => s.id === selected);
+  const selectedTrade = trades.find(trade => trade.slug === tradeChoice);
+  useEffect(() => {
+    if (service && !tradeChoice) setTradeChoice(service.trade);
+  }, [service?.id, tradeChoice]);
   const organization = trpc.mds.organizations.detail.useQuery(
     { id: organizationId || 0 },
     { enabled: !!organizationId && !!user, retry: false }
@@ -149,7 +158,7 @@ export default function Request() {
       postcode: /^\d{5}$/.test(draft.postcode) ? draft.postcode : undefined,
     },
     {
-      enabled: step === 2 && (!selected || !!service),
+      enabled: step === 4 && (!selected || !!service),
       retry: false,
       refetchOnWindowFocus: false,
     }
@@ -169,29 +178,32 @@ export default function Request() {
     },
     {
       enabled:
-        step === 1 &&
+        step === 3 &&
         /^\d{5}$/.test(draft.postcode) &&
         /^\d{4}-\d{2}-\d{2}$/.test(draft.date),
       retry: false,
     }
   );
   function validateStage() {
-    if (selected && !service)
-      return "Cette prestation n’est pas disponible. Choisissez une offre active ou décrivez votre problème librement.";
-    if (step === 0 && draft.description.trim().length < 10)
+    if (step === 0 && !selectedTrade)
+      return "Choisissez le métier qui correspond à votre besoin.";
+    if (step === 1 && !draft.problemType)
+      return "Choisissez le type de problème qui correspond le mieux.";
+    if (step === 1 && draft.description.trim().length < 10)
       return "Décrivez votre problème en quelques mots (10 caractères minimum).";
-    if (step === 1) {
+    if (step === 2) {
       if (
         draft.address.trim().length < 5 ||
         !/^\d{5}$/.test(draft.postcode) ||
         draft.city.trim().length < 2
       )
         return "Complétez l’adresse, le code postal et la ville.";
+    }
+    if (step === 3 && draft.date) {
       if (
-        draft.date &&
-        (!draft.time ||
-          !Number.isFinite(new Date(draft.date + "T" + draft.time).getTime()) ||
-          new Date(draft.date + "T" + draft.time) <= new Date())
+        !draft.time ||
+        !Number.isFinite(new Date(draft.date + "T" + draft.time).getTime()) ||
+        new Date(draft.date + "T" + draft.time) <= new Date()
       )
         return "Choisissez une heure future, ou laissez le créneau à convenir.";
     }
@@ -203,7 +215,7 @@ export default function Request() {
       setError(issue);
       return;
     }
-    setStep(s => Math.min(s + 1, 2));
+    setStep(s => Math.min(s + 1, 4));
   }
   async function uploadPhoto(key = receipt) {
     if (!key || !photos.length) return;
@@ -357,23 +369,29 @@ export default function Request() {
         style={{ maxWidth: 720, margin: "0 auto" }}
       >
         <ol className="request-progress" aria-label="Étapes de la demande">
-          {["Besoin", "Adresse et créneau", "Envoyer"].map((title, i) => (
-            <li
-              key={title}
-              className={step === i ? "current" : step > i ? "done" : ""}
-              aria-current={step === i ? "step" : undefined}
-            >
-              <span>{i + 1}</span>
-              {title}
-            </li>
-          ))}
+          {["Service", "Problème", "Adresse", "Disponibilité", "Envoi"].map(
+            (title, i) => (
+              <li
+                key={title}
+                className={step === i ? "current" : step > i ? "done" : ""}
+                aria-current={step === i ? "step" : undefined}
+              >
+                <span>{i + 1}</span>
+                {title}
+              </li>
+            )
+          )}
         </ol>
         <section className="panel stack">
           <h1 ref={headingRef} tabIndex={-1} className="page-title">
             {
-              ["Que se passe-t-il ?", "Où et quand ?", "Envoyer ma demande"][
-                step
-              ]
+              [
+                "Que souhaitez-vous faire ?",
+                "Quel est votre problème ?",
+                "Où se trouve le problème ?",
+                "Quand souhaitez-vous intervenir ?",
+                "Vérifiez votre demande",
+              ][step]
             }
           </h1>
           {catalog.error && selected && (
@@ -389,7 +407,98 @@ export default function Request() {
             />
           )}
           {step === 0 && (
+            <div className="choice-list" aria-label="Choisir un métier">
+              {trades.map(trade => (
+                <button
+                  key={trade.slug}
+                  type="button"
+                  className="btn secondary"
+                  onClick={() => {
+                    setTradeChoice(trade.slug);
+                    setDraft(d => ({
+                      ...d,
+                      problemType: "",
+                      answers: { ...d.answers, __trade: trade.slug },
+                    }));
+                    setSelected(null);
+                    setStep(1);
+                  }}
+                >
+                  <strong>{trade.name}</strong>
+                  <span className="muted">{trade.short}</span>
+                  <ArrowRight size={17} aria-hidden="true" />
+                </button>
+              ))}
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={() => {
+                  setTradeChoice("");
+                  setDraft(d => ({
+                    ...d,
+                    problemType: "Autre problème",
+                    answers: { ...d.answers, __trade: "" },
+                  }));
+                  setSelected(null);
+                  setStep(1);
+                }}
+              >
+                <strong>Je ne sais pas</strong>
+                <ArrowRight size={17} aria-hidden="true" />
+              </button>
+            </div>
+          )}
+          {step === 1 && (
             <>
+              {selectedTrade && (
+                <div className="selected-context">
+                  <strong>{selectedTrade.name}</strong>
+                  <button
+                    type="button"
+                    className="text-link"
+                    onClick={() => setStep(0)}
+                  >
+                    Modifier
+                  </button>
+                </div>
+              )}
+              {selectedTrade ? (
+                <div className="choice-list" aria-label="Choisir un problème">
+                  {selectedTrade.services.map(problem => (
+                    <button
+                      key={problem}
+                      type="button"
+                      className={`btn secondary ${draft.problemType === problem ? "selected" : ""}`}
+                      onClick={() => {
+                        setDraft(d => ({ ...d, problemType: problem }));
+                        const active = catalog.data?.find(
+                          item =>
+                            item.trade === selectedTrade.slug &&
+                            item.name.toLocaleLowerCase("fr") ===
+                              problem.toLocaleLowerCase("fr")
+                        );
+                        setSelected(active?.id ?? null);
+                      }}
+                    >
+                      {problem}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className={`btn secondary ${draft.problemType === "Autre problème" ? "selected" : ""}`}
+                    onClick={() => {
+                      setDraft(d => ({ ...d, problemType: "Autre problème" }));
+                      setSelected(null);
+                    }}
+                  >
+                    Autre problème de {selectedTrade.name.toLowerCase()}
+                  </button>
+                </div>
+              ) : (
+                <p className="notice">
+                  Décrivez votre besoin librement ; MDS vous orientera ensuite.
+                </p>
+              )}
               {service && (
                 <div className="row">
                   <strong>{service.name}</strong>
@@ -501,126 +610,139 @@ export default function Request() {
               )}
             </>
           )}
-          {step === 1 && (
+          {(step === 2 || step === 3) && (
             <>
-              <div className="field">
-                <label htmlFor="address">Adresse de l’intervention</label>
-                <p className="action-example">
-                  Exemple : 12 rue des Lilas, bâtiment B, 2e étage.
-                </p>
-                <input
-                  id="address"
-                  autoComplete="street-address"
-                  value={draft.address}
-                  maxLength={250}
-                  onChange={e => set("address", e.target.value)}
-                />
-              </div>
-              <div className="form-grid">
-                <div className="field">
-                  <label htmlFor="postcode">Code postal</label>
-                  <input
-                    id="postcode"
-                    autoComplete="postal-code"
-                    inputMode="numeric"
-                    value={draft.postcode}
-                    maxLength={5}
-                    onChange={e =>
-                      set("postcode", e.target.value.replace(/\D/g, ""))
-                    }
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="city">Ville</label>
-                  <input
-                    id="city"
-                    autoComplete="address-level2"
-                    value={draft.city}
-                    maxLength={100}
-                    onChange={e => set("city", e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="field">
-                <label htmlFor="date">Date souhaitée (facultative)</label>
-                <p className="action-example">
-                  Exemple : choisissez une date si vous avez une préférence ;
-                  MDS confirmera ensuite.
-                </p>
-                <input
-                  id="date"
-                  type="date"
-                  value={draft.date}
-                  min={new Date().toLocaleDateString("en-CA")}
-                  onChange={e => set("date", e.target.value)}
-                />
-              </div>
-              {draft.date && (
+              {step === 2 && (
                 <>
-                  {slots.data?.slots.length ? (
-                    <div
-                      className="slot-list"
-                      aria-label="Créneaux actuellement possibles"
-                    >
-                      {slots.data.slots.map(slot => (
-                        <button
-                          key={slot.startAt}
-                          type="button"
-                          className={`btn secondary ${new Date(draft.date + "T" + draft.time).getTime() === new Date(slot.startAt).getTime() ? "selected" : ""}`}
-                          onClick={() => {
-                            const date = new Date(slot.startAt);
-                            const local = new Date(
-                              date.getTime() - date.getTimezoneOffset() * 60000
-                            )
-                              .toISOString()
-                              .slice(0, 16)
-                              .split("T");
-                            setDraft(d => ({
-                              ...d,
-                              date: local[0],
-                              time: local[1],
-                            }));
-                            setConsent(false);
-                          }}
-                        >
-                          {dateTime(slot.startAt)}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    slots.data?.reason && (
-                      <p className="muted small-text">{slots.data.reason}</p>
-                    )
-                  )}
                   <div className="field">
-                    <label htmlFor="time">
-                      Heure souhaitée (heure de votre navigateur)
-                    </label>
+                    <label htmlFor="address">Adresse de l’intervention</label>
+                    <p className="action-example">
+                      Exemple : 12 rue des Lilas, bâtiment B, 2e étage.
+                    </p>
                     <input
-                      id="time"
-                      type="time"
-                      value={draft.time}
-                      onChange={e => set("time", e.target.value)}
+                      id="address"
+                      autoComplete="street-address"
+                      value={draft.address}
+                      maxLength={250}
+                      onChange={e => set("address", e.target.value)}
                     />
                   </div>
-                  {slots.error && (
-                    <p className="muted">
-                      Créneaux indisponibles. Vous pouvez proposer une heure à
-                      MDS.
-                    </p>
-                  )}
+                  <div className="form-grid">
+                    <div className="field">
+                      <label htmlFor="postcode">Code postal</label>
+                      <input
+                        id="postcode"
+                        autoComplete="postal-code"
+                        inputMode="numeric"
+                        value={draft.postcode}
+                        maxLength={5}
+                        onChange={e =>
+                          set("postcode", e.target.value.replace(/\D/g, ""))
+                        }
+                      />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="city">Ville</label>
+                      <input
+                        id="city"
+                        autoComplete="address-level2"
+                        value={draft.city}
+                        maxLength={100}
+                        onChange={e => set("city", e.target.value)}
+                      />
+                    </div>
+                  </div>
                 </>
               )}
-              <p className="muted small-text">
-                Ce créneau reste un souhait, pas une réservation.
-              </p>
+              {step === 3 && (
+                <>
+                  <div className="field">
+                    <label htmlFor="date">Date souhaitée (facultative)</label>
+                    <p className="action-example">
+                      Exemple : choisissez une date si vous avez une préférence
+                      ; MDS confirmera ensuite.
+                    </p>
+                    <input
+                      id="date"
+                      type="date"
+                      value={draft.date}
+                      min={new Date().toLocaleDateString("en-CA")}
+                      onChange={e => set("date", e.target.value)}
+                    />
+                  </div>
+                  {draft.date && (
+                    <>
+                      {slots.data?.slots.length ? (
+                        <div
+                          className="slot-list"
+                          aria-label="Créneaux actuellement possibles"
+                        >
+                          {slots.data.slots.map(slot => (
+                            <button
+                              key={slot.startAt}
+                              type="button"
+                              className={`btn secondary ${new Date(draft.date + "T" + draft.time).getTime() === new Date(slot.startAt).getTime() ? "selected" : ""}`}
+                              onClick={() => {
+                                const date = new Date(slot.startAt);
+                                const local = new Date(
+                                  date.getTime() -
+                                    date.getTimezoneOffset() * 60000
+                                )
+                                  .toISOString()
+                                  .slice(0, 16)
+                                  .split("T");
+                                setDraft(d => ({
+                                  ...d,
+                                  date: local[0],
+                                  time: local[1],
+                                }));
+                                setConsent(false);
+                              }}
+                            >
+                              {dateTime(slot.startAt)}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        slots.data?.reason && (
+                          <p className="muted small-text">
+                            {slots.data.reason}
+                          </p>
+                        )
+                      )}
+                      <div className="field">
+                        <label htmlFor="time">
+                          Heure souhaitée (heure de votre navigateur)
+                        </label>
+                        <input
+                          id="time"
+                          type="time"
+                          value={draft.time}
+                          onChange={e => set("time", e.target.value)}
+                        />
+                      </div>
+                      {slots.error && (
+                        <p className="muted">
+                          Créneaux indisponibles. Vous pouvez proposer une heure
+                          à MDS.
+                        </p>
+                      )}
+                    </>
+                  )}
+                  <p className="muted small-text">
+                    Ce créneau reste un souhait, pas une réservation.
+                  </p>
+                </>
+              )}
             </>
           )}
-          {step === 2 && (
+          {step === 4 && (
             <>
               <p>
-                <strong>{service?.name || "Votre problème"}</strong> ·{" "}
-                {draft.postcode} {draft.city}
+                <strong>
+                  {service?.name || draft.problemType || "Votre problème"}
+                </strong>{" "}
+                · {draft.postcode} {draft.city}
               </p>
               {pricing.data ? (
                 <PriceDetails snapshot={pricing.data.snapshot} />
@@ -721,11 +843,18 @@ export default function Request() {
                 Retour
               </button>
             )}
-            {step < 2 ? (
+            {step > 0 && step < 4 ? (
               <button
                 type="button"
                 className="btn primary"
                 disabled={
+                  (step === 1 &&
+                    (!draft.problemType ||
+                      draft.description.trim().length < 10)) ||
+                  (step === 2 &&
+                    (draft.address.trim().length < 5 ||
+                      !/^\d{5}$/.test(draft.postcode) ||
+                      draft.city.trim().length < 2)) ||
                   (!!selected && catalog.isLoading) ||
                   (!!organizationId && organization.isLoading)
                 }
@@ -734,7 +863,7 @@ export default function Request() {
                 Continuer
                 <ArrowRight size={17} />
               </button>
-            ) : (
+            ) : step === 4 ? (
               <button
                 type="button"
                 className="btn primary"
@@ -750,7 +879,7 @@ export default function Request() {
                 {create.isPending ? "Envoi…" : "Envoyer ma demande"}
                 <Check size={17} />
               </button>
-            )}
+            ) : null}
           </div>
         </section>
       </div>

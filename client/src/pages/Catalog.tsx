@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "wouter";
 import {
   Search,
   ArrowRight,
@@ -18,9 +18,15 @@ import { PriceDetails } from "@/components/mds/PriceDetails";
 import { FreeRequest, Loading, ApiError, Empty } from "@/components/mds/Layout";
 const icons = [Droplets, Zap, Flame, Paintbrush, Wrench];
 export default function Catalog() {
-  const params = new URLSearchParams(window.location.search);
+  const [location] = useLocation();
+  const params = new URLSearchParams(location.split("?")[1] || "");
   const [q, setQ] = useState(params.get("q") || "");
   const [trade, setTrade] = useState(params.get("metier") || "");
+  useEffect(() => {
+    const next = new URLSearchParams(location.split("?")[1] || "");
+    setTrade(next.get("metier") || "");
+    setQ(next.get("q") || "");
+  }, [location]);
   const query = trpc.mds.catalog.list.useQuery({});
   const filtered = (query.data || []).filter(
     s =>
@@ -130,7 +136,16 @@ export default function Catalog() {
               : "Aucune prestation ouverte pour le moment."
           }
         >
-          <p>Décrivez votre besoin à MDS.</p>
+          <p>
+            Cette catégorie n’a pas encore de prestation ouverte. Décrivez
+            directement votre besoin : MDS vous répondra depuis le même dossier.
+          </p>
+          <Link
+            className="btn primary"
+            href={`/demande?libre=1${trade ? `&metier=${trade}` : ""}`}
+          >
+            Décrire mon besoin <ArrowRight size={18} aria-hidden="true" />
+          </Link>
           {!!(q || trade) && (
             <button
               className="text-link"

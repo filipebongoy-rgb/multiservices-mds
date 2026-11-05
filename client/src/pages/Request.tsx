@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { ArrowLeft, ArrowRight, Check, ImagePlus, Copy } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { createRequestSchema, dateTime } from "@shared/mds";
+import { createRequestSchema, dateTime, trades } from "@shared/mds";
 import { PriceDetails } from "@/components/mds/PriceDetails";
 import { ApiError } from "@/components/mds/Layout";
 
@@ -67,7 +67,8 @@ function readFile(file: File) {
 export default function Request() {
   const params = new URLSearchParams(window.location.search),
     orgParam = Number(params.get("org")),
-    siteParam = Number(params.get("site"));
+    siteParam = Number(params.get("site")),
+    tradeParam = params.get("metier") || "";
   const organizationId =
       Number.isSafeInteger(orgParam) && orgParam > 0 ? orgParam : null,
     siteId =
@@ -411,6 +412,15 @@ export default function Request() {
                   >
                     Envoyer une demande libre
                   </button>
+                </p>
+              )}
+              {!service && tradeParam && (
+                <p className="notice">
+                  Catégorie choisie :{" "}
+                  <strong>
+                    {trades.find(trade => trade.slug === tradeParam)?.name ||
+                      tradeParam}
+                  </strong>
                 </p>
               )}
               <div className="field">

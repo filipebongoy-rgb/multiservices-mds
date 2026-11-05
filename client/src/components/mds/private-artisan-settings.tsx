@@ -231,6 +231,10 @@ function CatalogEditor({
   onChanged: () => void;
 }) {
   const [trade, setTrade] = useState("");
+  const [search, setSearch] = useState("");
+  const [availability, setAvailability] = useState<"" | "active" | "inactive">(
+    ""
+  );
   const [editing, setEditing] = useState<Service | "new" | null>(null);
   const [removing, setRemoving] = useState<Service | null>(null);
   const [success, setSuccess] = useState("");
@@ -241,9 +245,18 @@ function CatalogEditor({
       onChanged();
     },
   });
-  const filtered = services.filter(
-    service => !trade || service.trade === trade
-  );
+  const filtered = services.filter(service => {
+    const haystack =
+      `${service.name} ${service.description} ${service.problemTypes.join(" ")}`.toLocaleLowerCase(
+        "fr"
+      );
+    return (
+      (!trade || service.trade === trade) &&
+      (!availability ||
+        (availability === "active" ? service.active : !service.active)) &&
+      haystack.includes(search.toLocaleLowerCase("fr"))
+    );
+  });
   return (
     <section className="panel stack">
       <div
@@ -265,16 +278,38 @@ function CatalogEditor({
         de déplacement validés. Mode B : devis personnalisé après analyse.
         Vérifiez aussi durée, conditions et zone avant activation.
       </p>
-      <Field label="Métier">
-        <select value={trade} onChange={e => setTrade(e.target.value)}>
-          <option value="">Tous les métiers</option>
-          {trades.map(item => (
-            <option key={item.slug} value={item.slug}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-      </Field>
+      <div className="form-grid">
+        <Field label="Rechercher une prestation">
+          <input
+            type="search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Nom ou type de problème"
+          />
+        </Field>
+        <Field label="Métier">
+          <select value={trade} onChange={e => setTrade(e.target.value)}>
+            <option value="">Tous les métiers</option>
+            {trades.map(item => (
+              <option key={item.slug} value={item.slug}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="État de publication">
+          <select
+            value={availability}
+            onChange={e =>
+              setAvailability(e.target.value as "" | "active" | "inactive")
+            }
+          >
+            <option value="">Toutes</option>
+            <option value="active">Actives et validées</option>
+            <option value="inactive">Inactives à vérifier</option>
+          </select>
+        </Field>
+      </div>
       <QueryState
         loading={loading}
         error={error}

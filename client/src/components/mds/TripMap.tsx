@@ -111,6 +111,60 @@ export function TripMap({
     map.current.flyTo({ center: coordinates, zoom: 14, essential: false });
   }, [latest.data]);
 
+  useEffect(() => {
+    const point = latest.data;
+    if (!map.current || !point || !destination) return;
+    let cancelled = false;
+    const origin = `${point.longitude},${point.latitude}`;
+    const target = `${destination[0]},${destination[1]}`;
+    fetch(
+      `https://api.mapbox.com/directions/v5/mapbox/driving/${origin};${target}?geometries=geojson&overview=full&access_token=${MAPBOX_PUBLIC_TOKEN}`
+    )
+      .then(response => {
+        if (!response.ok) throw new Error("directions");
+        return response.json() as Promise<{
+          routes?: { geometry?: { coordinates?: Coordinates[] } }[];
+        }>;
+      })
+      .then(data => {
+        const coordinates = data.routes?.[0]?.geometry?.coordinates;
+        if (cancelled || !coordinates?.length || !map.current) return;
+        const drawRoute = () => {
+          if (!map.current || !coordinates.length) return;
+          const source = map.current.getSource("mds-trip-route");
+          const feature = {
+            type: "Feature",
+            properties: {},
+            geometry: { type: "LineString", coordinates },
+          } as const;
+          if (source && "setData" in source) {
+            source.setData(feature);
+            return;
+          }
+          map.current.addSource("mds-trip-route", {
+            type: "geojson",
+            data: feature,
+          });
+          map.current.addLayer({
+            id: "mds-trip-route-line",
+            type: "line",
+            source: "mds-trip-route",
+            paint: {
+              "line-color": "#d85b16",
+              "line-width": 5,
+              "line-opacity": 0.82,
+            },
+          });
+        };
+        if (map.current.isStyleLoaded()) drawRoute();
+        else map.current.once("load", drawRoute);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [destination, latest.data]);
+
   if (status !== "en_route") return null;
   if (!MAPBOX_PUBLIC_TOKEN)
     return (

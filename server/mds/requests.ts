@@ -10,6 +10,8 @@ import {
   type RequestStatus,
 } from "../../shared/mds";
 import * as s from "../../drizzle/schema";
+import { ARRIVAL_MAX_DISTANCE_M } from "../../shared/mapbox";
+import { arrivalProximity } from "./location";
 import {
   authenticated,
   artisan,
@@ -689,6 +691,15 @@ export const requestsRouter = router({
             if (intervention.arrivedAt)
               fail(
                 "L’arrivée est déjà enregistrée pour cette intervention.",
+                "CONFLICT"
+              );
+            // Comme le coursier Uber qui ne peut clôturer qu’à proximité :
+            // une position GPS récente et lointaine bloque la déclaration.
+            // Sans GPS (refusé ou périmé), aucune position n’est inventée.
+            const proximity = await arrivalProximity(tx, r.id);
+            if (proximity && proximity.distanceM > ARRIVAL_MAX_DISTANCE_M)
+              fail(
+                `Votre position GPS indique encore ${(proximity.distanceM / 1000).toFixed(1).replace(".", ",")} km jusqu’à l’adresse. Déclarez l’arrivée une fois sur place.`,
                 "CONFLICT"
               );
             await tx

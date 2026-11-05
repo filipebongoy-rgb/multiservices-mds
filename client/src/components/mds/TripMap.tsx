@@ -191,15 +191,35 @@ export function TripMap({
         La carte sera disponible lorsque Mapbox sera configuré.
       </section>
     );
+  const stale = Boolean(latest.data?.stale);
+  const approaching = Boolean(latest.data?.approaching);
+  const arrivalClock =
+    etaMinutes != null && !stale
+      ? new Date(Date.now() + etaMinutes * 60_000).toLocaleTimeString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
   return (
-    <section className="trip-map-card" aria-label="Suivi GPS de l’artisan">
+    <section
+      className={`trip-map-card${stale ? " is-stale" : ""}`}
+      aria-label="Suivi GPS de l’artisan"
+    >
       <div className="trip-map-heading">
         <div>
-          <strong>Votre artisan est en route</strong>
-          <p>
-            {latest.data
-              ? "Position réelle reçue pendant le trajet."
-              : "En attente de la première position GPS autorisée."}
+          <strong>
+            {approaching
+              ? "Votre artisan arrive bientôt"
+              : "Votre artisan est en route"}
+          </strong>
+          <p aria-live="polite">
+            {!latest.data
+              ? "En attente de la première position GPS de l’artisan."
+              : stale
+                ? "Position non actualisée depuis plus de 2 minutes : le réseau de l’artisan est peut-être coupé."
+                : approaching
+                  ? "Il est à moins d’un kilomètre de votre adresse."
+                  : "Position réelle actualisée automatiquement."}
           </p>
         </div>
         <button
@@ -216,12 +236,23 @@ export function TripMap({
         <div>
           <small>Arrivée estimée</small>
           <strong>
-            {etaMinutes != null ? `${etaMinutes} min` : "Calcul en cours…"}
+            {stale
+              ? "En attente du GPS"
+              : etaMinutes != null
+                ? `${etaMinutes} min`
+                : latest.data
+                  ? "Calcul en cours…"
+                  : "—"}
           </strong>
+          {arrivalClock && <small>vers {arrivalClock}</small>}
         </div>
         <div>
           <small>Distance restante</small>
-          <strong>{distanceKm != null ? `${distanceKm} km` : "—"}</strong>
+          <strong>
+            {distanceKm != null && !stale
+              ? `${String(distanceKm).replace(".", ",")} km`
+              : "—"}
+          </strong>
         </div>
       </div>
       {latest.data ? (

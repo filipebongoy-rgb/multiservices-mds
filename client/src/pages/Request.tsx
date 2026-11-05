@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { rememberGuestRequest } from "@/lib/requestProgress";
 import { createRequestSchema, dateTime, trades } from "@shared/mds";
 import { PriceDetails } from "@/components/mds/PriceDetails";
 import { ApiError } from "@/components/mds/Layout";
@@ -336,6 +337,7 @@ export default function Request() {
           result.trackingToken
         );
       } catch {}
+      if (!user) rememberGuestRequest(result.reference, result.trackingToken);
       await uploadPhoto(result);
     } catch (e: any) {
       setError(

@@ -13,6 +13,12 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import {
+  isActiveRequest,
+  requestHeadline,
+  requestNextAction,
+  requestProgressIndex,
+} from "@/lib/requestProgress";
 import { startLogin } from "@/const";
 import { statusLabels, dateTime, money } from "@shared/mds";
 import { PriceDetails } from "@/components/mds/PriceDetails";
@@ -1008,17 +1014,46 @@ export default function Tracking() {
 function MyRequests({ onSelect }: { onSelect: (reference: string) => void }) {
   const { user } = useAuth();
   const mine = trpc.mds.requests.mine.useQuery(undefined, { enabled: !!user });
+  const [tab, setTab] = useState<"active" | "done">("active");
   if (!user) return null;
+  const rows = mine.data || [];
+  const activeRows = rows.filter(r => isActiveRequest(r.status));
+  const doneRows = rows.filter(r => !isActiveRequest(r.status));
+  const shown = tab === "active" ? activeRows : doneRows;
   return (
     <section style={{ marginTop: 35 }}>
-      <h2 style={{ fontSize: 23 }}>Les demandes de mon compte</h2>
+      <h2 style={{ fontSize: 23 }}>Mes demandes</h2>
+      <div
+        className="orders-tabs"
+        role="tablist"
+        aria-label="Filtrer mes demandes"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "active"}
+          className={tab === "active" ? "selected" : ""}
+          onClick={() => setTab("active")}
+        >
+          En cours ({activeRows.length})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "done"}
+          className={tab === "done" ? "selected" : ""}
+          onClick={() => setTab("done")}
+        >
+          Terminées ({doneRows.length})
+        </button>
+      </div>
       {mine.isLoading ? (
         <Loading />
       ) : mine.error ? (
         <ApiError message={mine.error.message} retry={() => mine.refetch()} />
-      ) : mine.data?.length ? (
+      ) : shown.length ? (
         <div className="data-list" style={{ marginTop: 18 }}>
-          {mine.data.map(r => (
+          {shown.map(r => (
             <button
               key={r.id}
               className="request-tracking-card"
@@ -1026,12 +1061,13 @@ function MyRequests({ onSelect }: { onSelect: (reference: string) => void }) {
               onClick={() => onSelect(r.reference)}
             >
               <span className="request-tracking-card-heading">
-                <strong>{r.serviceName || "Demande libre"}</strong>
+                <strong>{requestHeadline(r.status)}</strong>
                 <span className="badge">
                   {statusLabels[r.status as keyof typeof statusLabels] ||
                     r.status}
                 </span>
               </span>
+              <small>{r.serviceName || "Demande libre"}</small>
               <span
                 className="request-tracking-card-progress"
                 aria-hidden="true"
@@ -1050,36 +1086,24 @@ function MyRequests({ onSelect }: { onSelect: (reference: string) => void }) {
                 {r.reference} · {dateTime(r.createdAt)}
               </small>
               <span className="request-tracking-card-link">
-                Ouvrir le suivi <ArrowRight size={16} />
+                {tab === "active" ? "Suivre" : "Voir et noter"}{" "}
+                <ArrowRight size={16} />
               </span>
             </button>
           ))}
         </div>
+      ) : tab === "active" ? (
+        <div className="orders-empty">
+          <p>Aucune intervention en cours.</p>
+          <Link className="btn primary" href="/demande">
+            Faire une demande <ArrowRight size={17} />
+          </Link>
+        </div>
       ) : (
         <p className="muted" style={{ marginTop: 12 }}>
-          Aucune demande associée à votre compte. Les demandes déposées sans
-          compte restent accessibles avec leur lien privé.
+          Aucune demande terminée pour le moment.
         </p>
       )}
     </section>
   );
-}
-
-function requestProgressIndex(status: string) {
-  if (["completed", "invoiced", "paid", "closed"].includes(status)) return 3;
-  if (["en_route", "in_progress"].includes(status)) return 2;
-  if (["confirmed", "planned"].includes(status)) return 1;
-  return 0;
-}
-
-function requestNextAction(status: string) {
-  if (["completed", "invoiced", "paid"].includes(status))
-    return "Vérifier les photos et confirmer la fin";
-  if (["confirmed", "planned"].includes(status))
-    return "Attendre le rendez-vous confirmé";
-  if (["en_route", "in_progress"].includes(status))
-    return "Intervention en cours chez vous";
-  if (["refused", "cancelled", "expired"].includes(status))
-    return "Dossier terminé — ouvrir pour consulter le détail";
-  return "MDS analyse votre demande";
 }

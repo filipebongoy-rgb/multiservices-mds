@@ -325,6 +325,10 @@ export const interventions = mysqlTable("mds_interventions", {
     .references(() => appointments.id),
   startedAt: timestamp("startedAt"),
   arrivedAt: timestamp("arrivedAt"),
+  // Destination géocodée une seule fois au premier point GPS du trajet.
+  destinationLatE6: int("destinationLatE6"),
+  destinationLngE6: int("destinationLngE6"),
+  approachNotifiedAt: timestamp("approachNotifiedAt"),
   completedAt: timestamp("completedAt"),
   summary: text("summary"),
   clientConfirmedAt: timestamp("clientConfirmedAt"),

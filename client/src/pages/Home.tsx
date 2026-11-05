@@ -11,12 +11,14 @@ import {
   Zap,
 } from "lucide-react";
 import { trades } from "@shared/mds";
+import { ActiveRequestBanner } from "@/components/mds/ActiveRequestBanner";
 
 const icons = [Droplets, Zap, Flame, Paintbrush, Wrench];
 
 export default function Home() {
   return (
     <main id="main-content" className="simple-home page-shell">
+      <ActiveRequestBanner />
       <section className="simple-home-intro" aria-labelledby="home-title">
         <figure className="simple-hero">
           <img
@@ -28,66 +30,23 @@ export default function Home() {
               Un problème <span className="home-title-rest">chez vous ?</span>
             </h1>
             <p className="home-lead">
-              Décrivez votre besoin. MDS vous accompagne jusqu’à la fin des
-              travaux.
+              Nous nous occupons de vos travaux et dépannages.
             </p>
-            <Link className="home-hero-action" href="/demande">
-              Faire une demande <ArrowRight size={18} aria-hidden="true" />
-            </Link>
           </div>
-          <figcaption>
-            Photo illustrative — intervention de dépannage
-          </figcaption>
+          <figcaption>Photo illustrative</figcaption>
         </figure>
         <div className="home-access" aria-label="Choisir un espace">
           <Link className="home-access-card active" href="/demande">
             <House size={27} strokeWidth={1.7} aria-hidden="true" />
             <strong>Particulier</strong>
-            <span>Faire réparer mon domicile</span>
+            <span>Pour votre domicile</span>
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
           <Link className="home-access-card" href="/professionnels">
             <Building2 size={27} strokeWidth={1.7} aria-hidden="true" />
             <strong>Professionnel</strong>
-            <span>Gérer mes bâtiments et interventions</span>
+            <span>Entreprise, mairie, HLM, syndic…</span>
             <ArrowRight size={18} aria-hidden="true" />
-          </Link>
-        </div>
-      </section>
-      <section className="home-next-steps" aria-labelledby="home-steps-title">
-        <div>
-          <span className="eyebrow">Simple, en trois étapes</span>
-          <h2 id="home-steps-title">Que va-t-il se passer ?</h2>
-        </div>
-        <ol>
-          <li>
-            <b>1</b>
-            <span>
-              <strong>Choisissez votre besoin</strong>
-              <small>Plomberie, électricité, chauffage et plus.</small>
-            </span>
-          </li>
-          <li>
-            <b>2</b>
-            <span>
-              <strong>Expliquez et ajoutez vos photos</strong>
-              <small>MDS comprend le problème sur place.</small>
-            </span>
-          </li>
-          <li>
-            <b>3</b>
-            <span>
-              <strong>Choisissez un créneau</strong>
-              <small>Uniquement parmi les disponibilités MDS.</small>
-            </span>
-          </li>
-        </ol>
-        <div className="home-primary-actions">
-          <Link className="btn primary" href="/demande">
-            Commencer maintenant <ArrowRight size={18} />
-          </Link>
-          <Link className="text-link" href="/suivi">
-            J’ai déjà une demande
           </Link>
         </div>
       </section>
@@ -115,10 +74,9 @@ export default function Home() {
             <span>Autre besoin</span>
           </Link>
         </div>
-        <Link href="/professionnels" className="home-professional-link">
-          <strong>Vous êtes une entreprise ou une collectivité ?</strong>
-          <span>Gérer vos bâtiments et vos interventions avec MDS.</span>
-          <ArrowRight size={18} aria-hidden="true" />
+        <Link href="/suivi" className="home-follow-link">
+          J’ai déjà une demande : suivre mon intervention
+          <ArrowRight size={17} aria-hidden="true" />
         </Link>
       </section>
     </main>

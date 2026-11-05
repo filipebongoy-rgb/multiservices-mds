@@ -1543,3 +1543,170 @@ input[type="checkbox"] {
     padding: 22px 18px 24px;
   }
 }
+
+/* Bandeau « intervention en cours » (équivalent de la bannière de commande). */
+.active-request-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--mds-ink);
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 6px 18px rgb(18 43 62 / 18%);
+}
+.active-request-banner:hover,
+.active-request-banner:focus-visible {
+  background: #17384f;
+  color: #fff;
+}
+.active-request-banner.is-urgent {
+  background: var(--mds-orange);
+}
+.active-request-banner.is-urgent:hover,
+.active-request-banner.is-urgent:focus-visible {
+  background: var(--mds-orange-dark);
+}
+.active-request-icon {
+  display: inline-flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 14%);
+}
+.active-request-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.active-request-copy strong {
+  font-size: 17px;
+  line-height: 1.25;
+}
+.active-request-copy small {
+  color: rgb(255 255 255 / 84%);
+  font-size: 14px;
+  line-height: 1.35;
+}
+.active-request-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  max-width: 180px;
+  margin-top: 6px;
+}
+.active-request-steps i {
+  height: 4px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 28%);
+}
+.active-request-steps i.done {
+  background: var(--mds-green);
+}
+.active-request-banner.is-urgent .active-request-steps i.done {
+  background: #fff;
+}
+.active-request-cta {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 9px 13px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--mds-ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* Lien de suivi sous les catégories de l'accueil. */
+.home-follow-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--mds-border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--mds-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.home-follow-link:hover,
+.home-follow-link:focus-visible {
+  border-color: var(--mds-orange);
+  color: var(--mds-orange-dark);
+}
+
+/* Onglets En cours / Terminées. */
+.orders-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #eceeed;
+}
+.orders-tabs button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #4d5553;
+  font-size: 16px;
+  font-weight: 700;
+}
+.orders-tabs button.selected {
+  background: #fff;
+  color: var(--mds-ink);
+  box-shadow: 0 1px 4px rgb(18 43 62 / 14%);
+}
+.orders-empty {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px dashed #c8cecc;
+  border-radius: 12px;
+  background: #fff;
+}
+
+/* Position GPS périmée : jamais présentée comme actuelle. */
+.trip-map-card.is-stale .trip-map-heading p {
+  color: #ffb27a;
+}
+.trip-map-card.is-stale .trip-map-canvas {
+  filter: grayscale(0.6);
+}
+.trip-map-arrival small + strong + small {
+  display: block;
+  margin-top: 2px;
+  opacity: 0.8;
+}
+
+@media (max-width: 520px) {
+  .active-request-banner {
+    gap: 10px;
+    padding: 12px;
+  }
+  .active-request-icon {
+    flex-basis: 38px;
+    width: 38px;
+    height: 38px;
+  }
+  .active-request-cta {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+}

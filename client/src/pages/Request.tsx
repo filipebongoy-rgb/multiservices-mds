@@ -47,6 +47,24 @@ function initialDraft(): Draft {
     return { ...blank, key: crypto.randomUUID() };
   }
 }
+function initialDraftForRoute(params: URLSearchParams): Draft {
+  const saved = initialDraft();
+  const requestedTrade = params.get("metier") || "";
+  const isFreeRequest = params.get("libre") === "1";
+  const savedTrade = saved.answers.__trade || "";
+  if (isFreeRequest || (requestedTrade && requestedTrade !== savedTrade)) {
+    return {
+      ...saved,
+      description: "",
+      problemType: "",
+      date: "",
+      time: "",
+      serviceId: null,
+      answers: { ...saved.answers, __trade: requestedTrade },
+    };
+  }
+  return saved;
+}
 function initialStep() {
   try {
     const params = new URLSearchParams(window.location.search);
@@ -75,15 +93,16 @@ export default function Request() {
       Number.isSafeInteger(orgParam) && orgParam > 0 ? orgParam : null,
     siteId =
       Number.isSafeInteger(siteParam) && siteParam > 0 ? siteParam : null;
-  const [draft, setDraft] = useState<Draft>(initialDraft),
+  const routeDraft = initialDraftForRoute(params);
+  const [draft, setDraft] = useState<Draft>(routeDraft),
     [step, setStep] = useState(initialStep);
   const [tradeChoice, setTradeChoice] = useState(
-    () => tradeParam || initialDraft().answers.__trade || ""
+    () => tradeParam || routeDraft.answers.__trade || ""
   );
   const [selected, setSelected] = useState<number | null>(() => {
     if (params.get("libre") === "1") return null;
     const id = Number(params.get("service"));
-    return Number.isSafeInteger(id) && id > 0 ? id : initialDraft().serviceId;
+    return Number.isSafeInteger(id) && id > 0 ? id : routeDraft.serviceId;
   });
   const { user } = useAuth();
   const catalog = trpc.mds.catalog.list.useQuery({});
@@ -492,7 +511,7 @@ export default function Request() {
                       setSelected(null);
                     }}
                   >
-                    Autre problème de {selectedTrade.name.toLowerCase()}
+                    Autre problème
                   </button>
                 </div>
               ) : (

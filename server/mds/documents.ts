@@ -29,6 +29,7 @@ import { fail } from "./workflow";
 const reference = z.string().min(4).max(40).optional();
 const token = z.string().min(16).max(100).optional();
 const kind = z.enum(["photo", "quote", "invoice", "contract", "other"]);
+const photoStage = z.enum(["before", "after", "other"]).default("other");
 async function documentScope(
   db: SqlDb,
   input: {
@@ -36,6 +37,7 @@ async function documentScope(
     token?: string;
     organizationId?: number;
     kind: string;
+    photoStage?: "before" | "after" | "other";
   },
   user: Identity,
   upload: boolean
@@ -77,6 +79,10 @@ async function documentScope(
       fail("Ce dossier n’accepte plus de nouvelles photos.", "CONFLICT");
   }
   if (upload && ["quote", "invoice"].includes(input.kind))
+    await requireArtisan(db, user);
+  if (input.kind !== "photo" && (input.photoStage || "other") !== "other")
+    fail("La séquence avant/après concerne uniquement les photos.");
+  if (upload && input.kind === "photo" && input.photoStage === "after")
     await requireArtisan(db, user);
   if (upload && input.kind === "contract") {
     if (!organizationId)
@@ -128,6 +134,7 @@ export const documentsRouter = router({
           ),
         base64: z.string().max(Math.ceil(MAX_FILE_BYTES / 3) * 4),
         kind,
+        photoStage,
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -153,6 +160,7 @@ export const documentsRouter = router({
             name: input.name,
             mimeType: input.mimeType,
             kind: input.kind,
+            photoStage: input.photoStage,
             byteSize: plaintext.length,
             storageKey: stored.key,
             encryptionKey: encrypted.encryptionKey,
@@ -161,14 +169,12 @@ export const documentsRouter = router({
           })
           .$returningId();
         if (input.kind === "contract" && scope.organizationId)
-          await tx
-            .insert(s.contracts)
-            .values({
-              organizationId: scope.organizationId,
-              documentId: created.id,
-              name: input.name,
-              status: "indexed",
-            });
+          await tx.insert(s.contracts).values({
+            organizationId: scope.organizationId,
+            documentId: created.id,
+            name: input.name,
+            status: "indexed",
+          });
         const actorId = ctx.user && ctx.user.id > 0 ? ctx.user.id : null;
         await recordAudit(
           tx,
@@ -187,23 +193,19 @@ export const documentsRouter = router({
             actorId
           );
         else {
-          await tx
-            .insert(s.notifications)
-            .values({
-              organizationId: scope.organizationId,
-              audience: "client",
-              title: "Document privé ajouté",
-              message: `Le document « ${input.name} » a été ajouté à votre organisation.`,
-            });
-          await tx
-            .insert(s.notifications)
-            .values({
-              userId: p.artisanUserId,
-              organizationId: scope.organizationId,
-              audience: "artisan",
-              title: "Document professionnel ajouté",
-              message: `Le document « ${input.name} » est indexé dans l’organisation.`,
-            });
+          await tx.insert(s.notifications).values({
+            organizationId: scope.organizationId,
+            audience: "client",
+            title: "Document privé ajouté",
+            message: `Le document « ${input.name} » a été ajouté à votre organisation.`,
+          });
+          await tx.insert(s.notifications).values({
+            userId: p.artisanUserId,
+            organizationId: scope.organizationId,
+            audience: "artisan",
+            title: "Document professionnel ajouté",
+            message: `Le document « ${input.name} » est indexé dans l’organisation.`,
+          });
         }
         return created;
       });

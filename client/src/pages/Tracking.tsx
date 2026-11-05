@@ -372,6 +372,7 @@ export default function Tracking() {
                     reference={r.reference}
                     token={lookup?.token}
                     kind="photo"
+                    photoStage="before"
                     onUploaded={() => void details.refetch()}
                   />
                   <button
@@ -718,7 +719,12 @@ export default function Tracking() {
                   details.data.documents.map(d => (
                     <div className="document-item" key={d.id}>
                       <FileText size={18} />
-                      <span className="small-text">{d.name}</span>
+                      <span className="small-text">
+                        {d.kind === "photo"
+                          ? `${d.photoStage === "before" ? "Avant travaux" : d.photoStage === "after" ? "Après travaux" : "Photo"} · `
+                          : ""}
+                        {d.name}
+                      </span>
                       <button
                         className="text-link"
                         aria-label={"Télécharger " + d.name}

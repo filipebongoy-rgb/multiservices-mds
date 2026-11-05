@@ -353,6 +353,9 @@ export const documents = mysqlTable("mds_documents", {
     "contract",
     "other",
   ]).notNull(),
+  photoStage: mysqlEnum("photoStage", ["before", "after", "other"])
+    .default("other")
+    .notNull(),
   byteSize: int("byteSize").notNull(),
   storageKey: varchar("storageKey", { length: 500 }).notNull(),
   encryptionKey: varchar("encryptionKey", { length: 64 }).notNull(),

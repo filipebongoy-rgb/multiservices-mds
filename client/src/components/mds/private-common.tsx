@@ -277,12 +277,14 @@ export function UploadDocument({
   token,
   organizationId,
   kind,
+  photoStage = "other",
   onUploaded,
 }: {
   reference?: string;
   token?: string;
   organizationId?: number;
   kind: "photo" | "quote" | "invoice" | "contract" | "other";
+  photoStage?: "before" | "after" | "other";
   onUploaded: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
@@ -328,6 +330,7 @@ export function UploadDocument({
         mimeType: kind === "photo" ? file.type : "application/pdf",
         base64,
         kind,
+        photoStage,
       });
       setFile(null);
       setName("");

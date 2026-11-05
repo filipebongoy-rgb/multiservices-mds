@@ -218,6 +218,7 @@ export default function Request() {
         name: photo.name,
         mimeType: photo.type,
         kind: "photo",
+        photoStage: "before",
         base64: await readFile(photo),
       });
       setPhoto(null);

@@ -137,6 +137,7 @@ export function PrivateQuoteBuilder({
                   name: `${draft.reference}.pdf`,
                   mimeType: "application/pdf",
                   kind: "quote",
+                  photoStage: "other",
                   createdAt: draft.createdAt,
                 },
               ]}

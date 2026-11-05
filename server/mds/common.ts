@@ -164,6 +164,7 @@ export const documentFields = {
   name: s.documents.name,
   mimeType: s.documents.mimeType,
   kind: s.documents.kind,
+  photoStage: s.documents.photoStage,
   createdAt: s.documents.createdAt,
 };
 export async function recordAudit(

@@ -9,6 +9,7 @@ import {
   ErrorNotice,
   Field,
   PrivateModal,
+  UploadDocument,
 } from "./private-common";
 import { parseEuroCents } from "./private-pricing";
 
@@ -57,6 +58,9 @@ export function PrivateOperations({
   const incidents = detail.incidents;
   const extras = detail.extraWorks;
   const open = incidents.filter(row => row.status === "open");
+  const afterPhotos = detail.documents.filter(
+    document => document.kind === "photo" && document.photoStage === "after"
+  );
   async function run(action: () => Promise<unknown>, close = false) {
     setError(null);
     try {
@@ -127,6 +131,27 @@ export function PrivateOperations({
           )}
         </article>
       ))}
+      {r.status === "in_progress" && (
+        <section className="notice stack">
+          <strong>Photo après travaux</strong>
+          <p>
+            Ajoutez au moins une photo nette du résultat avant de terminer
+            l’intervention. Elle sera visible par le client dans son suivi.
+          </p>
+          {afterPhotos.length > 0 && (
+            <p className="success-message" role="status">
+              {afterPhotos.length} photo{afterPhotos.length > 1 ? "s" : ""}{" "}
+              après travaux déjà ajoutée{afterPhotos.length > 1 ? "s" : ""}.
+            </p>
+          )}
+          <UploadDocument
+            reference={r.reference}
+            kind="photo"
+            photoStage="after"
+            onUploaded={onChanged}
+          />
+        </section>
+      )}
       {extras.map(extra => (
         <article className="notice stack" key={extra.id}>
           <strong>

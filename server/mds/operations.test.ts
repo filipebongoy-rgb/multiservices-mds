@@ -124,6 +124,9 @@ function running() {
       completedAt: null,
     },
   ]);
+  db.put(s.documents, [
+    { id: 99, requestId: 1, kind: "photo", photoStage: "after" },
+  ]);
 }
 beforeEach(() => {
   db.clear();
@@ -143,6 +146,14 @@ beforeEach(() => {
   db.put(s.requests, [request()]);
 });
 describe("réponses rapides et départ réel", () => {
+  it("refuse de terminer une intervention sans photo après travaux", async () => {
+    running();
+    db.put(s.documents, []);
+    await expect(
+      owner().requests.artisanAction({ id: 1, version: 0, action: "complete" })
+    ).rejects.toThrow("photo après travaux");
+  });
+
   it.each(["photo", "diagnostic"] as const)(
     "%s demande une information sans réserver ni créer de prix",
     async action => {

@@ -696,6 +696,22 @@ export const requestsRouter = router({
             requireState(r, ["in_progress"]);
             await assertNoOperationalBlock(tx, r);
             await assertExtrasClosed(tx, r.id);
+            const [afterPhoto] = await tx
+              .select({ id: s.documents.id })
+              .from(s.documents)
+              .where(
+                and(
+                  eq(s.documents.requestId, r.id),
+                  eq(s.documents.kind, "photo"),
+                  eq(s.documents.photoStage, "after")
+                )
+              )
+              .limit(1);
+            if (!afterPhoto)
+              fail(
+                "Ajoutez au moins une photo après travaux avant de terminer l’intervention.",
+                "CONFLICT"
+              );
             await tx
               .update(s.interventions)
               .set({ completedAt: new Date(), summary: message || null })
@@ -709,6 +725,15 @@ export const requestsRouter = router({
               "completed",
               message || "L’artisan a déclaré l’intervention terminée."
             );
+            await tx.insert(s.notifications).values({
+              userId: r.organizationId ? null : r.userId,
+              organizationId: r.organizationId,
+              requestId: r.id,
+              audience: "client",
+              title: "Travaux terminés",
+              message:
+                "L’artisan a terminé l’intervention et a ajouté les photos après travaux. Consultez le suivi de votre dossier.",
+            });
             break;
           case "invoice": {
             requireState(r, ["completed"]);

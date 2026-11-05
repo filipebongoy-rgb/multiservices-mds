@@ -1,0 +1,1 @@
+ALTER TABLE `mds_documents` ADD `photoStage` enum('before','after','other') DEFAULT 'other' NOT NULL;

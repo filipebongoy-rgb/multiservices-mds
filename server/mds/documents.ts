@@ -135,6 +135,7 @@ export const documentsRouter = router({
         base64: z.string().max(Math.ceil(MAX_FILE_BYTES / 3) * 4),
         kind,
         photoStage,
+        description: z.string().trim().max(500).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -161,6 +162,14 @@ export const documentsRouter = router({
             mimeType: input.mimeType,
             kind: input.kind,
             photoStage: input.photoStage,
+            photoAuthor:
+              input.kind === "photo"
+                ? ctx.user?.id === p.artisanUserId
+                  ? "artisan"
+                  : "client"
+                : "other",
+            description:
+              input.kind === "photo" ? input.description || null : null,
             byteSize: plaintext.length,
             storageKey: stored.key,
             encryptionKey: encrypted.encryptionKey,

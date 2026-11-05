@@ -153,6 +153,26 @@ describe("réponses rapides et départ réel", () => {
       owner().requests.artisanAction({ id: 1, version: 0, action: "complete" })
     ).rejects.toThrow("photo après travaux");
   });
+  it("enregistre la validation client sans la déduire d’une absence de réponse", async () => {
+    running();
+    await owner().requests.artisanAction({
+      id: 1,
+      version: 0,
+      action: "complete",
+      message: "Travaux terminés et zone nettoyée.",
+    });
+    await client().requests.clientAction({
+      reference: "MDS-memory-1",
+      token,
+      version: 1,
+      action: "confirmCompletion",
+      message: "Résultat conforme.",
+    });
+    expect(db.rows(s.interventions)[0]).toMatchObject({
+      clientConfirmedAt: expect.any(Date),
+      clientConfirmationMessage: "Résultat conforme.",
+    });
+  });
 
   it.each(["photo", "diagnostic"] as const)(
     "%s demande une information sans réserver ni créer de prix",

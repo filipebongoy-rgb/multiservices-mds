@@ -707,14 +707,17 @@ export const requestsRouter = router({
                 )
               )
               .limit(1);
-            if (!afterPhoto)
+            if (!afterPhoto && (message || "").trim().length < 10)
               fail(
-                "Ajoutez au moins une photo après travaux avant de terminer l’intervention.",
+                "Ajoutez une photo après travaux ou indiquez une justification précise de son absence.",
                 "CONFLICT"
               );
+            const completionSummary = afterPhoto
+              ? message || null
+              : `Absence de photo après travaux justifiée : ${message!.trim()}`;
             await tx
               .update(s.interventions)
-              .set({ completedAt: new Date(), summary: message || null })
+              .set({ completedAt: new Date(), summary: completionSummary })
               .where(eq(s.interventions.requestId, r.id));
             await tx
               .update(s.appointments)
@@ -723,7 +726,9 @@ export const requestsRouter = router({
             patch.status = "completed";
             await emit(
               "completed",
-              message || "L’artisan a déclaré l’intervention terminée."
+              afterPhoto
+                ? message || "L’artisan a déclaré l’intervention terminée."
+                : "L’artisan a déclaré l’intervention terminée avec une absence de photo après travaux justifiée."
             );
             await tx.insert(s.notifications).values({
               userId: r.organizationId ? null : r.userId,
@@ -737,6 +742,7 @@ export const requestsRouter = router({
             break;
           case "invoice": {
             requireState(r, ["completed"]);
+            await assertNoOperationalBlock(tx, r);
             if (
               r.proposedPriceCents === null ||
               !Number.isSafeInteger(r.proposedPriceCents) ||
@@ -780,6 +786,7 @@ export const requestsRouter = router({
           }
           case "paid": {
             requireState(r, ["invoiced"]);
+            await assertNoOperationalBlock(tx, r);
             const note = requireMessage(
               message,
               "Indiquez la vérification réelle du paiement hors ligne (mode, date ou référence). Cette action n’encaisse aucun paiement."
@@ -1116,6 +1123,33 @@ export const requestsRouter = router({
               )
             );
             break;
+          case "confirmCompletion": {
+            requireState(r, ["completed"]);
+            const [intervention] = await tx
+              .select()
+              .from(s.interventions)
+              .where(eq(s.interventions.requestId, r.id))
+              .for("update");
+            if (!intervention?.completedAt)
+              fail(
+                "L’intervention n’est pas encore déclarée terminée.",
+                "CONFLICT"
+              );
+            if (!intervention.clientConfirmedAt) {
+              await tx
+                .update(s.interventions)
+                .set({
+                  clientConfirmedAt: new Date(),
+                  clientConfirmationMessage: message || null,
+                })
+                .where(eq(s.interventions.id, intervention.id));
+              await emit(
+                "completed",
+                message || "Le client confirme la fin de l’intervention."
+              );
+            }
+            break;
+          }
           case "cancel":
             requireState(r, [
               ...negotiableStates,

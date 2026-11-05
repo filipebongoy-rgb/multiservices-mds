@@ -210,6 +210,7 @@ export const clientActionSchema = trackSchema.extend({
     "information",
     "acceptQuote",
     "refuseQuote",
+    "confirmCompletion",
     "cancel",
   ]),
   message: z.string().trim().max(3000).optional(),

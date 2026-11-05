@@ -112,6 +112,30 @@ select:focus-visible {
 ::selection {
   background: #f5c6b6;
 }
+.photo-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+.photo-preview-grid figure {
+  margin: 0;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 6px;
+}
+.photo-preview-grid img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+.photo-preview-grid figcaption {
+  overflow: hidden;
+  padding-top: 4px;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .sr-only {
   position: absolute;
   width: 1px;

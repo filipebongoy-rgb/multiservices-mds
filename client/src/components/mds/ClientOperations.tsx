@@ -40,8 +40,52 @@ export function ClientOperations({
     },
     onError: () => onChanged(),
   });
+  const confirmCompletion = trpc.mds.requests.clientAction.useMutation({
+    onSuccess: () => {
+      setMessage("");
+      setNotice("Votre confirmation de fin est enregistrée.");
+      onChanged();
+    },
+    onError: () => onChanged(),
+  });
   return (
     <>
+      {detail.request.status === "completed" &&
+        detail.intervention?.completedAt &&
+        !detail.intervention.clientConfirmedAt && (
+          <section className="panel stack">
+            <h2 style={{ fontSize: 22 }}>Fin des travaux</h2>
+            <p>
+              Vérifiez les photos après travaux. Votre absence de réponse ne
+              vaut pas validation automatique.
+            </p>
+            <textarea
+              rows={3}
+              maxLength={3000}
+              placeholder="Commentaire facultatif"
+              value={message}
+              onChange={event => setMessage(event.target.value)}
+            />
+            <button
+              className="btn primary"
+              disabled={confirmCompletion.isPending}
+              onClick={() =>
+                confirmCompletion.mutate({
+                  reference: detail.request.reference,
+                  token,
+                  version: detail.request.version,
+                  action: "confirmCompletion",
+                  message: message.trim() || undefined,
+                })
+              }
+            >
+              Confirmer que les travaux sont terminés
+            </button>
+            {confirmCompletion.error && (
+              <ApiError message={confirmCompletion.error.message} />
+            )}
+          </section>
+        )}
       {detail.extraWorks.length > 0 && (
         <section className="panel stack">
           <h2 style={{ fontSize: 22 }}>Travaux supplémentaires</h2>

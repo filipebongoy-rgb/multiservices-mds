@@ -61,6 +61,12 @@ export function PrivateOperations({
   const afterPhotos = detail.documents.filter(
     document => document.kind === "photo" && document.photoStage === "after"
   );
+  const artisanBeforePhotos = detail.documents.filter(
+    document =>
+      document.kind === "photo" &&
+      document.photoStage === "before" &&
+      document.photoAuthor === "artisan"
+  );
   async function run(action: () => Promise<unknown>, close = false) {
     setError(null);
     try {
@@ -148,6 +154,26 @@ export function PrivateOperations({
             reference={r.reference}
             kind="photo"
             photoStage="after"
+            onUploaded={onChanged}
+          />
+        </section>
+      )}
+      {r.status === "en_route" && (
+        <section className="notice stack">
+          <strong>État constaté à l’arrivée</strong>
+          <p>
+            Ajoutez les photos prises sur place avant de commencer. Elles seront
+            conservées séparément des photos initiales envoyées par le client.
+          </p>
+          {artisanBeforePhotos.length > 0 && (
+            <p className="success-message" role="status">
+              Photos d’arrivée déjà enregistrées.
+            </p>
+          )}
+          <UploadDocument
+            reference={r.reference}
+            kind="photo"
+            photoStage="before"
             onUploaded={onChanged}
           />
         </section>

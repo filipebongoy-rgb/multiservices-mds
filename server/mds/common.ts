@@ -165,6 +165,8 @@ export const documentFields = {
   mimeType: s.documents.mimeType,
   kind: s.documents.kind,
   photoStage: s.documents.photoStage,
+  photoAuthor: s.documents.photoAuthor,
+  description: s.documents.description,
   createdAt: s.documents.createdAt,
 };
 export async function recordAudit(
@@ -191,25 +193,21 @@ export async function event(
     .values({ requestId: request.id, status, message, actorType, actorUserId })
     .$returningId();
   const p = await principal(db);
-  await db
-    .insert(s.notifications)
-    .values({
-      requestId: request.id,
-      userId: p.artisanUserId,
-      audience: "artisan",
-      title: `${request.reference} — ${statusLabels[status]}`,
-      message,
-    });
-  await db
-    .insert(s.notifications)
-    .values({
-      requestId: request.id,
-      userId: request.userId,
-      organizationId: request.organizationId,
-      audience: "client",
-      title: statusLabels[status],
-      message,
-    });
+  await db.insert(s.notifications).values({
+    requestId: request.id,
+    userId: p.artisanUserId,
+    audience: "artisan",
+    title: `${request.reference} — ${statusLabels[status]}`,
+    message,
+  });
+  await db.insert(s.notifications).values({
+    requestId: request.id,
+    userId: request.userId,
+    organizationId: request.organizationId,
+    audience: "client",
+    title: statusLabels[status],
+    message,
+  });
   await enqueueEventMessages(
     db,
     request,
@@ -265,6 +263,16 @@ export async function detailData(
     })
     .from(s.appointments)
     .where(eq(s.appointments.requestId, request.id));
+  const [intervention] = await db
+    .select({
+      startedAt: s.interventions.startedAt,
+      completedAt: s.interventions.completedAt,
+      summary: s.interventions.summary,
+      clientConfirmedAt: s.interventions.clientConfirmedAt,
+      clientConfirmationMessage: s.interventions.clientConfirmationMessage,
+    })
+    .from(s.interventions)
+    .where(eq(s.interventions.requestId, request.id));
   const reviews = authenticatedUser
     ? await db
         .select({
@@ -339,6 +347,7 @@ export async function detailData(
     events: history,
     documents: docs,
     appointment: appointment || null,
+    intervention: intervention || null,
     reviews,
     invoice: invoice || null,
     incidents: incidentRows,

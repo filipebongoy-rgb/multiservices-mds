@@ -373,6 +373,7 @@ export default function Tracking() {
                     token={lookup?.token}
                     kind="photo"
                     photoStage="before"
+                    multiple
                     onUploaded={() => void details.refetch()}
                   />
                   <button
@@ -721,7 +722,7 @@ export default function Tracking() {
                       <FileText size={18} />
                       <span className="small-text">
                         {d.kind === "photo"
-                          ? `${d.photoStage === "before" ? "Avant travaux" : d.photoStage === "after" ? "Après travaux" : "Photo"} · `
+                          ? `${d.photoStage === "before" ? "Avant travaux" : d.photoStage === "after" ? "Après travaux" : "Photo"} · ${d.photoAuthor === "artisan" ? "Artisan" : d.photoAuthor === "client" ? "Client" : "Dossier"} · `
                           : ""}
                         {d.name}
                       </span>

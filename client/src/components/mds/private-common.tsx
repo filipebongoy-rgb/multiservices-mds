@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useRef,
   useState,
   type ButtonHTMLAttributes,
@@ -278,6 +279,7 @@ export function UploadDocument({
   organizationId,
   kind,
   photoStage = "other",
+  multiple = false,
   onUploaded,
 }: {
   reference?: string;
@@ -285,55 +287,73 @@ export function UploadDocument({
   organizationId?: number;
   kind: "photo" | "quote" | "invoice" | "contract" | "other";
   photoStage?: "before" | "after" | "other";
+  multiple?: boolean;
   onUploaded: () => void;
 }) {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [error, setError] = useState<unknown>(null);
   const [reading, setReading] = useState(false);
   const [success, setSuccess] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const upload = trpc.mds.documents.upload.useMutation();
+  useEffect(() => {
+    const urls =
+      kind === "photo" ? files.map(file => URL.createObjectURL(file)) : [];
+    setPreviews(urls);
+    return () => urls.forEach(url => URL.revokeObjectURL(url));
+  }, [files, kind]);
   async function submit() {
-    if (!file) return;
+    if (!files.length) return;
     setError(null);
     setSuccess(false);
     setReading(true);
     try {
-      const documentName = name.trim() || file.name;
-      if (documentName.length > 200 || /[\x00-\x1f/\\]/.test(documentName))
-        throw new Error(
-          "Le nom doit contenir au maximum 200 caractères, sans barre oblique ni caractère de contrôle."
-        );
-      if (file.size > 5 * 1024 * 1024)
-        throw new Error("Le fichier doit faire au maximum 5 Mo.");
-      if (kind === "photo") {
-        if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
-          throw new Error("Choisissez une photo JPG, PNG ou WebP.");
-      } else if (
-        !file.name.toLowerCase().endsWith(".pdf") ||
-        (file.type && file.type !== "application/pdf")
-      )
-        throw new Error("Sélectionnez un véritable document PDF.");
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result).split(",")[1]);
-        reader.onerror = () =>
-          reject(new Error("Impossible de lire le fichier."));
-        reader.readAsDataURL(file);
-      });
-      await upload.mutateAsync({
-        reference,
-        token,
-        organizationId,
-        name: documentName,
-        mimeType: kind === "photo" ? file.type : "application/pdf",
-        base64,
-        kind,
-        photoStage,
-      });
-      setFile(null);
+      if (multiple && files.length > 10)
+        throw new Error("Ajoutez au maximum 10 photos à la fois.");
+      for (const file of files) {
+        const documentName =
+          multiple || kind === "photo" ? file.name : name.trim() || file.name;
+        if (documentName.length > 200 || /[\x00-\x1f/\\]/.test(documentName))
+          throw new Error(
+            "Le nom doit contenir au maximum 200 caractères, sans barre oblique ni caractère de contrôle."
+          );
+        if (file.size > 5 * 1024 * 1024)
+          throw new Error("Chaque fichier doit faire au maximum 5 Mo.");
+        if (kind === "photo") {
+          if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
+            throw new Error(
+              "Choisissez uniquement des photos JPG, PNG ou WebP."
+            );
+        } else if (
+          !file.name.toLowerCase().endsWith(".pdf") ||
+          (file.type && file.type !== "application/pdf")
+        )
+          throw new Error("Sélectionnez un véritable document PDF.");
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result).split(",")[1]);
+          reader.onerror = () =>
+            reject(new Error("Impossible de lire le fichier."));
+          reader.readAsDataURL(file);
+        });
+        await upload.mutateAsync({
+          reference,
+          token,
+          organizationId,
+          name: documentName,
+          mimeType: kind === "photo" ? file.type : "application/pdf",
+          base64,
+          kind,
+          photoStage,
+          description: description.trim() || undefined,
+        });
+      }
+      setFiles([]);
       setName("");
+      setDescription("");
       if (inputRef.current) inputRef.current.value = "";
       setSuccess(true);
       onUploaded();
@@ -356,13 +376,16 @@ export function UploadDocument({
           label={kind === "photo" ? "Photo demandée par MDS" : "Document PDF"}
           hint={
             kind === "photo"
-              ? "JPG, PNG ou WebP, 5 Mo maximum."
+              ? multiple
+                ? "JPG, PNG ou WebP, 5 Mo par photo, 10 photos maximum."
+                : "JPG, PNG ou WebP, 5 Mo maximum."
               : "PDF, 5 Mo maximum. Transfert privé."
           }
         >
           <input
             ref={inputRef}
             type="file"
+            multiple={multiple}
             accept={
               kind === "photo"
                 ? "image/jpeg,image/png,image/webp"
@@ -370,9 +393,9 @@ export function UploadDocument({
             }
             required
             onChange={e => {
-              const next = e.target.files?.[0] ?? null;
-              setFile(next);
-              setName(next?.name ?? "");
+              const next = Array.from(e.target.files || []);
+              setFiles(next);
+              setName(next[0]?.name ?? "");
               setSuccess(false);
             }}
           />
@@ -387,7 +410,27 @@ export function UploadDocument({
             />
           </Field>
         )}
+        {kind === "photo" && (
+          <Field label="Description (facultative)">
+            <input
+              value={description}
+              maxLength={500}
+              onChange={event => setDescription(event.target.value)}
+              placeholder="Exemple : état du mur sous la fuite"
+            />
+          </Field>
+        )}
       </div>
+      {kind === "photo" && previews.length > 0 && (
+        <div className="photo-preview-grid" aria-label="Aperçu des photos">
+          {previews.map((url, index) => (
+            <figure key={url}>
+              <img src={url} alt={`Aperçu de la photo ${index + 1}`} />
+              <figcaption>{files[index]?.name}</figcaption>
+            </figure>
+          ))}
+        </div>
+      )}
       <ErrorNotice error={error} />
       {success && (
         <p className="success-message" role="status">
@@ -397,13 +440,15 @@ export function UploadDocument({
       <ActionButton
         type="submit"
         className="primary"
-        disabled={!file || reading || upload.isPending}
+        disabled={!files.length || reading || upload.isPending}
       >
         <Upload size={18} aria-hidden="true" />
         {reading || upload.isPending
           ? "Dépôt en cours…"
           : kind === "photo"
-            ? "Ajouter la photo"
+            ? multiple
+              ? `Ajouter ${files.length || "les"} photos`
+              : "Ajouter la photo"
             : "Déposer le PDF"}
       </ActionButton>
     </form>

@@ -138,6 +138,8 @@ export function PrivateQuoteBuilder({
                   mimeType: "application/pdf",
                   kind: "quote",
                   photoStage: "other",
+                  photoAuthor: "other",
+                  description: null,
                   createdAt: draft.createdAt,
                 },
               ]}

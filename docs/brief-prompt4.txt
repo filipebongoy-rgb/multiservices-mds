@@ -1,0 +1,3 @@
+# MULTISERVICES MDS — PROMPT 4
+
+Photos avant/après, preuves d’intervention, validation client, réclamations et paiement non actif. Continuer le projet existant sans recréer d’application. Ne jamais simuler une transaction réelle ni prétendre qu’un paiement est sécurisé ou libéré. Les photos restent privées, datées, attribuées et conservées dans le dossier.

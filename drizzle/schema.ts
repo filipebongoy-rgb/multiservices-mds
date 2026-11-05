@@ -326,6 +326,8 @@ export const interventions = mysqlTable("mds_interventions", {
   startedAt: timestamp("startedAt"),
   completedAt: timestamp("completedAt"),
   summary: text("summary"),
+  clientConfirmedAt: timestamp("clientConfirmedAt"),
+  clientConfirmationMessage: text("clientConfirmationMessage"),
   ...dates(),
 });
 export const availability = mysqlTable("mds_availability", {
@@ -356,6 +358,10 @@ export const documents = mysqlTable("mds_documents", {
   photoStage: mysqlEnum("photoStage", ["before", "after", "other"])
     .default("other")
     .notNull(),
+  photoAuthor: mysqlEnum("photoAuthor", ["client", "artisan", "other"])
+    .default("other")
+    .notNull(),
+  description: varchar("description", { length: 500 }),
   byteSize: int("byteSize").notNull(),
   storageKey: varchar("storageKey", { length: 500 }).notNull(),
   encryptionKey: varchar("encryptionKey", { length: 64 }).notNull(),

@@ -76,13 +76,13 @@ export function Privacy() {
       </p>
       <h2>Vos droits et la mise en service</h2>
       <p>
-        MDS devra renseigner ses coordonnées de contact, la durée de
-        conservation, le responsable du traitement et les informations
-        réglementaires avant une ouverture commerciale. Ces informations ne sont
-        pas inventées dans cette version. Les demandes d’accès, de rectification
-        ou de suppression doivent être adressées à MDS une fois ses coordonnées
-        configurées. La suppression physique des pièces stockées et une
-        politique automatique de conservation restent à mettre en place.
+        Pour toute demande d’accès, de rectification ou d’effacement de vos
+        données personnelles, vous pouvez écrire à MULTISERVICES MDS par e-mail
+        (contact@multiservices-mds.fr) ou par courrier (10 Rue Monsieur Vincent,
+        35200 Rennes). Vos données sont conservées le temps nécessaire à la
+        gestion de votre dossier et aux obligations comptables de l’entreprise.
+        Vous disposez également du droit d’introduire une réclamation auprès de
+        la CNIL.
       </p>
       <div className="notice">
         Ces informations décrivent la version développée. Elles ne remplacent
@@ -139,11 +139,6 @@ export function LegalNotice() {
             valider. Pour les travaux nécessitant un devis, son acceptation est
             une étape distincte.
           </p>
-          <div className="notice">
-            Cette application est une fondation technique. Les informations
-            légales manquantes doivent être complétées avant mise en service
-            commerciale.
-          </div>
         </>
       )}
       <Link className="text-link" href="/confidentialite">

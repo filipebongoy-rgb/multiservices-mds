@@ -79,22 +79,39 @@ export function Header() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="simple-space-menu">
-        {!isAdmin && (
-          <DropdownMenuItem asChild>
-            <Link
-              href="/artisan"
-              className={
-                user?.role === "admin" ? "simple-artisan-item" : undefined
-              }
-            >
-              Espace artisan
-            </Link>
-          </DropdownMenuItem>
-        )}
-        {!isAdmin && (
-          <DropdownMenuItem asChild>
-            <Link href="/professionnels">Professionnel</Link>
-          </DropdownMenuItem>
+        {isAdmin ? (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/">Voir le site public</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/professionnels">Espace professionnel</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/prestations">Catalogue prestations</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/artisan" className="simple-artisan-item">
+                Espace artisan
+              </Link>
+            </DropdownMenuItem>
+          </>
+        ) : (
+          <>
+            <DropdownMenuItem asChild>
+              <Link
+                href="/artisan"
+                className={
+                  user?.role === "admin" ? "simple-artisan-item" : undefined
+                }
+              >
+                Espace artisan
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/professionnels">Professionnel</Link>
+            </DropdownMenuItem>
+          </>
         )}
         {user && (
           <DropdownMenuItem asChild>
@@ -148,7 +165,26 @@ export function Header() {
                 : "Navigation principale"
             }
           >
-            {isAdmin ? null : privateWorkspace ? (
+            {isAdmin ? (
+              location === "/artisan" ? (
+                <Link
+                  href="/"
+                  className="simple-nav-link"
+                  aria-label="Voir le site public"
+                >
+                  Voir le site public →
+                </Link>
+              ) : (
+                <Link
+                  href="/artisan"
+                  className="simple-nav-link simple-artisan-item"
+                  aria-label="Retourner à l’espace artisan"
+                >
+                  <ArrowLeft size={17} aria-hidden="true" />
+                  Atelier
+                </Link>
+              )
+            ) : privateWorkspace ? (
               <Link href="/" className="simple-nav-link simple-client-return">
                 <ArrowLeft size={17} aria-hidden="true" />
                 Retour client

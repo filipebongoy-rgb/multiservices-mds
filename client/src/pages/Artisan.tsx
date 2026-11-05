@@ -223,6 +223,9 @@ function ArtisanWorkspace() {
           </h1>
         </div>
         <div className="artisan-ws-meta">
+          <Link href="/" className="text-link" aria-label="Voir le site public">
+            Voir le site public →
+          </Link>
           {todayAppointments.length > 0 && (
             <button
               type="button"

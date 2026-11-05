@@ -59,8 +59,8 @@ export function registerOAuthRoutes(app: Express) {
         loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
         lastSignedIn: new Date(),
       });
+      const existingUser = await db.getUserByOpenId(userInfo.openId);
       try {
-        const existingUser = await db.getUserByOpenId(userInfo.openId);
         const dbConn = await db.getDb();
         if (dbConn && existingUser) {
           await recordAudit(
@@ -86,7 +86,8 @@ export function registerOAuthRoutes(app: Express) {
         maxAge: ONE_YEAR_MS,
       });
 
-      res.redirect(302, "/");
+      const isArtisan = existingUser?.role === "admin";
+      res.redirect(302, isArtisan ? "/artisan" : "/");
     } catch (error) {
       console.error(
         "[OAuth] Callback failed",

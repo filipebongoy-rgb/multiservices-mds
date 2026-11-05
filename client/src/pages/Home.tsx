@@ -16,24 +16,23 @@ export default function Home() {
   return (
     <main id="main-content" className="simple-home page-shell">
       <section className="simple-home-intro" aria-labelledby="home-title">
-        <h1 id="home-title">
-          Un problème <span className="home-title-rest">chez vous ?</span>
-        </h1>
-        <p className="home-lead">
-          Nous nous occupons de vos travaux et dépannages.
-        </p>
         <figure className="simple-hero">
           <img
             src="/manus-storage/async-images/jrMWVnVL5iHffqpYfhEc1x/image-1.webp"
             alt="Photo illustrative d’un artisan en intervention devant une habitation"
           />
+          <div className="simple-hero-copy">
+            <h1 id="home-title">
+              Un problème <span className="home-title-rest">chez vous ?</span>
+            </h1>
+            <p className="home-lead">
+              Nous nous occupons de vos travaux et dépannages.
+            </p>
+          </div>
           <figcaption>
             Photo illustrative — intervention de dépannage
           </figcaption>
         </figure>
-        <Link className="btn primary simple-continue" href="/demande">
-          Commencer ma demande <ArrowRight size={20} aria-hidden="true" />
-        </Link>
         <div className="home-access" aria-label="Choisir un espace">
           <Link className="home-access-card active" href="/demande">
             <strong>Particulier</strong>

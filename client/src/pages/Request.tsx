@@ -158,7 +158,7 @@ export default function Request() {
       postcode: /^\d{5}$/.test(draft.postcode) ? draft.postcode : undefined,
     },
     {
-      enabled: step === 4 && (!selected || !!service),
+      enabled: step === 3 && (!selected || !!service),
       retry: false,
       refetchOnWindowFocus: false,
     }
@@ -178,7 +178,7 @@ export default function Request() {
     },
     {
       enabled:
-        step === 3 &&
+        step === 2 &&
         /^\d{5}$/.test(draft.postcode) &&
         /^\d{4}-\d{2}-\d{2}$/.test(draft.date),
       retry: false,
@@ -199,7 +199,7 @@ export default function Request() {
       )
         return "Complétez l’adresse, le code postal et la ville.";
     }
-    if (step === 3 && draft.date) {
+    if (step === 2 && draft.date) {
       if (
         !draft.time ||
         !Number.isFinite(new Date(draft.date + "T" + draft.time).getTime()) ||
@@ -215,7 +215,7 @@ export default function Request() {
       setError(issue);
       return;
     }
-    setStep(s => Math.min(s + 1, 4));
+    setStep(s => Math.min(s + 1, 3));
   }
   async function uploadPhoto(key = receipt) {
     if (!key || !photos.length) return;
@@ -369,7 +369,7 @@ export default function Request() {
         style={{ maxWidth: 720, margin: "0 auto" }}
       >
         <ol className="request-progress" aria-label="Étapes de la demande">
-          {["Service", "Problème", "Adresse", "Disponibilité", "Envoi"].map(
+          {["Service", "Détails", "Disponibilité", "Validation"].map(
             (title, i) => (
               <li
                 key={title}
@@ -611,133 +611,122 @@ export default function Request() {
               )}
             </>
           )}
-          {(step === 2 || step === 3) && (
+          {step === 2 && (
             <>
-              {step === 2 && (
+              <div className="field">
+                <label htmlFor="address">Adresse de l’intervention</label>
+                <p className="action-example">
+                  Exemple : 12 rue des Lilas, bâtiment B, 2e étage.
+                </p>
+                <input
+                  id="address"
+                  autoComplete="street-address"
+                  value={draft.address}
+                  maxLength={250}
+                  onChange={e => set("address", e.target.value)}
+                />
+              </div>
+              <div className="form-grid">
+                <div className="field">
+                  <label htmlFor="postcode">Code postal</label>
+                  <input
+                    id="postcode"
+                    autoComplete="postal-code"
+                    inputMode="numeric"
+                    value={draft.postcode}
+                    maxLength={5}
+                    onChange={e =>
+                      set("postcode", e.target.value.replace(/\D/g, ""))
+                    }
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="city">Ville</label>
+                  <input
+                    id="city"
+                    autoComplete="address-level2"
+                    value={draft.city}
+                    maxLength={100}
+                    onChange={e => set("city", e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="field">
+                <label htmlFor="date">Date souhaitée (facultative)</label>
+                <p className="action-example">
+                  Exemple : choisissez une date si vous avez une préférence ;
+                  MDS confirmera ensuite.
+                </p>
+                <input
+                  id="date"
+                  type="date"
+                  value={draft.date}
+                  min={new Date().toLocaleDateString("en-CA")}
+                  onChange={e => set("date", e.target.value)}
+                />
+              </div>
+              {draft.date && (
                 <>
-                  <div className="field">
-                    <label htmlFor="address">Adresse de l’intervention</label>
-                    <p className="action-example">
-                      Exemple : 12 rue des Lilas, bâtiment B, 2e étage.
-                    </p>
-                    <input
-                      id="address"
-                      autoComplete="street-address"
-                      value={draft.address}
-                      maxLength={250}
-                      onChange={e => set("address", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-grid">
-                    <div className="field">
-                      <label htmlFor="postcode">Code postal</label>
-                      <input
-                        id="postcode"
-                        autoComplete="postal-code"
-                        inputMode="numeric"
-                        value={draft.postcode}
-                        maxLength={5}
-                        onChange={e =>
-                          set("postcode", e.target.value.replace(/\D/g, ""))
-                        }
-                      />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="city">Ville</label>
-                      <input
-                        id="city"
-                        autoComplete="address-level2"
-                        value={draft.city}
-                        maxLength={100}
-                        onChange={e => set("city", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-              {step === 3 && (
-                <>
-                  <div className="field">
-                    <label htmlFor="date">Date souhaitée (facultative)</label>
-                    <p className="action-example">
-                      Exemple : choisissez une date si vous avez une préférence
-                      ; MDS confirmera ensuite.
-                    </p>
-                    <input
-                      id="date"
-                      type="date"
-                      value={draft.date}
-                      min={new Date().toLocaleDateString("en-CA")}
-                      onChange={e => set("date", e.target.value)}
-                    />
-                  </div>
-                  {draft.date && (
-                    <>
-                      {slots.data?.slots.length ? (
-                        <div
-                          className="slot-list"
-                          aria-label="Créneaux actuellement possibles"
+                  {slots.data?.slots.length ? (
+                    <div
+                      className="slot-list"
+                      aria-label="Créneaux actuellement possibles"
+                    >
+                      {slots.data.slots.map(slot => (
+                        <button
+                          key={slot.startAt}
+                          type="button"
+                          className={`btn secondary ${new Date(draft.date + "T" + draft.time).getTime() === new Date(slot.startAt).getTime() ? "selected" : ""}`}
+                          onClick={() => {
+                            const date = new Date(slot.startAt);
+                            const local = new Date(
+                              date.getTime() - date.getTimezoneOffset() * 60000
+                            )
+                              .toISOString()
+                              .slice(0, 16)
+                              .split("T");
+                            setDraft(d => ({
+                              ...d,
+                              date: local[0],
+                              time: local[1],
+                            }));
+                            setConsent(false);
+                          }}
                         >
-                          {slots.data.slots.map(slot => (
-                            <button
-                              key={slot.startAt}
-                              type="button"
-                              className={`btn secondary ${new Date(draft.date + "T" + draft.time).getTime() === new Date(slot.startAt).getTime() ? "selected" : ""}`}
-                              onClick={() => {
-                                const date = new Date(slot.startAt);
-                                const local = new Date(
-                                  date.getTime() -
-                                    date.getTimezoneOffset() * 60000
-                                )
-                                  .toISOString()
-                                  .slice(0, 16)
-                                  .split("T");
-                                setDraft(d => ({
-                                  ...d,
-                                  date: local[0],
-                                  time: local[1],
-                                }));
-                                setConsent(false);
-                              }}
-                            >
-                              {dateTime(slot.startAt)}
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        slots.data?.reason && (
-                          <p className="muted small-text">
-                            {slots.data.reason}
-                          </p>
-                        )
-                      )}
-                      <div className="field">
-                        <label htmlFor="time">
-                          Heure souhaitée (heure de votre navigateur)
-                        </label>
-                        <input
-                          id="time"
-                          type="time"
-                          value={draft.time}
-                          onChange={e => set("time", e.target.value)}
-                        />
-                      </div>
-                      {slots.error && (
-                        <p className="muted">
-                          Créneaux indisponibles. Vous pouvez proposer une heure
-                          à MDS.
-                        </p>
-                      )}
-                    </>
+                          {dateTime(slot.startAt)}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    slots.data?.reason && (
+                      <p className="muted small-text">{slots.data.reason}</p>
+                    )
                   )}
-                  <p className="muted small-text">
-                    Ce créneau reste un souhait, pas une réservation.
-                  </p>
+                  <div className="field">
+                    <label htmlFor="time">
+                      Heure souhaitée (heure de votre navigateur)
+                    </label>
+                    <input
+                      id="time"
+                      type="time"
+                      value={draft.time}
+                      onChange={e => set("time", e.target.value)}
+                    />
+                  </div>
+                  {slots.error && (
+                    <p className="muted">
+                      Créneaux indisponibles. Vous pouvez proposer une heure à
+                      MDS.
+                    </p>
+                  )}
                 </>
               )}
+              <p className="muted small-text">
+                Ce créneau reste un souhait, pas une réservation.
+              </p>
             </>
           )}
-          {step === 4 && (
+          {step === 3 && (
             <>
               <p>
                 <strong>
@@ -844,7 +833,7 @@ export default function Request() {
                 Retour
               </button>
             )}
-            {step > 0 && step < 4 ? (
+            {step > 0 && step < 3 ? (
               <button
                 type="button"
                 className="btn primary"
@@ -864,7 +853,7 @@ export default function Request() {
                 Continuer
                 <ArrowRight size={17} />
               </button>
-            ) : step === 4 ? (
+            ) : step === 3 ? (
               <button
                 type="button"
                 className="btn primary"

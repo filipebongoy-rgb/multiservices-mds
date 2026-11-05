@@ -2001,6 +2001,9 @@ details[open] > .simple-summary::before {
   font-size: clamp(26px, 5vw, 36px);
   margin-bottom: 4px;
 }
+.request-simple .page-title:focus {
+  outline: none;
+}
 .request-kicker {
   color: var(--primary);
   font-size: 14px;

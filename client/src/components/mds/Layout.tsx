@@ -6,6 +6,11 @@ import {
   ChevronDown,
   CircleHelp,
   LogOut,
+  Phone,
+  CalendarDays,
+  FileText,
+  House,
+  UserRound,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
@@ -89,6 +94,15 @@ export function Header() {
       >
         <div className="header-inner">
           <Brand />
+          {!privateWorkspace && (
+            <Link
+              href="/demande"
+              className="simple-phone-action"
+              aria-label="Prendre rendez-vous"
+            >
+              <Phone size={21} aria-hidden="true" />
+            </Link>
+          )}
           <nav
             className="simple-primary-nav"
             aria-label={
@@ -144,6 +158,38 @@ export function Footer() {
         </nav>
       </div>
     </footer>
+  );
+}
+
+export function MobileBottomNav() {
+  const [location] = useLocation();
+  const items = [
+    { href: "/", label: "Accueil", Icon: House },
+    { href: "/suivi", label: "Mes demandes", Icon: CalendarDays },
+    { href: "/paiements", label: "Mes documents", Icon: FileText },
+    { href: "/professionnels", label: "Mon espace", Icon: UserRound },
+  ];
+  return (
+    <nav className="mobile-bottom-nav" aria-label="Navigation mobile">
+      {items.map(({ href, label, Icon }) => {
+        const active = href === "/" ? location === "/" : location === href;
+        return (
+          <Link
+            key={href}
+            href={href}
+            className={active ? "active" : undefined}
+            aria-current={active ? "page" : undefined}
+          >
+            <Icon
+              size={22}
+              strokeWidth={active ? 2.4 : 1.8}
+              aria-hidden="true"
+            />
+            <span>{label}</span>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
 

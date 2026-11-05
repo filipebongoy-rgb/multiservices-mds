@@ -4,7 +4,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { Header, Footer, Loading } from "./components/mds/Layout";
+import {
+  Header,
+  Footer,
+  Loading,
+  MobileBottomNav,
+} from "./components/mds/Layout";
 import Home from "./pages/Home";
 const Catalog = lazy(() => import("./pages/Catalog"));
 const Request = lazy(() => import("./pages/Request"));
@@ -73,6 +78,7 @@ function Routes() {
           <Route component={NotFound} />
         </Switch>
       </Suspense>
+      <MobileBottomNav />
       <Footer />
     </>
   );

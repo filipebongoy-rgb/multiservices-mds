@@ -1100,3 +1100,100 @@
 .private-modal:has(.simple-pro-form) .field select {
   min-height: 48px;
 }
+
+/* Composition maquette GPS MDS : ajoutée sans modifier les autres parcours. */
+.tracking-gps-page {
+  max-width: 100%;
+  padding-top: 0;
+  padding-right: 0;
+  padding-left: 0;
+  background: #071725;
+  color: #fff;
+}
+.tracking-gps-page > .eyebrow,
+.tracking-gps-page > .tracking-header,
+.tracking-gps-page > .tracking-progress,
+.tracking-gps-page > .tracking-live-card,
+.tracking-gps-page > .trip-map-card,
+.tracking-gps-page > .tracking-layout {
+  width: min(100%, 520px);
+  margin-right: auto;
+  margin-left: auto;
+}
+.tracking-gps-page > .eyebrow {
+  padding: 22px 20px 0;
+  color: #b8c7d2;
+}
+.tracking-gps-page .tracking-header {
+  padding: 14px 20px 0;
+}
+.tracking-gps-page .tracking-header .page-title {
+  color: #fff;
+  font-size: 22px;
+}
+.tracking-gps-page .tracking-header .muted {
+  color: #b8c7d2;
+}
+.tracking-gps-page .tracking-header .badge {
+  border-color: #2eb875;
+  background: #1c8b5d;
+  color: #fff;
+}
+.tracking-gps-page .tracking-progress {
+  padding: 12px 20px 4px;
+  border: 0;
+  background: transparent;
+}
+.tracking-gps-page .tracking-progress li strong {
+  color: #b8c7d2;
+}
+.tracking-gps-page .tracking-progress li.done strong {
+  color: #f4f7f8;
+}
+.tracking-gps-page .tracking-progress li span {
+  border-color: #78909f;
+  background: transparent;
+  color: #cbd7df;
+}
+.tracking-gps-page .tracking-progress li.done span {
+  border-color: #27b477;
+  background: #27b477;
+  color: #fff;
+}
+.tracking-gps-page .tracking-live-card {
+  margin-top: 12px;
+  margin-bottom: 0;
+  border-right: 0;
+  border-left: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.tracking-gps-page .trip-map-card {
+  margin-top: 0;
+  margin-bottom: 0;
+  border-right: 0;
+  border-left: 0;
+  border-radius: 0;
+}
+.tracking-gps-page .tracking-layout {
+  padding: 20px;
+  background: #f7f8f7;
+  color: #172c3e;
+}
+.tracking-gps-page .tracking-contact-card,
+.tracking-gps-page .tracking-layout .panel {
+  border-color: #dce3e5;
+}
+@media (min-width: 760px) {
+  .tracking-gps-page > .eyebrow,
+  .tracking-gps-page > .tracking-header,
+  .tracking-gps-page > .tracking-progress,
+  .tracking-gps-page > .tracking-live-card,
+  .tracking-gps-page > .trip-map-card,
+  .tracking-gps-page > .tracking-layout {
+    width: min(100%, 760px);
+  }
+  .tracking-gps-page .trip-map-canvas {
+    min-height: 430px;
+  }
+}

@@ -219,7 +219,12 @@ export default function Tracking() {
       document => document.kind === "photo" && document.photoStage === "after"
     ) ?? [];
   return (
-    <main id="main-content" className="page-shell standard-page">
+    <main
+      id="main-content"
+      className={`page-shell standard-page ${
+        r?.status === "en_route" ? "tracking-gps-page" : ""
+      }`}
+    >
       <div className="eyebrow">VOTRE DOSSIER, ÉTAPE PAR ÉTAPE</div>
       {!lookup || !r ? (
         <>

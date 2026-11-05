@@ -25,6 +25,7 @@ import { PriceDetails } from "@/components/mds/PriceDetails";
 import { ClientOperations } from "@/components/mds/ClientOperations";
 import { UploadDocument } from "@/components/mds/private-common";
 import { PaymentPanel } from "@/components/mds/PaymentPanel";
+import { ProofOfWorkCard } from "@/components/mds/ProofOfWorkCard";
 const TripMap = lazy(() =>
   import("@/components/mds/TripMap").then(module => ({
     default: module.TripMap,
@@ -446,38 +447,13 @@ export default function Tracking() {
               </Suspense>
             )}
           {isFinished && (
-            <section
-              className="tracking-proof-card"
-              aria-labelledby="proof-title"
-            >
-              <div>
-                <div className="eyebrow">PREUVE DE FIN D’INTERVENTION</div>
-                <h2 id="proof-title">Le résultat est documenté</h2>
-                <p>
-                  Comparez les photos avant et après. Votre confirmation reste
-                  nécessaire : le dépôt d’une photo ne libère jamais le paiement
-                  automatiquement.
-                </p>
-              </div>
-              <div className="tracking-proof-columns">
-                <div>
-                  <strong>Avant travaux</strong>
-                  <span>{beforePhotos.length} photo(s)</span>
-                </div>
-                <div className={afterPhotos.length ? "is-ready" : "is-missing"}>
-                  <strong>Après travaux</strong>
-                  <span>
-                    {afterPhotos.length
-                      ? `${afterPhotos.length} preuve(s) ajoutée(s)`
-                      : "Preuve manquante"}
-                  </span>
-                </div>
-              </div>
-              <a className="btn primary" href="#client-validation">
-                Vérifier les photos et confirmer la fin
-                <ArrowRight size={17} />
-              </a>
-            </section>
+            <ProofOfWorkCard
+              reference={r.reference}
+              token={lookup?.token}
+              before={beforePhotos}
+              after={afterPhotos}
+              clientConfirmedAt={details.data?.intervention?.clientConfirmedAt}
+            />
           )}
           <div className="tracking-layout">
             <div className="stack">

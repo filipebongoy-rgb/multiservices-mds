@@ -80,6 +80,20 @@ function quoteRequired(request: RequestRecord) {
   );
 }
 
+function requestPriority(request: RequestRecord) {
+  if (
+    ["needs_information", "to_analyze", "awaiting_mds"].includes(request.status)
+  )
+    return 0;
+  if (
+    ["proposed_slot", "awaiting_client", "quote_pending"].includes(
+      request.status
+    )
+  )
+    return 1;
+  return 2;
+}
+
 export function ArtisanRequests({
   requests,
   services,
@@ -101,13 +115,22 @@ export function ArtisanRequests({
 }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const filtered = requests.filter(
-    request =>
-      (!status || request.status === status) &&
-      `${request.reference} ${request.name} ${request.serviceName ?? ""} ${request.city}`
-        .toLocaleLowerCase("fr")
-        .includes(search.toLocaleLowerCase("fr"))
-  );
+  const filtered = requests
+    .filter(
+      request =>
+        (!status || request.status === status) &&
+        `${request.reference} ${request.name} ${request.serviceName ?? ""} ${request.city}`
+          .toLocaleLowerCase("fr")
+          .includes(search.toLocaleLowerCase("fr"))
+    )
+    .sort((a, b) => {
+      const priority = requestPriority(a) - requestPriority(b);
+      if (priority) return priority;
+      return (
+        new Date(a.expiresAt ?? a.createdAt).getTime() -
+        new Date(b.expiresAt ?? b.createdAt).getTime()
+      );
+    });
   return (
     <div className="stack">
       <div className="section-heading">
@@ -146,7 +169,8 @@ export function ArtisanRequests({
         <div className="split-view" style={{ alignItems: "start" }}>
           <div className="panel stack" style={{ minWidth: 0 }}>
             <p className="muted">
-              {filtered.length} dossier{filtered.length !== 1 ? "s" : ""}
+              {filtered.length} dossier{filtered.length !== 1 ? "s" : ""} ·
+              actions urgentes en premier
             </p>
             {filtered.length === 0 ? (
               <div className="empty">
@@ -194,6 +218,11 @@ export function ArtisanRequests({
                         {request.city}
                       </p>
                       <StatusBadge status={request.status} />
+                      {requestPriority(request) < 2 && (
+                        <span className="badge" style={{ marginLeft: 6 }}>
+                          Action requise
+                        </span>
+                      )}
                       <p className="muted" style={{ marginTop: 8 }}>
                         {dateTime(request.createdAt)}
                       </p>

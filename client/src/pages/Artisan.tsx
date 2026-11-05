@@ -472,6 +472,8 @@ function Interventions({
   );
 }
 function Notifications({ onOpen }: { onOpen: (id: number) => void }) {
+  const [onlyUnread, setOnlyUnread] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(10);
   const notifications = trpc.mds.notifications.list.useQuery(undefined, {
     retry: false,
     refetchInterval: 30_000,
@@ -479,8 +481,25 @@ function Notifications({ onOpen }: { onOpen: (id: number) => void }) {
   const read = trpc.mds.notifications.read.useMutation({
     onSuccess: () => void notifications.refetch(),
   });
+  const allNotifications = notifications.data ?? [];
+  const unreadCount = allNotifications.filter(item => !item.readAt).length;
+  const visibleNotifications = allNotifications
+    .filter(item => !onlyUnread || !item.readAt)
+    .slice(0, visibleCount);
   return (
     <div className="stack" style={{ paddingTop: 16 }}>
+      <div
+        className="row"
+        style={{ justifyContent: "space-between", flexWrap: "wrap" }}
+      >
+        <p className="muted">
+          {unreadCount} notification{unreadCount !== 1 ? "s" : ""} non lue
+          {unreadCount !== 1 ? "s" : ""}
+        </p>
+        <ActionButton onClick={() => setOnlyUnread(value => !value)}>
+          {onlyUnread ? "Voir toutes" : "Voir les non lues"}
+        </ActionButton>
+      </div>
       <QueryState
         loading={notifications.isLoading}
         error={notifications.error}
@@ -489,7 +508,7 @@ function Notifications({ onOpen }: { onOpen: (id: number) => void }) {
         emptyText="Aucune notification."
       />
       <ErrorNotice error={read.error} />
-      {notifications.data?.slice(0, 10).map(notification => (
+      {visibleNotifications.map(notification => (
         <div className="data-row stack" key={notification.id}>
           <div
             className="row"
@@ -517,6 +536,12 @@ function Notifications({ onOpen }: { onOpen: (id: number) => void }) {
           </div>
         </div>
       ))}
+      {visibleNotifications.length <
+        allNotifications.filter(item => !onlyUnread || !item.readAt).length && (
+        <ActionButton onClick={() => setVisibleCount(value => value + 10)}>
+          Afficher les 10 suivantes
+        </ActionButton>
+      )}
     </div>
   );
 }

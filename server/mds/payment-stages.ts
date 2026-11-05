@@ -458,3 +458,57 @@ export const stageProcedures = {
       });
     }),
 };
+
+export const settlementProcedures = {
+  settlements: artisan.query(async ({ ctx }) => {
+    const db = await dbRequired();
+    const rows = await db
+      .select({
+        payment: s.payments,
+        request: s.requests,
+      })
+      .from(s.payments)
+      .innerJoin(s.requests, eq(s.requests.id, s.payments.requestId))
+      .orderBy(desc(s.payments.createdAt), desc(s.payments.id));
+    const result = [];
+    for (const row of rows) {
+      if (row.payment.status !== "succeeded") continue;
+      const [intervention] = await db
+        .select({
+          completedAt: s.interventions.completedAt,
+          clientConfirmedAt: s.interventions.clientConfirmedAt,
+        })
+        .from(s.interventions)
+        .where(eq(s.interventions.requestId, row.request.id));
+      const [openIncident] = await db
+        .select({ id: s.incidents.id })
+        .from(s.incidents)
+        .where(
+          and(
+            eq(s.incidents.requestId, row.request.id),
+            eq(s.incidents.status, "open")
+          )
+        )
+        .limit(1);
+      const status = openIncident
+        ? "blocked"
+        : !intervention?.clientConfirmedAt
+          ? "pending_validation"
+          : "pending_transfer";
+      result.push({
+        id: row.payment.id,
+        reference: row.request.reference,
+        serviceName: row.request.serviceName,
+        amountCents: row.payment.receivedAmountCents ?? row.payment.amountCents,
+        currency: row.payment.currency,
+        mode: row.payment.mode,
+        paidAt: row.payment.confirmedAt ?? row.payment.createdAt,
+        interventionCompletedAt: intervention?.completedAt ?? null,
+        clientConfirmedAt: intervention?.clientConfirmedAt ?? null,
+        status,
+        transferEnabled: false as const,
+      });
+    }
+    return result;
+  }),
+};

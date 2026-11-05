@@ -19,7 +19,11 @@ import {
   type SqlDb,
 } from "./common";
 import { fail } from "./workflow";
-import { stageFor, stageProcedures } from "./payment-stages";
+import {
+  settlementProcedures,
+  stageFor,
+  stageProcedures,
+} from "./payment-stages";
 import { refundProcedures } from "./refunds";
 export { commercialPaidCents } from "./payment-stages";
 
@@ -256,6 +260,7 @@ function checkoutUrl(session: Stripe.Checkout.Session) {
 
 export const paymentsRouter = router({
   ...stageProcedures,
+  ...settlementProcedures,
   ...refundProcedures,
   config: procedure.query(() => paymentConfig()),
   list: procedure.input(trackSchema).query(async ({ input, ctx }) => {

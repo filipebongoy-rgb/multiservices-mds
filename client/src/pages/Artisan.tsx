@@ -6,10 +6,11 @@ import {
   LockKeyhole,
   Settings2,
   Wrench,
+  WalletCards,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import { dateTime } from "@shared/mds";
+import { dateTime, money } from "@shared/mds";
 import {
   ActionButton,
   ErrorNotice,
@@ -38,6 +39,7 @@ const navigation = [
   { id: "requests", name: "Demandes", icon: ClipboardList },
   { id: "planning", name: "Planning", icon: CalendarDays },
   { id: "interventions", name: "Interventions", icon: Wrench },
+  { id: "settlements", name: "Mes règlements", icon: WalletCards },
 ] as const;
 type Tab = (typeof navigation)[number]["id"];
 
@@ -313,10 +315,79 @@ function ArtisanWorkspace() {
             onChanged={refreshRequests}
           />
         )}
+        {tab === "settlements" && <Settlements />}
       </div>
     </main>
   );
 }
+
+function Settlements() {
+  const query = trpc.mds.payments.settlements.useQuery(undefined, {
+    retry: false,
+    refetchInterval: 30_000,
+  });
+  const labels = {
+    pending_validation: "En attente de validation client",
+    pending_transfer: "En attente de transfert",
+    transferred: "Transféré",
+    blocked: "Bloqué pour réclamation",
+  } as const;
+  return (
+    <section className="stack">
+      <div className="section-heading">
+        <h2>Mes règlements</h2>
+        <p className="muted">
+          Les montants proviennent uniquement des paiements rapprochés. Aucun
+          virement n’est déclaré avant la validation du client.
+        </p>
+      </div>
+      {query.isLoading && <QueryState loading />}
+      {query.error && <QueryState error={query.error} retry={query.refetch} />}
+      {!query.isLoading && !query.error && query.data?.length === 0 && (
+        <section className="panel">
+          <p>
+            Aucun paiement rapproché n’est encore associé à une intervention.
+          </p>
+        </section>
+      )}
+      {query.data?.map(row => (
+        <article className="panel stack" key={row.id}>
+          <div
+            className="row"
+            style={{ justifyContent: "space-between", flexWrap: "wrap" }}
+          >
+            <div>
+              <strong>{row.serviceName || "Intervention MDS"}</strong>
+              <p className="muted small-text">
+                Dossier {row.reference} · {dateTime(row.paidAt)}
+              </p>
+            </div>
+            <strong>
+              {row.amountCents == null
+                ? "Montant à vérifier"
+                : money(row.amountCents)}
+            </strong>
+          </div>
+          <span className="badge">
+            {labels[row.status as keyof typeof labels] ?? row.status}
+          </span>
+          {row.mode === "test" && (
+            <small className="muted">
+              Environnement de test — aucun virement réel.
+            </small>
+          )}
+          {!row.transferEnabled && (
+            <small className="muted">
+              Le transfert réel sera activé uniquement après validation du
+              montage de paiement MDS.
+            </small>
+          )}
+        </article>
+      ))}
+    </section>
+  );
+}
+
 function TodaySummary({
   pending,
   appointments,

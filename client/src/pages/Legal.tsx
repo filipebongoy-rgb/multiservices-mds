@@ -32,13 +32,6 @@ export function Privacy() {
         restituées après contrôle des droits. Les données textuelles du dossier
         sont conservées dans une base gérée, avec accès contrôlé côté serveur.
       </p>
-      <h2>La dictée et les brouillons</h2>
-      <p>
-        La dictée, lorsqu’elle est compatible avec votre navigateur, utilise son
-        service de reconnaissance vocale, qui peut être fourni par l’éditeur du
-        navigateur. MDS ne conserve pas l’audio. Vous pouvez toujours utiliser
-        la saisie écrite.
-      </p>
       <p>
         Votre brouillon est conservé dans la session de votre navigateur afin de
         ne pas perdre les informations saisies. Il est supprimé après l’envoi

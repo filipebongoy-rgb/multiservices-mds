@@ -1,14 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  ImagePlus,
-  Mic,
-  MicOff,
-  Copy,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ImagePlus, Copy } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { createRequestSchema, dateTime } from "@shared/mds";
@@ -97,17 +89,14 @@ export default function Request() {
   const [error, setError] = useState(""),
     [consent, setConsent] = useState(false),
     [photo, setPhoto] = useState<File | null>(null),
-    [photoPreview, setPhotoPreview] = useState(""),
-    [recording, setRecording] = useState(false),
-    [speechSupported, setSpeechSupported] = useState(false);
+    [photoPreview, setPhotoPreview] = useState("");
   const [receipt, setReceipt] = useState<{
       id: number;
       reference: string;
       trackingToken: string;
     } | null>(null),
     [uploadError, setUploadError] = useState("");
-  const speechRef = useRef<any>(null),
-    headingRef = useRef<HTMLHeadingElement>(null),
+  const headingRef = useRef<HTMLHeadingElement>(null),
     fingerprintSeen = useRef<string | null>(null);
   const create = trpc.mds.requests.create.useMutation(),
     upload = trpc.mds.documents.upload.useMutation();
@@ -144,11 +133,6 @@ export default function Request() {
         phone: site.contactPhone || d.phone,
       }));
   }, [organization.data, siteId]);
-  useEffect(() => {
-    const w = window as any;
-    setSpeechSupported(!!(w.SpeechRecognition || w.webkitSpeechRecognition));
-    return () => speechRef.current?.abort();
-  }, []);
   useEffect(() => {
     if (!photo) {
       setPhotoPreview("");
@@ -194,36 +178,6 @@ export default function Request() {
       retry: false,
     }
   );
-  function dictate() {
-    if (recording) {
-      speechRef.current?.stop();
-      return;
-    }
-    const w = window as any,
-      R = w.SpeechRecognition || w.webkitSpeechRecognition;
-    if (!R) return;
-    const recognition = new R();
-    recognition.lang = "fr-FR";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.onresult = (e: any) =>
-      setDraft(d => ({
-        ...d,
-        description: (d.description + " " + e.results[0][0].transcript).trim(),
-      }));
-    recognition.onend = () => setRecording(false);
-    recognition.onerror = () => {
-      setRecording(false);
-      setError("La dictée est indisponible. Vous pouvez écrire.");
-    };
-    speechRef.current = recognition;
-    try {
-      recognition.start();
-      setRecording(true);
-    } catch {
-      setError("Le microphone est indisponible.");
-    }
-  }
   function validateStage() {
     if (selected && !service)
       return "Cette prestation n’est pas disponible. Choisissez une offre active ou décrivez votre problème librement.";
@@ -472,16 +426,6 @@ export default function Request() {
                 />
               </div>
               <div className="row" style={{ flexWrap: "wrap" }}>
-                {speechSupported && (
-                  <button
-                    type="button"
-                    className="btn secondary"
-                    onClick={dictate}
-                  >
-                    {recording ? <MicOff size={17} /> : <Mic size={17} />}{" "}
-                    {recording ? "Arrêter" : "Dicter"}
-                  </button>
-                )}
                 <label className="btn secondary" htmlFor="photo">
                   <ImagePlus size={17} />
                   {photo ? "Changer la photo" : "Ajouter une photo"}

@@ -36,6 +36,13 @@
       "when": 1793883182116,
       "tag": "0004_lumpy_daimon_hellstrom",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1793889293386,
+      "tag": "0005_short_shocker",
+      "breakpoints": true
     }
   ]
 }

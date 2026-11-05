@@ -52,6 +52,11 @@ export default function Home() {
           Je ne trouve pas mon problème
           <ArrowRight size={18} aria-hidden="true" />
         </Link>
+        <Link href="/professionnels" className="home-professional-link">
+          <strong>Vous êtes une entreprise ou une collectivité ?</strong>
+          <span>Gérer vos bâtiments et vos interventions avec MDS.</span>
+          <ArrowRight size={18} aria-hidden="true" />
+        </Link>
       </section>
     </main>
   );

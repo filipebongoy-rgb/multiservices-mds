@@ -1,0 +1,171 @@
+J'ai regardé les captures. Le problème n'est pas seulement esthétique : la page demande trop d'efforts avant même que le client ait commencé sa demande.
+
+Pour une personne de 70 ans, il faut supprimer les choix simultanés et rendre le parcours évident.
+
+### Ce que je changerais
+
+* Accueil : une seule question, « Que souhaitez-vous faire réparer ? »
+
+* Services : cinq grandes catégories faciles à reconnaître. « Je ne sais pas » reste disponible.
+
+* Description : uniquement après le choix du service, pas sur la page d'accueil.
+
+* Photos : un bouton facultatif, sans obligation.
+
+* Réservation : adresse et disponibilité dans une étape claire.
+
+* Suivi : une seule page avec l'avancement de la demande.
+
+Le bouton « Continuer » placé au-dessus des catégories est notamment à supprimer : il crée une hésitation sur ce qu'il faut faire en premier.
+
+Le logo et le slogan doivent aussi être repensés. « Artisan de proximité » est générique. Je privilégierais une identité sobre, crédible et professionnelle, sans pictogramme de maison standard ni esthétique de template généré par IA.
+
+### Prompt de refonte pour Manus
+
+# MULTISERVICES MDS — REFONTE PROFESSIONNELLE DE L'INTERFACE
+
+Je souhaite une véritable refonte de l'expérience utilisateur de MULTISERVICES MDS à partir des captures fournies.
+
+Le résultat actuel paraît trop générique, trop chargé et amateur. Je veux une interface digne d'une entreprise artisanale professionnelle, avec une expérience aussi intuitive que Doctolib.
+
+**PRIORITÉ : rendre l'application compréhensible pour une personne de 70 ans qui utilise peu Internet.**
+
+## 1. NOUVEL ACCUEIL
+
+Supprimer le formulaire de description placé directement sur la page d'accueil.
+
+Afficher uniquement :
+
+**MULTISERVICES MDS**
+
+« Un problème à réparer ? Nous sommes là pour vous aider. »
+
+Puis une question centrale :
+
+**Que souhaitez-vous faire réparer ?**
+
+Présenter cinq grandes catégories :
+- Plomberie
+- Électricité
+- Chauffage
+- Peinture
+- Petits travaux
+
+Ajouter une option discrète mais visible :
+« Je ne sais pas, aidez-moi. »
+
+Chaque catégorie doit être directement cliquable.
+
+Ne pas afficher simultanément un formulaire, un bouton Continuer et les catégories.
+
+## 2. NOUVEAU PARCOURS CLIENT
+
+Créer un parcours guidé, avec une seule étape à la fois.
+
+Étape 1 : choisir le service.
+
+Étape 2 : préciser le problème avec quelques mots ou choisir un problème proposé.
+
+Étape 3 : indiquer l'adresse et les disponibilités.
+
+Étape 4 : renseigner les coordonnées et ajouter des photos si nécessaire.
+
+Étape 5 : envoyer la demande.
+
+Afficher une progression simple :
+« Étape 1 sur 4 », etc.
+
+Ne demander aucune information inutile. Permettre de revenir en arrière sans perdre les informations déjà saisies.
+
+## 3. DESIGN PROFESSIONNEL
+
+Revoir entièrement :
+- Les proportions.
+- Les espacements.
+- La typographie.
+- Les couleurs.
+- Les boutons.
+- Les cartes de services.
+- Le menu de navigation.
+- Le pied de page.
+
+Éviter les titres gigantesques, les polices décoratives excessives, les cartes trop volumineuses et les éléments visuels qui donnent une impression de modèle préfabriqué.
+
+Utiliser une typographie professionnelle, très lisible, et une hiérarchie visuelle cohérente.
+
+Conserver une identité sobre : fond clair, texte foncé, couleur terracotta utilisée avec modération.
+
+## 4. LOGO ET IDENTITÉ
+
+Repenser le logo MDS.
+
+Je veux :
+- Un logo professionnel et reconnaissable.
+- Une identité visuelle cohérente.
+- Une typographie élégante et lisible.
+- Un symbole simple, distinctif et non générique.
+- Une version adaptée au mobile, au site et aux documents.
+
+Supprimer le pictogramme de maison standard actuel.
+
+Remplacer « ARTISAN DE PROXIMITÉ » par une signature plus concrète :
+
+« DÉPANNAGE & PETITS TRAVAUX »
+
+Le nom MULTISERVICES MDS doit rester clairement identifiable.
+
+## 5. NAVIGATION
+
+Simplifier le menu.
+
+Pour le client :
+- Demander une intervention.
+- Suivre ma demande.
+- Mon espace.
+
+Ne pas afficher les fonctions administratives ou artisan dans la navigation client.
+
+## 6. ACCESSIBILITÉ
+
+Concevoir pour les personnes de 60 à 80 ans :
+- Texte suffisamment grand.
+- Contrastes élevés.
+- Boutons facilement identifiables.
+- Libellés explicites.
+- Aucun texte technique.
+- Aucune action cachée.
+- Aucun menu complexe.
+- Zones tactiles suffisamment grandes.
+
+## 7. RÈGLES ABSOLUES
+
+- Une action principale par écran.
+- Pas de formulaire interminable.
+- Pas de répétition des mêmes informations.
+- Pas de boutons décoratifs.
+- Pas de fonctionnalités supprimées sans raison.
+- Ne pas casser les réservations, les photos, les demandes ou le suivi existants.
+- Conserver les données et le moteur métier actuels.
+- Interface entièrement responsive.
+
+Supprimer également le badge « Réalisé avec Manus » de l'interface publique si les options officielles de publication le permettent.
+
+## 8. VALIDATION
+
+Tester la nouvelle interface sur téléphone et ordinateur.
+
+Faire tester mentalement le parcours par un utilisateur peu habitué au numérique.
+
+Vérifier qu'il peut comprendre immédiatement :
+1. Où cliquer pour demander une intervention.
+2. Comment choisir un service.
+3. Comment envoyer sa demande.
+4. Comment suivre son intervention.
+
+Ne pas simplement changer les couleurs. Repenser réellement l'expérience utilisateur.
+
+**OBJECTIF : une application élégante, rassurante, accessible et professionnelle. Elle doit donner confiance dès les cinq premières secondes.**
+
+Mon choix pour le slogan : « Dépannage & petits travaux » comme signature descriptive. C'est moins publicitaire, mais beaucoup plus clair pour le client.
+
+Et surtout : ne demande pas à Manus d'ajouter encore des fonctionnalités. Il doit d'abord rendre ce qui existe simple à utiliser.

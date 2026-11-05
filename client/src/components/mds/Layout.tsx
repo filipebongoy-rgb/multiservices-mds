@@ -24,20 +24,12 @@ export function Brand({ inverse = false }: { inverse?: boolean }) {
       className={`brand ${inverse ? "inverse" : ""}`}
       aria-label="MULTISERVICES MDS — accueil"
     >
-      <span className="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 40 40" fill="none">
-          <path
-            d="M5 18 20 6l15 12M9 16v18h22V16M16 34V24h8v10"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="square"
-            strokeLinejoin="miter"
-          />
-        </svg>
+      <span className="brand-mark brand-monogram" aria-hidden="true">
+        MDS
       </span>
       <span>
         <strong>MDS</strong>
-        <small>ARTISAN DE PROXIMITÉ</small>
+        <small>DÉPANNAGE &amp; PETITS TRAVAUX</small>
       </span>
     </Link>
   );
@@ -77,9 +69,6 @@ export function Header() {
       <DropdownMenuContent align="end" className="simple-space-menu">
         <DropdownMenuItem asChild>
           <Link href="/professionnels">Professionnel</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/artisan">Artisan MDS</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => void accountAction()}>

@@ -200,6 +200,16 @@ select:focus-visible {
   width: 34px;
   height: 34px;
 }
+.brand-monogram {
+  width: 46px;
+  height: 46px;
+  border: 1px solid #bc4c23;
+  background: transparent;
+  color: #262a27;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
 .brand strong {
   display: block;
   font-size: 31px;

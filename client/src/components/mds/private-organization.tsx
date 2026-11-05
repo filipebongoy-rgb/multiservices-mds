@@ -64,7 +64,9 @@ export function OrganizationDetail({
     { id: summary.id },
     { retry: false, refetchInterval: 30_000 }
   );
-  const [tab, setTab] = useState<"declare" | "follow" | "buildings">("declare");
+  const [tab, setTab] = useState<
+    "declare" | "follow" | "buildings" | "documents"
+  >("declare");
   const [siteId, setSiteId] = useState<number | null>(null);
   const [siteSearch, setSiteSearch] = useState("");
   const [draftError, setDraftError] = useState<unknown>(null);
@@ -123,9 +125,10 @@ export function OrganizationDetail({
       <nav className="simple-pro-nav" aria-label="Navigation professionnelle">
         {(
           [
-            ["declare", "Déclarer"],
-            ["follow", "Suivre"],
+            ["declare", "Demander"],
+            ["follow", "Mes interventions"],
             ["buildings", "Bâtiments"],
+            ["documents", "Documents & contrats"],
           ] as const
         ).map(([id, label]) => (
           <ActionButton
@@ -415,13 +418,13 @@ export function OrganizationDetail({
               </section>
             </details>
           )}
-          {tab === "buildings" && (
+          {tab === "documents" && (
             <details className="simple-context-details">
               <summary>Devis et factures</summary>
               <OrganizationDocuments documents={data.documents} />
             </details>
           )}
-          {tab === "buildings" && (
+          {tab === "documents" && (
             <details className="simple-context-details">
               <summary>Contrats</summary>
               <section className="stack">

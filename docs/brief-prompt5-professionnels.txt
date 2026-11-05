@@ -1,0 +1,255 @@
+Il faut effectivement prévoir deux parcours distincts : Particuliers et Professionnels & collectivités. Mais ils doivent reposer sur le même système MDS.
+
+Pour les mairies, bailleurs sociaux, organismes HLM, syndics et entreprises, l'objectif est de pouvoir commander une intervention ponctuelle en quelques clics ou mettre en place un contrat de maintenance sur plusieurs mois ou années.
+
+Je recommande une logique commerciale avec quatre offres simples :
+
+| Offre      | Fonctionnement                           |
+| ---------- | ---------------------------------------- |
+| Prix fixe  | Prestation avec tarif connu à l'avance   |
+| Devis      | Intervention nécessitant une estimation  |
+| Abonnement | Forfait mensuel ou annuel                |
+| Contrat    | Maintenance et interventions récurrentes |
+
+### Le parcours professionnel idéal
+
+![What It Actually Takes to Manage 350+ Units Across 18 Properties | Foundation Capital Insights](https://images.openai.com/static-rsc-4/mRG-vw7HRgr4AjletAVqr5ZvH6gkCX8CZ1DTR8gZ1n-dpTWS8VMPJIwmbTclVJsS5uEeiciTvToLXsD16bBDRtRltEIjJvs8pP3gz_jVEV05oVuzWXvNO9vPsBsbEHrCbdDcEIKf6m0wogivGHCfXd1VPdnOJEqbJ72WrTk2WxnLBPAawG43aoKBb7Q-wyq4?purpose=fullsize)
+
+1\. Accès professionnel
+
+Entreprise, mairie, bailleur, HLM ou syndic.
+
+![Ihre Immobilienverwaltung - SFC Property Management](https://images.openai.com/static-rsc-4/6yIX_KgeLWY19MCQhXT9U7xfKt65XZc8r9m5cn3nYzSWWFQ69jGUpCyJ14usxsmDf7ptwXfVcQRw6_mdUVDNPPveh52WSeDJqtvRP0qlZXUHDtEynMM9JBbiCW8kfmY0aEKH2U6-H_wTpuEMCO65xXFSRQsPZ6GqHNmRkhTPEP0sMU7qmra8J7HyLWPNUxUv?purpose=fullsize)
+
+2\. Choix du bâtiment
+
+Sélectionner un site ou une adresse déjà enregistrée.
+
+![RPM -  Maintenance | National Apartment Association](https://images.openai.com/static-rsc-4/MjnF8EwElQdZOavBwisZYaRY_N3_71VpzO7rdTiMnUicoELrdDgBUnVz-cXYF9TwIxfI5XdpbtYl6tn5_-NrA6YC6vJ3ZlVGy0y7ygn-_rEDERWl5yrcqcM79iZ8FYc4NU7AoRcfFYREGyVQqAq-KVk5t3LUcI1NZvVK0gpYXpV_5Volytj-t87biDf55gEP?purpose=fullsize)
+
+3\. Choix de la prestation
+
+Prix fixe, devis ou contrat existant.
+
+![Duvox – Ihr Gebäudedienstleister im Rhein-Main-Gebiet](https://images.openai.com/static-rsc-4/cV5CF8pGGfE8BJd-YJj-7K3nRaHFrIqwOJaWO0GF9cb_2zHmQ7N9Ac5cf56r42ryc1qmcc1RCpRA6Sb6fVkQ3cnEQTA-1JJI0qtaHs8RFYQQQeoqzMN5YYjKdQEs1II5jRjzEuhVOUTOnTTmP92xLZPATGzJ9qzWGaK3TxJQ2Y51lrUoLKZAYFT0mpQGND-G?purpose=fullsize)
+
+4\. Confirmation et suivi
+
+Demande, validation, intervention, facture.
+
+### PROMPT 5 — ESPACE PROFESSIONNEL ET CONTRATS
+
+Voici le prompt à transmettre à Manus.
+
+# MULTISERVICES MDS — PROMPT 5
+## ESPACE PROFESSIONNEL, COLLECTIVITÉS, TARIFS ET CONTRATS
+
+Je souhaite faire évoluer MULTISERVICES MDS pour accueillir les particuliers ET les clients professionnels.
+
+Cibles :
+- Entreprises.
+- Mairies et collectivités.
+- Bailleurs sociaux.
+- Organismes HLM.
+- Syndics de copropriété.
+- Gestionnaires immobiliers.
+- Associations.
+- Commerces.
+
+IMPORTANT : conserver une seule application, une seule entreprise prestataire et un moteur commun. Ne pas créer une marketplace.
+
+L'expérience professionnelle doit être aussi simple que Doctolib ou Uber Eats.
+
+## 1. DEUX ACCÈS DISTINCTS
+
+Sur l'accueil, présenter deux choix très clairs :
+
+PARTICULIERS
+« Un problème chez vous ? Demandez une intervention. »
+
+PROFESSIONNELS
+« Gérez vos interventions et vos bâtiments avec MDS. »
+
+Chaque accès ouvre une expérience adaptée.
+
+## 2. ESPACE PROFESSIONNEL
+
+Créer un espace centralisé permettant de :
+
+- Enregistrer une organisation.
+- Enregistrer plusieurs bâtiments et adresses.
+- Ajouter des collaborateurs autorisés.
+- Commander une intervention.
+- Suivre les demandes.
+- Consulter les devis.
+- Consulter les factures.
+- Gérer les contrats.
+- Consulter l'historique des interventions.
+
+Ne pas multiplier les menus.
+
+Créer un tableau de bord simple avec quatre rubriques :
+1. Demander une intervention.
+2. Mes interventions.
+3. Mes contrats.
+4. Mes documents.
+
+## 3. COMMANDE RAPIDE
+
+Permettre à un professionnel de commander une prestation en quelques étapes :
+
+1. Choisir son bâtiment.
+2. Choisir le service.
+3. Décrire le problème et joindre des photos facultatives.
+4. Choisir une disponibilité.
+5. Envoyer.
+
+Si un tarif fixe est configuré, l'afficher immédiatement.
+
+Si un devis est nécessaire, l'indiquer clairement.
+
+## 4. QUATRE MODÈLES COMMERCIAUX
+
+Créer quatre possibilités.
+
+A. PRIX FIXE
+
+Pour les prestations standardisées.
+
+Afficher :
+- Prix TTC ou HT selon le profil et le régime applicable.
+- Contenu de la prestation.
+- Déplacement éventuel.
+- Conditions.
+- Durée indicative.
+
+Le professionnel peut commander directement.
+
+B. DEVIS
+
+Pour les travaux complexes ou les interventions nécessitant un diagnostic.
+
+Le professionnel décrit son besoin.
+MDS prépare un devis.
+Le responsable autorisé peut l'accepter ou le refuser.
+
+C. ABONNEMENT
+
+Permettre de proposer des formules mensuelles ou annuelles.
+
+Exemples de formules à configurer :
+- Essentiel.
+- Confort.
+- Premium.
+
+Les tarifs, prestations incluses, limites, fréquences et conditions doivent être entièrement configurables.
+
+Ne pas inventer les prix.
+
+D. CONTRAT LONGUE DURÉE
+
+Permettre de créer un contrat de maintenance pour une durée définie.
+
+Fonctions :
+- Date de début et de fin.
+- Prestations incluses.
+- Sites concernés.
+- Fréquence des interventions.
+- Tarif mensuel ou annuel.
+- Conditions particulières.
+- Renouvellement.
+- Résiliation.
+- Historique des interventions.
+
+Prévoir les contrats personnalisés avec devis préalable.
+
+## 5. MAIRIES ET ORGANISMES HLM
+
+Prévoir la possibilité de gérer :
+- Plusieurs bâtiments.
+- Plusieurs logements.
+- Plusieurs sites.
+- Plusieurs collaborateurs.
+- Des demandes individuelles par adresse.
+- Des contrats couvrant plusieurs bâtiments.
+- Des factures regroupées ou séparées selon le contrat.
+
+Pour les collectivités, prévoir un processus de validation interne et les références de commande nécessaires.
+
+Ne pas présenter un simple abonnement comme une procédure suffisante pour respecter les règles de commande publique.
+
+## 6. AUTOMATISATION
+
+Automatiser :
+- La création des demandes.
+- Le classement par bâtiment.
+- Le suivi des interventions.
+- Les notifications.
+- Les rappels.
+- La préparation des devis.
+- La génération des factures.
+- Le suivi des échéances contractuelles.
+
+L'artisan conserve la validation des décisions engageantes.
+
+## 7. EXPÉRIENCE UTILISATEUR
+
+Un professionnel doit pouvoir commander une intervention sans devoir comprendre toute la gestion administrative.
+
+Afficher uniquement les informations utiles à son profil.
+
+Ne pas mélanger les demandes particulières et professionnelles.
+
+Conserver les mêmes principes :
+- Une action principale par écran.
+- Peu de clics.
+- Boutons explicites.
+- Interface mobile et ordinateur.
+- Navigation accessible.
+
+## 8. ADMINISTRATION MDS
+
+Permettre à l'administrateur de configurer :
+- Prix fixes.
+- Devis.
+- Abonnements.
+- Contrats.
+- Durées.
+- Prestations incluses.
+- Conditions.
+- Zones d'intervention.
+- Échéances et renouvellements.
+
+Ne jamais créer automatiquement un engagement commercial sans validation.
+
+## 9. TESTS
+
+Tester :
+- Une entreprise avec une intervention à prix fixe.
+- Une mairie avec plusieurs bâtiments.
+- Un organisme HLM avec plusieurs demandes.
+- Un devis accepté.
+- Un abonnement.
+- Un contrat annuel.
+- Une échéance de contrat.
+- Une facture professionnelle.
+
+Vérifier les droits d'accès et l'isolation des organisations.
+
+Ne pas casser les fonctionnalités existantes.
+
+OBJECTIF FINAL :
+
+Faire de MULTISERVICES MDS un service de maintenance et d'intervention simple à utiliser pour les particuliers, les entreprises, les mairies et les bailleurs sociaux.
+
+Le client doit pouvoir commander rapidement, tandis que les contrats et la gestion administrative restent automatisés autant que possible.
+
+### Une décision commerciale importante
+
+Je te conseille de ne pas afficher les mêmes tarifs à tout le monde automatiquement.
+
+Un particulier peut avoir un prix public fixe. Une mairie ou un bailleur peut bénéficier d'une grille négociée, d'un contrat annuel ou d'un tarif regroupé par bâtiment.
+
+MDS doit donc posséder un catalogue tarifaire unique, avec plusieurs grilles commerciales selon le type de client.
+
+C'est ce qui permettra de passer d'une simple application de dépannage à une véritable activité de maintenance professionnelle.

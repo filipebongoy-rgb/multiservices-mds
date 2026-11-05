@@ -136,3 +136,11 @@ Le trajet suit désormais `Démarrer le trajet` → position réellement autoris
 - **Espaces privés sanctuarisés** : le footer public et la barre mobile publique sont masqués sur `/artisan` et `/professionnels` pour ne plus encombrer l’écran de travail.
 - **Liens d’échappement** sur les écrans de connexion et d’activation (« Revenir à l’accueil », « Accéder à mon espace professionnel »).
 - **Page 404** refaite en français avec l’identité MULTISERVICES MDS (auparavant en anglais).
+
+## Isolation complète de l’espace artisan — 5 novembre 2026 (dernière passe)
+
+- **Redirection automatique** : l’artisan connecté (`role=admin`) est renvoyé vers `/artisan` dès qu’il tente d’accéder à une page publique ou professionnelle (accueil, prestations, demande, suivi, paiements, professionnels). Seules `/artisan`, `/profil` et les pages légales restent accessibles.
+- **Header taillé pour l’artisan** : pas de liens de navigation publique, pas de « Retour client », pas de bouton d’appel MDS (l’artisan n’appelle pas l’artisan), logo liant vers `/artisan`.
+- **Menu « Espaces » adapté** : pour l’artisan, suppression des entrées « Espace artisan » (redondante) et « Professionnel » ; seul « Mon profil » + « Se déconnecter » subsiste.
+- **Profil artisan épuré** : masquage des sections client « Mes espaces » et « Paiements et suivi » pour l’administrateur, bouton unique « Retour à l’atelier », masquage du footer sur `/profil` pour l’artisan.
+- **Écran d’activation** : retrait du lien « Accéder à mon espace professionnel ».

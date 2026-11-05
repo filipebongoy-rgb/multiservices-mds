@@ -64,3 +64,11 @@ Le pied de page dupliqué sur la page d'accueil a été retiré (suppression du 
 - Footer et barre mobile publique masqués sur `/artisan` et `/professionnels`.
 - Liens d’échappement sur les écrans de connexion/activation.
 - Page 404 localisée en français avec l’identité MDS.
+
+## 8. Isolation complète de l’espace artisan (5 novembre 2026, dernière passe)
+
+- Redirection automatique de l’artisan connecté (`role=admin`) vers `/artisan` depuis toute page publique/pro.
+- Header artisan : pas de liens publics, pas de « Retour client », pas de bouton d’appel MDS, logo liant à `/artisan`.
+- Menu « Mon compte » sans « Professionnel » ni doublon « Espace artisan ».
+- Profil artisan épuré : sections client masquées, bouton unique « Retour à l’atelier ».
+- Écran d’activation artisan sans lien vers l’espace professionnel.

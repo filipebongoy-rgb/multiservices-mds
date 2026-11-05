@@ -23,8 +23,8 @@ export default function Home() {
           Choisissez le service. Décrivez le problème. MDS vous confirme la
           suite.
         </p>
-        <Link className="btn primary simple-continue" href="/prestations">
-          Choisir un service <ArrowRight size={20} aria-hidden="true" />
+        <Link className="btn primary simple-continue" href="/demande">
+          Commencer ma demande <ArrowRight size={20} aria-hidden="true" />
         </Link>
       </section>
       <section
@@ -38,7 +38,7 @@ export default function Home() {
             return (
               <Link
                 key={trade.slug}
-                href={`/prestations?metier=${trade.slug}`}
+                href={`/demande?metier=${trade.slug}`}
                 className="simple-trade"
               >
                 <Icon size={25} strokeWidth={1.7} aria-hidden="true" />

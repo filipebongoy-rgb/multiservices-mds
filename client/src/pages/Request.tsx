@@ -245,7 +245,10 @@ export default function Request() {
     const input = {
       serviceId: service?.id ?? null,
       pricingFingerprint: pricing.data.fingerprint,
-      problemType: draft.problemType,
+      problemType:
+        draft.problemType ||
+        trades.find(trade => trade.slug === tradeParam)?.name ||
+        "",
       description: draft.description,
       name: draft.name,
       email: draft.email,

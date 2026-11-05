@@ -2,9 +2,9 @@
 
 ## Parcours client
 
-Le chemin nominal est désormais : accueil → choix du service → demande en trois étapes. L’accueil ne demande plus de décrire le problème avant le formulaire : la description n’est saisie qu’une seule fois dans la demande.
+Le chemin nominal est désormais : accueil → catégorie de service → demande en trois étapes. L’accueil ne demande plus de décrire le problème avant le formulaire et n’impose plus le détour par le catalogue : la description n’est saisie qu’une seule fois dans la demande.
 
-Depuis l’accueil, il faut 1 clic pour choisir un service, puis 1 clic sur « Demander cette prestation », puis 2 clics de progression (« Continuer ») et 1 clic d’envoi, hors saisie. Les photos initiales sont sélectionnées en une seule opération, avec aperçu et retrait individuel avant envoi.
+Depuis l’accueil, il faut 1 clic sur la catégorie ou sur « Commencer ma demande », puis 2 clics de progression (« Continuer ») et 1 clic d’envoi, hors saisie. Les photos initiales sont sélectionnées en une seule opération, avec aperçu et retrait individuel avant envoi.
 
 ## Suivi
 

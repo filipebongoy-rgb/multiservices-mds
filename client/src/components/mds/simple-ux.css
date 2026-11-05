@@ -9,6 +9,15 @@
   gap: 16px;
   max-width: 1216px;
 }
+.brand-logo {
+  display: block;
+  width: 238px;
+  height: auto;
+}
+.simple-request-back,
+.simple-request-title {
+  display: none;
+}
 .simple-primary-nav {
   display: flex;
   align-items: center;
@@ -206,7 +215,7 @@
   grid-template-columns: 1fr auto;
   gap: 3px 10px;
   align-items: center;
-  min-height: 82px;
+  min-height: 132px;
   padding: 15px 16px;
   border: 1px solid #dedfd9;
   background: #fff;
@@ -215,13 +224,22 @@
 .home-access-card span {
   grid-column: 1;
 }
+.home-access-card > svg:first-child {
+  grid-column: 1;
+  grid-row: 1;
+  color: #bc4c23;
+}
+.home-access-card strong {
+  grid-row: 2;
+}
 .home-access-card span {
   color: #626762;
   font-size: 14px;
+  grid-row: 3;
 }
 .home-access-card svg {
   grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-row: 1 / span 3;
 }
 .home-access-card.active {
   border-color: #bc4c23;
@@ -460,11 +478,8 @@
   .simple-header .brand {
     margin: 0 auto;
   }
-  .simple-header .brand strong {
-    font-size: 28px;
-  }
-  .simple-header .brand small {
-    font-size: 7px;
+  .simple-header .brand-logo {
+    width: 238px;
   }
   .simple-header .simple-primary-nav {
     display: none;
@@ -538,7 +553,7 @@
     grid-column: auto;
   }
   .simple-home {
-    padding: 32px 20px;
+    padding: 12px 20px 32px;
   }
   .simple-home h1 {
     letter-spacing: -1px;
@@ -566,7 +581,15 @@
     width: 100%;
   }
   .home-access {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .home-access-card {
+    min-height: 148px;
+    padding: 14px 12px;
+  }
+  .home-access-card span {
+    font-size: 13px;
   }
   .simple-pro.private-workspace {
     padding: 24px 20px 32px;
@@ -580,6 +603,36 @@
   }
   .simple-footer-inner nav {
     gap: 16px;
+  }
+  .simple-header.is-request .header-inner {
+    min-height: 70px;
+    justify-content: flex-start;
+    padding: 10px 20px;
+  }
+  .simple-header.is-request .brand,
+  .simple-header.is-request .simple-primary-nav {
+    display: none;
+  }
+  .simple-header.is-request .simple-request-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+  }
+  .simple-header.is-request .simple-request-title {
+    position: absolute;
+    left: 50%;
+    display: block;
+    transform: translateX(-50%);
+    font-size: 19px;
+    white-space: nowrap;
+  }
+  .request-simple .page-title {
+    display: none;
+  }
+  .request-simple .request-kicker {
+    display: none;
   }
 }
 @media (max-width: 480px) {

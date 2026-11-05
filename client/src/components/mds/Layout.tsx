@@ -29,13 +29,11 @@ export function Brand({ inverse = false }: { inverse?: boolean }) {
       className={`brand ${inverse ? "inverse" : ""}`}
       aria-label="MULTISERVICES MDS — accueil"
     >
-      <span className="brand-mark brand-monogram" aria-hidden="true">
-        MDS
-      </span>
-      <span>
-        <strong>MDS</strong>
-        <small>DÉPANNAGE &amp; PETITS TRAVAUX</small>
-      </span>
+      <img
+        className="brand-logo"
+        src="/mds-logo.svg"
+        alt="MDS Multiservices — dépannage et petits travaux"
+      />
     </Link>
   );
 }
@@ -46,6 +44,7 @@ export function Header() {
   const [error, setError] = useState("");
   const privateWorkspace =
     !!user && ["/artisan", "/professionnels"].includes(location);
+  const requestPage = location === "/demande";
 
   async function accountAction() {
     try {
@@ -90,11 +89,25 @@ export function Header() {
         Aller au contenu
       </a>
       <header
-        className={`site-header simple-header ${privateWorkspace ? "is-private" : ""}`}
+        className={`site-header simple-header ${privateWorkspace ? "is-private" : ""} ${requestPage ? "is-request" : ""}`}
       >
         <div className="header-inner">
+          {requestPage && (
+            <Link
+              href="/"
+              className="simple-request-back"
+              aria-label="Retour à l’accueil"
+            >
+              <ArrowLeft size={24} aria-hidden="true" />
+            </Link>
+          )}
           <Brand />
-          {!privateWorkspace && (
+          {requestPage && (
+            <strong className="simple-request-title">
+              Demande d’intervention
+            </strong>
+          )}
+          {!privateWorkspace && !requestPage && (
             <Link
               href="/demande"
               className="simple-phone-action"

@@ -1,10 +1,12 @@
 import { Link } from "wouter";
 import {
   ArrowRight,
+  Building2,
   CircleHelp,
   Droplets,
   Flame,
   Paintbrush,
+  House,
   Wrench,
   Zap,
 } from "lucide-react";
@@ -35,11 +37,13 @@ export default function Home() {
         </figure>
         <div className="home-access" aria-label="Choisir un espace">
           <Link className="home-access-card active" href="/demande">
+            <House size={27} strokeWidth={1.7} aria-hidden="true" />
             <strong>Particulier</strong>
             <span>Pour votre domicile</span>
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
           <Link className="home-access-card" href="/professionnels">
+            <Building2 size={27} strokeWidth={1.7} aria-hidden="true" />
             <strong>Professionnel</strong>
             <span>Entreprise, mairie, HLM, syndic et collectivité</span>
             <ArrowRight size={18} aria-hidden="true" />

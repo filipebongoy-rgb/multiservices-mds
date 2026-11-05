@@ -108,6 +108,19 @@ export default function Request() {
   const catalog = trpc.mds.catalog.list.useQuery({});
   const service = catalog.data?.find(s => s.id === selected);
   const selectedTrade = trades.find(trade => trade.slug === tradeChoice);
+  const problemOptions =
+    selectedTrade?.slug === "plomberie"
+      ? [
+          { label: "Fuite d’eau", value: "Fuite" },
+          { label: "Robinetterie", value: "Robinetterie" },
+          { label: "WC et chasse d’eau", value: "WC" },
+          { label: "Évier et lavabo", value: "Lavabo et évier" },
+          { label: "Débouchage", value: "Débouchage" },
+        ]
+      : (selectedTrade?.services ?? []).map(problem => ({
+          label: problem,
+          value: problem,
+        }));
   useEffect(() => {
     if (service && !tradeChoice) setTradeChoice(service.trade);
   }, [service?.id, tradeChoice]);
@@ -177,7 +190,7 @@ export default function Request() {
       postcode: /^\d{5}$/.test(draft.postcode) ? draft.postcode : undefined,
     },
     {
-      enabled: step === 3 && (!selected || !!service),
+      enabled: step === 4 && (!selected || !!service),
       retry: false,
       refetchOnWindowFocus: false,
     }
@@ -197,7 +210,7 @@ export default function Request() {
     },
     {
       enabled:
-        step === 2 &&
+        step === 3 &&
         /^\d{5}$/.test(draft.postcode) &&
         /^\d{4}-\d{2}-\d{2}$/.test(draft.date),
       retry: false,
@@ -208,9 +221,9 @@ export default function Request() {
       return "Choisissez le métier qui correspond à votre besoin.";
     if (step === 1 && !draft.problemType)
       return "Choisissez le type de problème qui correspond le mieux.";
-    if (step === 1 && draft.description.trim().length < 10)
+    if (step === 2 && draft.description.trim().length < 10)
       return "Décrivez votre problème en quelques mots (10 caractères minimum).";
-    if (step === 2) {
+    if (step === 3) {
       if (
         draft.address.trim().length < 5 ||
         !/^\d{5}$/.test(draft.postcode) ||
@@ -218,7 +231,7 @@ export default function Request() {
       )
         return "Complétez l’adresse, le code postal et la ville.";
     }
-    if (step === 2 && draft.date) {
+    if (step === 3 && draft.date) {
       if (
         !draft.time ||
         !Number.isFinite(new Date(draft.date + "T" + draft.time).getTime()) ||
@@ -234,7 +247,7 @@ export default function Request() {
       setError(issue);
       return;
     }
-    setStep(s => Math.min(s + 1, 3));
+    setStep(s => Math.min(s + 1, 4));
   }
   async function uploadPhoto(key = receipt) {
     if (!key || !photos.length) return;
@@ -381,6 +394,7 @@ export default function Request() {
         </section>
       </main>
     );
+  const progressStep = step <= 1 ? 0 : step === 2 ? 1 : step === 3 ? 2 : 3;
   return (
     <main id="main-content" className="page-shell standard-page">
       <div
@@ -392,8 +406,14 @@ export default function Request() {
             (title, i) => (
               <li
                 key={title}
-                className={step === i ? "current" : step > i ? "done" : ""}
-                aria-current={step === i ? "step" : undefined}
+                className={
+                  progressStep === i
+                    ? "current"
+                    : progressStep > i
+                      ? "done"
+                      : ""
+                }
+                aria-current={progressStep === i ? "step" : undefined}
               >
                 <span>{i + 1}</span>
                 {title}
@@ -484,23 +504,23 @@ export default function Request() {
               )}
               {selectedTrade ? (
                 <div className="choice-list" aria-label="Choisir un problème">
-                  {selectedTrade.services.map(problem => (
+                  {problemOptions.map(problem => (
                     <button
-                      key={problem}
+                      key={problem.value}
                       type="button"
-                      className={`btn secondary ${draft.problemType === problem ? "selected" : ""}`}
+                      className={`btn secondary ${draft.problemType === problem.value ? "selected" : ""}`}
                       onClick={() => {
-                        setDraft(d => ({ ...d, problemType: problem }));
+                        setDraft(d => ({ ...d, problemType: problem.value }));
                         const active = catalog.data?.find(
                           item =>
                             item.trade === selectedTrade.slug &&
                             item.name.toLocaleLowerCase("fr") ===
-                              problem.toLocaleLowerCase("fr")
+                              problem.value.toLocaleLowerCase("fr")
                         );
                         setSelected(active?.id ?? null);
                       }}
                     >
-                      {problem}
+                      {problem.label}
                     </button>
                   ))}
                   <button
@@ -519,42 +539,10 @@ export default function Request() {
                   Décrivez votre besoin librement ; MDS vous orientera ensuite.
                 </p>
               )}
-              {service && (
-                <div className="row">
-                  <strong>{service.name}</strong>
-                  <button
-                    type="button"
-                    className="text-link"
-                    onClick={() => {
-                      setSelected(null);
-                      setConsent(false);
-                    }}
-                  >
-                    Changer
-                  </button>
-                </div>
-              )}
-              {selected && !service && !catalog.isLoading && (
-                <p className="notice">
-                  Cette offre n’est pas disponible.{" "}
-                  <button
-                    type="button"
-                    className="text-link"
-                    onClick={() => setSelected(null)}
-                  >
-                    Envoyer une demande libre
-                  </button>
-                </p>
-              )}
-              {!service && tradeParam && (
-                <p className="notice">
-                  Catégorie choisie :{" "}
-                  <strong>
-                    {trades.find(trade => trade.slug === tradeParam)?.name ||
-                      tradeParam}
-                  </strong>
-                </p>
-              )}
+            </>
+          )}
+          {step === 2 && (
+            <>
               <div className="field">
                 <label htmlFor="description">Décrivez votre problème</label>
                 <p className="action-example">
@@ -630,7 +618,7 @@ export default function Request() {
               )}
             </>
           )}
-          {step === 2 && (
+          {step === 3 && (
             <>
               <div className="field">
                 <label htmlFor="address">Adresse de l’intervention</label>
@@ -745,7 +733,7 @@ export default function Request() {
               </p>
             </>
           )}
-          {step === 3 && (
+          {step === 4 && (
             <>
               <p>
                 <strong>
@@ -840,8 +828,11 @@ export default function Request() {
               {error}
             </p>
           )}
-          <div className="row" style={{ flexWrap: "wrap" }}>
-            {step > 0 && (
+          <div
+            className={`row ${step === 1 ? "request-actions-single" : ""}`}
+            style={{ flexWrap: "wrap" }}
+          >
+            {step > 1 && (
               <button
                 type="button"
                 className="btn secondary"
@@ -852,15 +843,13 @@ export default function Request() {
                 Retour
               </button>
             )}
-            {step > 0 && step < 3 ? (
+            {step > 0 && step < 4 ? (
               <button
                 type="button"
                 className="btn primary"
                 disabled={
-                  (step === 1 &&
-                    (!draft.problemType ||
-                      draft.description.trim().length < 10)) ||
-                  (step === 2 &&
+                  (step === 2 && draft.description.trim().length < 10) ||
+                  (step === 3 &&
                     (draft.address.trim().length < 5 ||
                       !/^\d{5}$/.test(draft.postcode) ||
                       draft.city.trim().length < 2)) ||
@@ -872,7 +861,7 @@ export default function Request() {
                 Continuer
                 <ArrowRight size={17} />
               </button>
-            ) : step === 3 ? (
+            ) : step === 4 ? (
               <button
                 type="button"
                 className="btn primary"

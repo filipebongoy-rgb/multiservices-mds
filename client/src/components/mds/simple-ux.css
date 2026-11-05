@@ -99,6 +99,38 @@
   padding-top: clamp(32px, 5vw, 64px);
   padding-bottom: 40px;
 }
+.request-next-action {
+  margin: -12px 0 18px;
+  padding: 12px 14px;
+  border-left: 3px solid #bc4c23;
+  background: #fff4e9;
+  color: #4f514c;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.request-simple .choice-list .btn {
+  justify-content: flex-start;
+  min-height: 64px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  text-align: left;
+}
+.request-simple .choice-list .btn.selected {
+  border-color: #bc4c23;
+  background: #fff4e9;
+  color: #262a27;
+  box-shadow: inset 0 0 0 1px #bc4c23;
+}
+.request-simple .btn.primary {
+  min-height: 52px;
+  border-radius: 8px;
+  background: #d85b16;
+  font-size: 17px;
+  font-weight: 700;
+}
+.request-simple .btn.primary:hover {
+  background: #b8490f;
+}
 .simple-home-intro {
   max-width: 800px;
 }
@@ -552,6 +584,18 @@
   .simple-header .brand-logo {
     width: 238px;
   }
+  .simple-header:not(.is-request) .brand-logo {
+    display: none;
+  }
+  .simple-header:not(.is-request) .brand::after {
+    content: "MULTISERVICES MDS";
+    color: #262a27;
+    font-family: "Trebuchet MS", Arial, sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+  }
   .simple-header .simple-primary-nav {
     display: none;
   }
@@ -650,6 +694,10 @@
   }
   .simple-home .simple-continue {
     width: 100%;
+  }
+  .request-next-action {
+    margin-top: -8px;
+    font-size: 14px;
   }
   .home-access {
     grid-template-columns: repeat(2, minmax(0, 1fr));

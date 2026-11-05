@@ -446,6 +446,17 @@ export default function Request() {
                   "Vérifiez votre demande",
                 ][step]}
           </h1>
+          <p className="request-next-action">
+            {step === 0 && "Commencez par indiquer le lieu de l’intervention."}
+            {step === 1 &&
+              "Choisissez le métier puis le problème qui correspond le mieux."}
+            {step === 2 &&
+              "Décrivez simplement ce qui se passe. Vous pouvez ajouter plusieurs photos."}
+            {step === 3 &&
+              "Choisissez une date puis un horaire parmi les disponibilités MDS."}
+            {step === 4 &&
+              "Relisez les informations, acceptez les conditions, puis envoyez la demande."}
+          </p>
           {catalog.error && selected && (
             <ApiError
               message={catalog.error.message}
@@ -908,7 +919,8 @@ export default function Request() {
                   (step === 3 &&
                     (draft.address.trim().length < 5 ||
                       !/^\d{5}$/.test(draft.postcode) ||
-                      draft.city.trim().length < 2)) ||
+                      draft.city.trim().length < 2 ||
+                      (!!slots.data?.configured && !selectedSlot))) ||
                   (!!selected && catalog.isLoading) ||
                   (!!organizationId && organization.isLoading)
                 }

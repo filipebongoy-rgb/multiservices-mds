@@ -331,10 +331,10 @@
 .trip-map-card {
   margin: 24px 0;
   overflow: hidden;
-  border: 1px solid #dedbd6;
+  border: 1px solid #172c3e;
   border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 5px 16px rgb(38 42 39 / 6%);
+  background: #071725;
+  box-shadow: 0 8px 22px rgb(7 23 37 / 18%);
 }
 .trip-map-heading {
   display: flex;
@@ -345,10 +345,11 @@
 }
 .trip-map-heading strong {
   font-size: 20px;
+  color: #fff;
 }
 .trip-map-heading p {
   margin: 4px 0 0;
-  color: #656860;
+  color: #b7c5d0;
   font-size: 14px;
 }
 .trip-map-heading .text-link {
@@ -358,15 +359,33 @@
   white-space: nowrap;
 }
 .trip-map-canvas {
-  min-height: 280px;
+  min-height: 330px;
   background: #e8eee9;
+}
+.trip-map-arrival {
+  display: flex;
+  gap: 44px;
+  padding: 16px 18px;
+  background: #fff;
+}
+.trip-map-arrival div {
+  display: grid;
+  gap: 3px;
+}
+.trip-map-arrival small {
+  color: #687079;
+  font-size: 12px;
+}
+.trip-map-arrival strong {
+  color: #132b3e;
+  font-size: 25px;
 }
 .trip-map-meta,
 .trip-map-error,
 .trip-map-state {
   display: block;
   padding: 10px 18px 14px;
-  color: #656860;
+  color: #b7c5d0;
   font-size: 13px;
 }
 .trip-map-error {
@@ -376,6 +395,32 @@
   margin: 24px 0;
   border-left: 3px solid #d85b16;
   background: #fff5eb;
+}
+.tracking-live-gps {
+  border-color: #17354a;
+  background: #071725;
+  color: #fff;
+}
+.tracking-live-gps h2 {
+  color: #fff;
+}
+.tracking-live-gps p,
+.tracking-live-gps .tracking-live-updated,
+.tracking-live-gps .tracking-live-next {
+  color: #c3d0d9;
+}
+.tracking-live-gps .tracking-live-topline {
+  color: #a9c1d1;
+}
+.tracking-live-address {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+}
+.tracking-live-gps .tracking-call-button {
+  border-color: #7c95a7;
+  color: #fff;
 }
 .simple-home-intro {
   max-width: 800px;

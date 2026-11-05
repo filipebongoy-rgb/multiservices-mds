@@ -55,7 +55,7 @@ const actionLabels: Record<ArtisanAction, string> = {
   information: "Demander des précisions",
   photo: "Demander une photo",
   diagnostic: "Organiser un diagnostic",
-  depart: "Déclarer mon départ réel",
+  depart: "Démarrer le trajet",
   arrived: "Confirmer mon arrivée",
   quote: "Soumettre un devis",
   start: "Commencer l’intervention",
@@ -618,7 +618,7 @@ export function RequestDetail({
               disabled={mutation.isPending}
               onClick={() => setAction("depart")}
             >
-              Déclarer mon départ
+              Démarrer le trajet
             </ActionButton>
           )}
           {request.status === "en_route" &&

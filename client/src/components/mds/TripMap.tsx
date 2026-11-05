@@ -31,6 +31,8 @@ export function TripMap({
   const clientMarker = useRef<mapboxgl.Marker | null>(null);
   const [destination, setDestination] = useState<Coordinates | null>(null);
   const [geocodeError, setGeocodeError] = useState("");
+  const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const latest = trpc.mds.location.latest.useQuery(
     { reference, token },
     {
@@ -74,7 +76,7 @@ export function TripMap({
     mapboxgl.accessToken = MAPBOX_PUBLIC_TOKEN;
     map.current = new mapboxgl.Map({
       container: mapNode.current,
-      style: "mapbox://styles/mapbox/streets-v12",
+      style: "mapbox://styles/mapbox/dark-v11",
       center: destination || [2.3522, 48.8566],
       zoom: destination ? 13 : 5,
       attributionControl: true,
@@ -123,11 +125,28 @@ export function TripMap({
       .then(response => {
         if (!response.ok) throw new Error("directions");
         return response.json() as Promise<{
-          routes?: { geometry?: { coordinates?: Coordinates[] } }[];
+          routes?: {
+            geometry?: { coordinates?: Coordinates[] };
+            duration?: number;
+            distance?: number;
+          }[];
         }>;
       })
       .then(data => {
-        const coordinates = data.routes?.[0]?.geometry?.coordinates;
+        const route = data.routes?.[0];
+        const coordinates = route?.geometry?.coordinates;
+        if (!cancelled) {
+          setEtaMinutes(
+            route?.duration != null
+              ? Math.max(1, Math.ceil(route.duration / 60))
+              : null
+          );
+          setDistanceKm(
+            route?.distance != null
+              ? Math.round((route.distance / 1000) * 10) / 10
+              : null
+          );
+        }
         if (cancelled || !coordinates?.length || !map.current) return;
         const drawRoute = () => {
           if (!map.current || !coordinates.length) return;
@@ -176,7 +195,7 @@ export function TripMap({
     <section className="trip-map-card" aria-label="Suivi GPS de l’artisan">
       <div className="trip-map-heading">
         <div>
-          <strong>Votre artisan arrive</strong>
+          <strong>Votre artisan est en route</strong>
           <p>
             {latest.data
               ? "Position réelle reçue pendant le trajet."
@@ -193,6 +212,18 @@ export function TripMap({
         </button>
       </div>
       <div ref={mapNode} className="trip-map-canvas" />
+      <div className="trip-map-arrival">
+        <div>
+          <small>Arrivée estimée</small>
+          <strong>
+            {etaMinutes != null ? `${etaMinutes} min` : "Calcul en cours…"}
+          </strong>
+        </div>
+        <div>
+          <small>Distance restante</small>
+          <strong>{distanceKm != null ? `${distanceKm} km` : "—"}</strong>
+        </div>
+      </div>
       {latest.data ? (
         <small className="trip-map-meta">
           Dernière position : {dateTime(latest.data.recordedAt)}

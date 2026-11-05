@@ -9,6 +9,7 @@ import {
   Star,
   LockKeyhole,
   Phone,
+  MapPin,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -352,7 +353,12 @@ export default function Tracking() {
               )
             )}
           </ol>
-          <section className="tracking-live-card" aria-live="polite">
+          <section
+            className={`tracking-live-card ${
+              r.status === "en_route" ? "tracking-live-gps" : ""
+            }`}
+            aria-live="polite"
+          >
             <div className="tracking-live-topline">
               <span className="tracking-live-pulse" aria-hidden="true" />
               <span>Suivi du dossier</span>
@@ -367,6 +373,11 @@ export default function Tracking() {
               </button>
             </div>
             <h2>{liveTitle}</h2>
+            {r.status === "en_route" && (
+              <p className="tracking-live-address">
+                <MapPin size={15} /> {r.address}, {r.postcode} {r.city}
+              </p>
+            )}
             <p>{liveDescription}</p>
             {r.status === "en_route" && (
               <a

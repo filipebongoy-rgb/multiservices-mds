@@ -177,3 +177,11 @@ Le trajet suit désormais `Démarrer le trajet` → position réellement autoris
 - **Suivi live façon Uber (`client/src/pages/Tracking.tsx`)** : carte sombre Mapbox déjà en place enrichie de la **carte d'identité de l'artisan** avec sa vraie photo (`artisan-avatar.webp`), spécialités, note 4,8 ★ et bouton d'appel direct.
 - **Navigation mobile alignée maquette (`Layout.tsx`)** : Accueil, Mes demandes, Contrats (vers `/professionnels`), Mon espace/Artisan ; footer légal restauré sur la page pro.
 - **Vérifications** : 289/289 tests passants (13 fichiers), `pnpm check` OK, `pnpm build` OK, assets statiques HTTP 200, 10 routes HTTP 200.
+
+## Cartes de formules/secteurs 100% cliquables et souscription express professionnelle (2026-11-06)
+
+- **Diagnostic vidéo utilisateur 4** (`SVID_20261106_004658_1.mp4`, analysée avec `manus-analyze-video`) : l'utilisateur tape à plusieurs reprises sur « Formule Mensuelle » (00:47-00:50) et « Formule Annuelle » (00:51-00:52) — rien ne se passe car les cartes étaient des `article` non interactifs.
+- **Formules cliquables (`Professional.tsx`)** : chaque carte devient un bouton avec état `aria-pressed`, effet au survol, état sélectionné orange avec badge « Sélectionnée ✓ », un gros bouton explicite « Choisir cette formule → » à l'intérieur, et pré-sélection automatique de la formule dans le formulaire avec défilement fluide vers celui-ci.
+- **Secteurs cliquables** : les 7 cartes secteurs pré-remplissent le type d'organisation et défilent vers le formulaire.
+- **Souscription express 1 minute** : 4 champs obligatoires seulement (nom, organisation, téléphone, email), sélecteur de formule en pills, détails facultatifs repliés, message de confirmation avec référence et contact direct.
+- **Vérifications** : 295/295 tests (13 fichiers), `pnpm check` OK, `pnpm build` OK, routes HTTP 200.

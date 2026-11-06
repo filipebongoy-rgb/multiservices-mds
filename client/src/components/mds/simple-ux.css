@@ -3205,3 +3205,114 @@ input[type="checkbox"] {
     font-size: 13px;
   }
 }
+
+/* Cartes de formules cliquables + souscription rapide */
+.pro-plan-clickable,
+.pro-sector-clickable {
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+  border: 1px solid #dcdad4;
+  background: #fff;
+}
+.pro-plan-clickable:hover,
+.pro-sector-clickable:hover {
+  border-color: #bc4c23;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(188, 76, 35, 0.14);
+}
+.pro-plan-selected {
+  border-color: #bc4c23 !important;
+  box-shadow:
+    0 0 0 3px #bc4c23,
+    0 8px 22px rgba(188, 76, 35, 0.18) !important;
+  background: #fffdf9 !important;
+}
+.pro-plan-checked,
+.pro-sector-checked {
+  background: #1f7a40;
+  color: #fff;
+  font-size: 11px;
+}
+.pro-plan-cta {
+  margin-top: auto;
+  align-self: stretch;
+  text-align: center;
+}
+.pro-sector-head {
+  width: 100%;
+}
+.pro-sector-selected {
+  border-color: #bc4c23 !important;
+  box-shadow: 0 0 0 3px #bc4c23 !important;
+  background: #fffaf5 !important;
+}
+.pro-sector-cta {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.pro-express-badge {
+  background: #262a27;
+  color: #fff;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.pro-formula-pills {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+.pro-formula-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 2px solid #dcdad4;
+  border-radius: 10px;
+  background: #fff;
+  color: #262a27;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.pro-formula-pill:hover {
+  border-color: #bc4c23;
+}
+.pro-formula-pill.active {
+  border-color: #bc4c23;
+  background: #fffaf5;
+  box-shadow: 0 0 0 1px #bc4c23;
+}
+.pro-formula-pill strong {
+  font-size: 14px;
+}
+.pro-formula-pill small {
+  font-size: 11px;
+  color: #6a6256;
+}
+.pro-details-fold {
+  border: 1px solid #dcdad4;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #faf8f5;
+}
+.pro-details-fold > summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5e625b;
+}
+.pro-success-notice a {
+  font-weight: 600;
+  color: inherit;
+}

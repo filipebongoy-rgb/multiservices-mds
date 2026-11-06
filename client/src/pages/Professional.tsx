@@ -5,7 +5,6 @@ import {
   Briefcase,
   Building,
   Building2,
-  CalendarDays,
   CheckCircle2,
   Clock,
   FileCheck2,
@@ -13,11 +12,9 @@ import {
   HeartPulse,
   Home,
   KeyRound,
-  LockKeyhole,
   Mail,
   Phone,
   Plus,
-  Shield,
   Sparkles,
   Store,
 } from "lucide-react";
@@ -40,36 +37,43 @@ import "@/components/mds/private.css";
 
 const sectors = [
   {
+    id: "mairie",
     icon: Building2,
     name: "Mairies & collectivités territoriales",
     desc: "Bâtiments communaux, écoles municipales, médiathèques, locaux techniques.",
   },
   {
+    id: "hlm",
     icon: Home,
     name: "Bailleurs sociaux & organismes HLM",
     desc: "Logements collectifs, parties communes, résidences étudiantes et sociales.",
   },
   {
+    id: "syndic",
     icon: Building,
     name: "Syndics & gestionnaires de copropriétés",
     desc: "Immeubles, locaux poubelles, parkings, parties communes, compteurs.",
   },
   {
+    id: "hopital",
     icon: HeartPulse,
     name: "Hôpitaux, cliniques & établissements de santé",
     desc: "Maintenance courante, mise en sécurité, réactivité renforcée.",
   },
   {
+    id: "ecole",
     icon: GraduationCap,
     name: "Écoles, crèches & établissements scolaires",
     desc: "Sanitaires, électricité, sécurité des élèves, interventions hors temps scolaire.",
   },
   {
+    id: "commerce",
     icon: Store,
     name: "Centres commerciaux, galeries & commerces",
     desc: "Sanitaires clients, maintenance continue, interventions hors heures d'ouverture.",
   },
   {
+    id: "entreprise",
     icon: Briefcase,
     name: "Entreprises, bureaux & locaux professionnels",
     desc: "Petits travaux, réaménagements, entretien récurrent de vos sites.",
@@ -87,10 +91,9 @@ const plans = [
     points: [
       "Abonnement mensualisé, résiliable avec un préavis court",
       "Priorité d'intervention par rapport aux demandes ponctuelles",
-      "1 contact unique pour plomberie, électricité, chauffage, peinture, maintenance",
-      "Interventions d'urgence incluses selon la formule retenue",
+      "1 contact unique : plomberie, électricité, chauffage, peinture, maintenance",
       "Facturation mensuelle claire et prévisible",
-      "Rapports d'intervention avec photos avant/après obligatoires et signatures",
+      "Rapports avec photos avant/après obligatoires et signatures",
     ],
   },
   {
@@ -102,11 +105,10 @@ const plans = [
     priceNote: "Tarif réduit annuel avec remise d'engagement pour vos parcs",
     points: [
       "Tous les avantages de la formule mensuelle",
-      "Tarif annuel remisé : la formule la plus avantageuse pour les gestionnaires",
+      "Tarif annuel remisé : la formule la plus avantageuse",
       "Visites de contrôle programmées et maintenance préventive",
       "Créneaux d'intervention réservés à l'avance",
-      "Bilan annuel d'état du parc et préconisations d'amélioration",
-      "Idéale pour les parcs de bâtiments : HLM, copropriétés, patrimoine communal",
+      "Idéale pour les parcs : HLM, copropriétés, patrimoine communal",
     ],
   },
   {
@@ -117,11 +119,10 @@ const plans = [
     highlight: false,
     priceNote: "Sur devis personnalisé sous 48 h",
     points: [
-      "Hôpitaux & cliniques, centres commerciaux, grands bailleurs multi-sites",
+      "Hôpitaux, centres commerciaux, bailleurs multi-sites",
       "Délais d'intervention contractuels (SLA) définis ensemble",
-      "Astreinte et interventions en horaires décalés envisageables",
-      "Interlocuteur dédié, suivi d'activité et reporting consolidé",
-      "Montage financier et juridique adapté (mandat, bon de commande, marché)",
+      "Astreinte et interventions en horaires décalés",
+      "Interlocuteur dédié et reporting consolidé",
     ],
   },
 ];
@@ -129,29 +130,31 @@ const plans = [
 const inclusions = [
   {
     title: "Priorité d'intervention garantie",
-    text: "Vos demandes professionnelles passent avant les demandes ponctuelles de particuliers.",
+    text: "Vos demandes professionnelles passent avant les demandes ponctuelles.",
   },
   {
     title: "5 corps de métier, un seul contact",
-    text: "Plomberie, électricité, chauffage, peinture et petits travaux/maintenance : un seul numéro, une seule facture.",
+    text: "Plomberie, électricité, chauffage, peinture, maintenance : un numéro, une facture.",
   },
   {
     title: "Preuves obligatoires à chaque intervention",
-    text: "Photos avant/après obligatoires bloquant la fin des travaux, signatures clients enregistrées : chaque intervention est juridiquement traçable.",
+    text: "Photos avant/après obligatoires qui bloquent la fin des travaux, signatures clients enregistrées.",
   },
   {
-    title: "Facturation simplifiée",
-    text: "Une seule facture mensuelle ou annuelle détaillée par bâtiment — fini les devis éparpillés.",
+    title: "Facturation unique mensuelle ou annuelle",
+    text: "Une seule facture détaillée par bâtiment, pas de devis éparpillés.",
   },
   {
-    title: "Pas de marketplace : c'est toujours MDS",
-    text: "Toujours le même artisan de confiance qui intervient sur vos sites — aucune sous-traitance à des inconnus.",
+    title: "Pas de marketplace — toujours MDS",
+    text: "Le même artisan de confiance sur vos sites, zéro sous-traitance anonyme.",
   },
   {
-    title: "Zone : Rennes et son agglomération (30 km)",
-    text: "Interventions rapides sur l'ensemble de l'Ille-et-Vilaine dans un rayon de 30 km autour de Rennes.",
+    title: "Rennes et agglomération — 30 km",
+    text: "Interventions rapides sur l'ensemble de l'Ille-et-Vilaine.",
   },
 ];
+
+type Formula = "annual" | "monthly" | "custom";
 
 export default function Professional() {
   const auth = useAuth();
@@ -234,15 +237,16 @@ export default function Professional() {
 }
 
 function ProfessionalOffer({ onGoWorkspace }: { onGoWorkspace: () => void }) {
+  const { user } = useAuth();
+  const [formula, setFormula] = useState<Formula>("annual");
+  const [sector, setSector] = useState("");
   const [sent, setSent] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(user?.name || "");
   const [org, setOrg] = useState("");
-  const [sector, setSector] = useState("");
   const [buildings, setBuildings] = useState("");
-  const [formula, setFormula] = useState("annual");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("Rennes");
   const [postcode, setPostcode] = useState("35000");
@@ -250,6 +254,20 @@ function ProfessionalOffer({ onGoWorkspace }: { onGoWorkspace: () => void }) {
   const [message, setMessage] = useState("");
   const [consent, setConsent] = useState(false);
   const create = trpc.mds.requests.create.useMutation();
+
+  function selectFormula(f: Formula) {
+    setFormula(f);
+    document
+      .getElementById("demande-contrat")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function selectSector(sId: string) {
+    setSector(sId);
+    document
+      .getElementById("demande-contrat")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -269,6 +287,9 @@ function ProfessionalOffer({ onGoWorkspace }: { onGoWorkspace: () => void }) {
             ? "Formule Mensuelle (sans engagement annuel)"
             : "Formule Sur-mesure Grands Comptes"
       }`,
+      address.trim()
+        ? `Adresse du site : ${address.trim()}, ${postcode} ${city}`
+        : null,
       message.trim() ? `Message : ${message.trim()}` : null,
     ]
       .filter(Boolean)
@@ -317,65 +338,122 @@ function ProfessionalOffer({ onGoWorkspace }: { onGoWorkspace: () => void }) {
         </span>
       </section>
 
+      {/* Secteurs ciblés — chaque carte est cliquable et pré-sélectionne le formulaire */}
       <section className="stack">
-        <h2 className="section-title">Pour qui travaillons-nous ?</h2>
-        <p className="muted">
-          MDS conçoit ses interventions pour les parcs de bâtiments : chaque
-          organisation dispose d'un suivi dédié et d'une tarification adaptée au
-          volume.
-        </p>
+        <div
+          className="row"
+          style={{
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          <h2 className="section-title">Pour qui travaillons-nous ?</h2>
+          <span className="muted small-text">
+            Cliquez sur votre profil pour pré-remplir votre demande
+          </span>
+        </div>
         <div className="pro-sectors-grid">
           {sectors.map(s => {
             const Icon = s.icon;
+            const selected = sector === s.id;
             return (
-              <article key={s.name} className="panel pro-sector-card stack">
+              <button
+                key={s.id}
+                type="button"
+                className={`panel pro-sector-card pro-sector-clickable stack ${
+                  selected ? "pro-sector-selected" : ""
+                }`}
+                onClick={() => selectSector(s.id)}
+                aria-pressed={selected}
+              >
                 <div className="pro-sector-head">
                   <Icon size={24} strokeWidth={1.8} aria-hidden="true" />
                   <strong>{s.name}</strong>
+                  {selected && (
+                    <span
+                      className="badge pro-sector-checked"
+                      aria-hidden="true"
+                    >
+                      ✓
+                    </span>
+                  )}
                 </div>
                 <p className="muted small-text">{s.desc}</p>
-              </article>
+                <span className="pro-sector-cta text-link">
+                  Demander pour ce profil →
+                </span>
+              </button>
             );
           })}
         </div>
       </section>
 
+      {/* 3 formules cliquables */}
       <section className="stack">
-        <h2 className="section-title">
-          Contrats d'entretien : formules d'abonnement adaptées
-        </h2>
-        <p className="muted">
-          Plutôt que des devis à chaque panne, optez pour un abonnement
-          récurrent avec des tarifs négociés et une{" "}
-          <strong>réduction annuelle</strong> pour attirer et fidéliser les
-          gestionnaires de parcs.
-        </p>
+        <div
+          className="row"
+          style={{
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          <h2 className="section-title">
+            Contrats d'entretien : formules d'abonnement adaptées
+          </h2>
+          <span className="muted small-text">
+            Cliquez une formule pour passer directement à la souscription
+          </span>
+        </div>
         <div className="pro-plans-grid">
-          {plans.map(p => (
-            <article
-              key={p.id}
-              className={`panel pro-plan-card stack ${
-                p.highlight ? "pro-plan-highlight" : ""
-              }`}
-            >
-              <div className="row" style={{ justifyContent: "space-between" }}>
-                <strong>{p.name}</strong>
-                {p.badge && (
-                  <span className="badge pro-plan-badge">{p.badge}</span>
-                )}
-              </div>
-              <span className="eyebrow">{p.commitment}</span>
-              <p className="pro-plan-price">{p.priceNote}</p>
-              <ul className="pro-plan-points">
-                {p.points.map(pt => (
-                  <li key={pt}>
-                    <CheckCircle2 size={16} aria-hidden="true" />
-                    <span>{pt}</span>
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
+          {plans.map(p => {
+            const isSelected = formula === (p.id as Formula);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className={`panel pro-plan-card pro-plan-clickable stack ${
+                  p.highlight ? "pro-plan-highlight" : ""
+                } ${isSelected ? "pro-plan-selected" : ""}`}
+                onClick={() => selectFormula(p.id as Formula)}
+                aria-pressed={isSelected}
+              >
+                <div
+                  className="row"
+                  style={{
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <strong>{p.name}</strong>
+                  {p.badge && (
+                    <span className="badge pro-plan-badge">{p.badge}</span>
+                  )}
+                  {isSelected && (
+                    <span className="badge pro-plan-checked">
+                      Sélectionnée ✓
+                    </span>
+                  )}
+                </div>
+                <span className="eyebrow">{p.commitment}</span>
+                <p className="pro-plan-price">{p.priceNote}</p>
+                <ul className="pro-plan-points">
+                  {p.points.map(pt => (
+                    <li key={pt}>
+                      <CheckCircle2 size={16} aria-hidden="true" />
+                      <span>{pt}</span>
+                    </li>
+                  ))}
+                </ul>
+                <span className="btn primary pro-plan-cta">
+                  Choisir cette formule →
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -396,34 +474,54 @@ function ProfessionalOffer({ onGoWorkspace }: { onGoWorkspace: () => void }) {
           Des tarifs adaptés et une réduction annuelle transparente
         </h2>
         <p className="muted">
-          Le prix d'un contrat dépend de la taille de votre parc (nombre de
-          bâtiments, de logements ou de mètres carrés) et du niveau de service
-          souhaité. La formule annuelle applique une{" "}
-          <strong>remise d'engagement</strong> par rapport au coût des
-          interventions ponctuelles équivalentes. Les devis sont gratuits,
-          détaillés et sans engagement : demandez votre proposition
-          personnalisée ci-dessous.
+          Le prix dépend de la taille de votre parc (bâtiments, logements, m²).
+          La formule annuelle applique une <strong>remise d'engagement</strong>{" "}
+          par rapport aux interventions ponctuelles. Devis gratuits, détaillés
+          et sans engagement : réponse sous 24–48 h.
         </p>
       </section>
 
+      {/* Formulaire express de souscription / demande de contrat */}
       <section className="panel pro-form-panel stack" id="demande-contrat">
-        <h2 className="section-title">
-          Demander une proposition de contrat personnalisée
-        </h2>
-        <p className="muted">
-          Réponse rapide sous 24–48 h avec une estimation tarifaire chiffrée.
+        <div
+          className="row"
+          style={{
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          <h2 className="section-title" style={{ margin: 0 }}>
+            Demander une proposition de contrat
+          </h2>
+          <span className="badge pro-express-badge">
+            <Clock size={13} aria-hidden="true" /> Réponse sous 24–48 h ·
+            gratuit
+          </span>
+        </div>
+        <p className="muted small-text">
+          Formule actuellement sélectionnée :{" "}
+          <strong>
+            {formula === "annual"
+              ? "Formule Annuelle (tarif réduit — formule recommandée)"
+              : formula === "monthly"
+                ? "Formule Mensuelle (sans engagement annuel)"
+                : "Formule Sur-mesure Grands Comptes"}
+          </strong>{" "}
+          — vous pouvez la changer ci-dessous.
         </p>
 
         {sent ? (
-          <div className="notice" role="status">
+          <div className="notice pro-success-notice" role="status">
             <strong>Votre demande a bien été envoyée.</strong>
             <p>
               Référence du dossier : <code>{sent}</code>. Vous recevrez une
-              proposition sous 24 à 48 heures.
+              proposition chiffrée sous 24 à 48 heures.
             </p>
             <p className="small-text muted">
-              Vous pouvez aussi nous joindre au{" "}
-              <a href="tel:0604159916">06 04 15 99 16</a> ou à{" "}
+              Besoin urgent ? Appelez directement le{" "}
+              <a href="tel:0604159916">06 04 15 99 16</a> ou écrivez à{" "}
               <a href="mailto:contact@multiservices-mds.fr">
                 contact@multiservices-mds.fr
               </a>
@@ -432,84 +530,78 @@ function ProfessionalOffer({ onGoWorkspace }: { onGoWorkspace: () => void }) {
           </div>
         ) : (
           <form className="stack pro-contract-form" onSubmit={handleSubmit}>
-            <Field label="Votre nom et prénom *">
-              <input
-                required
-                minLength={2}
-                maxLength={120}
-                value={name}
-                onChange={e => setName(e.target.value)}
-                autoComplete="name"
-              />
-            </Field>
-            <Field label="Nom de l'organisation (mairie, HLM, syndic, entreprise…) *">
-              <input
-                required
-                minLength={2}
-                maxLength={200}
-                value={org}
-                onChange={e => setOrg(e.target.value)}
-                autoComplete="organization"
-              />
-            </Field>
-            <Field label="Type d'organisation">
-              <select value={sector} onChange={e => setSector(e.target.value)}>
-                <option value="">Sélectionner</option>
-                <option value="mairie">Mairie / collectivité</option>
-                <option value="hlm">Bailleur social / HLM</option>
-                <option value="syndic">Syndic de copropriété</option>
-                <option value="bailleur">Bailleur privé / gestionnaire</option>
-                <option value="hopital">Hôpital / clinique / santé</option>
-                <option value="ecole">École / crèche / enseignement</option>
-                <option value="commerce">Centre commercial / commerce</option>
-                <option value="entreprise">Entreprise / bureau</option>
-                <option value="autre">Autre</option>
-              </select>
-            </Field>
+            {/* Formule en gros pills façon segment control */}
+            <div className="field">
+              <label>Formule</label>
+              <div
+                className="pro-formula-pills"
+                role="radiogroup"
+                aria-label="Formule de contrat"
+              >
+                {[
+                  {
+                    id: "annual",
+                    label: "Annuelle · tarif réduit",
+                    hint: "engagement 12 mois",
+                  },
+                  {
+                    id: "monthly",
+                    label: "Mensuelle",
+                    hint: "sans engagement",
+                  },
+                  {
+                    id: "custom",
+                    label: "Sur-mesure",
+                    hint: "grands comptes",
+                  },
+                ].map(f => {
+                  const checked = formula === f.id;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={checked}
+                      className={`pro-formula-pill ${checked ? "active" : ""}`}
+                      onClick={() => setFormula(f.id as Formula)}
+                    >
+                      <strong>{f.label}</strong>
+                      <small>{f.hint}</small>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="row" style={{ flexWrap: "wrap", gap: 12 }}>
               <div style={{ flex: 1, minWidth: 260 }}>
-                <Field label="Formule souhaitée *">
-                  <select
+                <Field label="Votre nom et prénom *">
+                  <input
                     required
-                    value={formula}
-                    onChange={e => setFormula(e.target.value)}
-                  >
-                    <option value="annual">
-                      Formule Annuelle — tarif réduit (recommandée)
-                    </option>
-                    <option value="monthly">
-                      Formule Mensuelle — sans engagement annuel
-                    </option>
-                    <option value="custom">
-                      Formule Sur-mesure Grands Comptes
-                    </option>
-                  </select>
+                    minLength={2}
+                    maxLength={120}
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    autoComplete="name"
+                  />
                 </Field>
               </div>
               <div style={{ flex: 1, minWidth: 260 }}>
-                <Field label="Nombre de bâtiments / logements / lots (estimation)">
+                <Field label="Nom de l'organisation *">
                   <input
-                    type="text"
-                    maxLength={50}
-                    placeholder="ex. 3 immeubles, 120 logements"
-                    value={buildings}
-                    onChange={e => setBuildings(e.target.value)}
+                    required
+                    minLength={2}
+                    maxLength={200}
+                    placeholder="Mairie, HLM, syndic, hôpital, entreprise…"
+                    value={org}
+                    onChange={e => setOrg(e.target.value)}
+                    autoComplete="organization"
                   />
                 </Field>
               </div>
             </div>
+
             <div className="row" style={{ flexWrap: "wrap", gap: 12 }}>
-              <div style={{ flex: 1, minWidth: 260 }}>
-                <Field label="E-mail professionnel *">
-                  <input
-                    required
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    autoComplete="email"
-                  />
-                </Field>
-              </div>
               <div style={{ flex: 1, minWidth: 260 }}>
                 <Field label="Téléphone *">
                   <input
@@ -523,55 +615,110 @@ function ProfessionalOffer({ onGoWorkspace }: { onGoWorkspace: () => void }) {
                   />
                 </Field>
               </div>
-            </div>
-            <div className="row" style={{ flexWrap: "wrap", gap: 12 }}>
-              <div style={{ flex: 2, minWidth: 260 }}>
-                <Field label="Adresse du site ou siège *">
+              <div style={{ flex: 1, minWidth: 260 }}>
+                <Field label="E-mail professionnel *">
                   <input
                     required
-                    minLength={5}
-                    maxLength={250}
-                    placeholder="ex. 10 rue de la Gare"
-                    value={address}
-                    onChange={e => setAddress(e.target.value)}
-                    autoComplete="street-address"
-                  />
-                </Field>
-              </div>
-              <div style={{ flex: 1, minWidth: 140 }}>
-                <Field label="Code postal *">
-                  <input
-                    required
-                    pattern="\\d{5}"
-                    title="Code postal à 5 chiffres"
-                    value={postcode}
-                    onChange={e => setPostcode(e.target.value)}
-                    autoComplete="postal-code"
-                  />
-                </Field>
-              </div>
-              <div style={{ flex: 1, minWidth: 180 }}>
-                <Field label="Ville *">
-                  <input
-                    required
-                    minLength={2}
-                    maxLength={100}
-                    value={city}
-                    onChange={e => setCity(e.target.value)}
-                    autoComplete="address-level2"
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    autoComplete="email"
                   />
                 </Field>
               </div>
             </div>
-            <Field label="Précisions sur votre parc ou vos besoins (facultatif)">
-              <textarea
-                rows={4}
-                maxLength={2000}
-                placeholder="ex. 3 résidences étudiantes sur Rennes sud, besoin de plomberie d'urgence et de relamping des parties communes…"
-                value={message}
-                onChange={e => setMessage(e.target.value)}
-              />
-            </Field>
+
+            <details className="pro-details-fold">
+              <summary>Préciser mon parc ou mes besoins (facultatif)</summary>
+              <div className="stack" style={{ marginTop: 12 }}>
+                <div className="row" style={{ flexWrap: "wrap", gap: 12 }}>
+                  <div style={{ flex: 1, minWidth: 260 }}>
+                    <Field label="Type d'organisation">
+                      <select
+                        value={sector}
+                        onChange={e => setSector(e.target.value)}
+                      >
+                        <option value="">Sélectionner</option>
+                        <option value="mairie">Mairie / collectivité</option>
+                        <option value="hlm">Bailleur social / HLM</option>
+                        <option value="syndic">Syndic de copropriété</option>
+                        <option value="bailleur">
+                          Bailleur privé / gestionnaire
+                        </option>
+                        <option value="hopital">
+                          Hôpital / clinique / santé
+                        </option>
+                        <option value="ecole">
+                          École / crèche / enseignement
+                        </option>
+                        <option value="commerce">
+                          Centre commercial / commerce
+                        </option>
+                        <option value="entreprise">Entreprise / bureau</option>
+                        <option value="autre">Autre</option>
+                      </select>
+                    </Field>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 260 }}>
+                    <Field label="Nombre de bâtiments / logements (estimation)">
+                      <input
+                        type="text"
+                        maxLength={50}
+                        placeholder="ex. 3 immeubles, 120 logements"
+                        value={buildings}
+                        onChange={e => setBuildings(e.target.value)}
+                      />
+                    </Field>
+                  </div>
+                </div>
+
+                <div className="row" style={{ flexWrap: "wrap", gap: 12 }}>
+                  <div style={{ flex: 2, minWidth: 260 }}>
+                    <Field label="Adresse du site ou siège">
+                      <input
+                        maxLength={250}
+                        placeholder="ex. 10 rue de la Gare"
+                        value={address}
+                        onChange={e => setAddress(e.target.value)}
+                        autoComplete="street-address"
+                      />
+                    </Field>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 140 }}>
+                    <Field label="Code postal">
+                      <input
+                        pattern="\\d{5}"
+                        title="Code postal à 5 chiffres"
+                        value={postcode}
+                        onChange={e => setPostcode(e.target.value)}
+                        autoComplete="postal-code"
+                      />
+                    </Field>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 180 }}>
+                    <Field label="Ville">
+                      <input
+                        maxLength={100}
+                        value={city}
+                        onChange={e => setCity(e.target.value)}
+                        autoComplete="address-level2"
+                      />
+                    </Field>
+                  </div>
+                </div>
+
+                <Field label="Précisions">
+                  <textarea
+                    rows={3}
+                    maxLength={2000}
+                    placeholder="Besoins particuliers : plomberie d'urgence, maintenance électrique, peinture des parties communes…"
+                    value={message}
+                    onChange={e => setMessage(e.target.value)}
+                  />
+                </Field>
+              </div>
+            </details>
+
             <label className="pro-consent-label">
               <input
                 type="checkbox"
@@ -580,25 +727,29 @@ function ProfessionalOffer({ onGoWorkspace }: { onGoWorkspace: () => void }) {
                 onChange={e => setConsent(e.target.checked)}
               />
               <span>
-                J'accepte que mes coordonnées soient utilisées par MDS pour me
-                recontacter au sujet de cette proposition de contrat,
-                conformément à la{" "}
+                J'accepte que MDS utilise mes coordonnées pour me transmettre
+                une proposition de contrat (
                 <Link href="/confidentialite">
                   politique de confidentialité
                 </Link>
-                .
+                ).
               </span>
             </label>
+
             {submitError && <ErrorNotice error={submitError} />}
-            <div className="row" style={{ flexWrap: "wrap", gap: 12 }}>
+
+            <div
+              className="row"
+              style={{ flexWrap: "wrap", gap: 12, alignItems: "center" }}
+            >
               <ActionButton
                 type="submit"
                 className="primary"
                 disabled={submitting}
               >
                 {submitting
-                  ? "Envoi en cours…"
-                  : "Demander ma proposition gratuite"}
+                  ? "Envoi…"
+                  : "Envoyer ma demande de souscription (gratuit)"}
               </ActionButton>
               <a href="tel:0604159916" className="text-link">
                 Ou appelez directement le 06 04 15 99 16
@@ -611,8 +762,8 @@ function ProfessionalOffer({ onGoWorkspace }: { onGoWorkspace: () => void }) {
       <section className="pro-cta-card stack">
         <h2 className="section-title">Déjà client professionnel MDS ?</h2>
         <p className="muted">
-          Retrouvez vos organisations, vos bâtiments déclarés, vos interventions
-          en cours, vos devis et vos factures dans votre espace dédié.
+          Retrouvez vos organisations, bâtiments, interventions en cours, devis
+          et factures dans votre espace dédié.
         </p>
         <div>
           <ActionButton className="primary" onClick={onGoWorkspace}>

@@ -193,3 +193,46 @@ describe("refonte Uber : identité officielle, photos réelles, recherche et ré
     expect(layout).toContain('href="/artisan"');
   });
 });
+
+describe("souscription professionnelle rapide et cartes 100% cliquables", () => {
+  const pro = readFileSync(
+    new URL("../../client/src/pages/Professional.tsx", import.meta.url),
+    "utf8"
+  );
+  const css = readFileSync(
+    new URL("../../client/src/components/mds/simple-ux.css", import.meta.url),
+    "utf8"
+  );
+  it("les cartes de formules sont cliquables avec CTA explicite 'Choisir cette formule'", () => {
+    expect(pro).toContain("pro-plan-clickable");
+    expect(pro).toContain("Choisir cette formule");
+    expect(pro).toContain("selectFormula");
+  });
+  it("les cartes de secteurs sont cliquables et pré-sélectionnent le profil dans le formulaire", () => {
+    expect(pro).toContain("pro-sector-clickable");
+    expect(pro).toContain("Demander pour ce profil");
+    expect(pro).toContain("selectSector");
+  });
+  it("le formulaire permet de changer de formule via des pills en un clic", () => {
+    expect(pro).toContain("pro-formula-pills");
+    expect(pro).toContain("Annuelle · tarif réduit");
+    expect(pro).toContain("Mensuelle");
+    expect(pro).toContain("Sur-mesure");
+  });
+  it("la souscription ne nécessite que 4 champs obligatoires et un clic d'envoi", () => {
+    expect(pro).toContain("Votre nom et prénom *");
+    expect(pro).toContain("Nom de l'organisation *");
+    expect(pro).toContain("Téléphone *");
+    expect(pro).toContain("E-mail professionnel *");
+    expect(pro).toContain("Envoyer ma demande de souscription (gratuit)");
+  });
+  it("les détails du parc restent facultatifs pour ne pas bloquer l'envoi rapide", () => {
+    expect(pro).toContain("pro-details-fold");
+    expect(pro).toContain("Préciser mon parc ou mes besoins (facultatif)");
+  });
+  it("les états sélectionnés des cartes sont stylés avec l'identité orange MDS", () => {
+    expect(css).toContain("pro-plan-selected");
+    expect(css).toContain("pro-sector-selected");
+    expect(css).toContain("border-color: #bc4c23");
+  });
+});

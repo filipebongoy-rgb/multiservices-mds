@@ -261,15 +261,15 @@ describe("contrôle transactionnel et occupation", () => {
   });
 });
 describe("administration sûre", () => {
-  it("lecture et écritures artisan uniquement", async () => {
+  it("lecture et écritures réservées aux administrateurs", async () => {
     await expect(caller().get()).rejects.toMatchObject({
       code: "UNAUTHORIZED",
     });
     await expect(caller(user(2)).get()).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
-    await expect(caller(user(2, "admin")).get()).rejects.toMatchObject({
-      code: "FORBIDDEN",
+    await expect(caller(user(2, "admin")).get()).resolves.toMatchObject({
+      periods: expect.any(Array),
     });
     db.put(s.availability, [
       period("available", "11:00", "13:00"),

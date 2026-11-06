@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, adminInvites, users } from "../drizzle/schema";
 import { createPool, type Pool } from "mysql2/promise";
 
 let _db: MySql2Database<Record<string, unknown>> | null = null;
@@ -72,6 +72,33 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     await db.insert(users).values(values).onDuplicateKeyUpdate({
       set: updateSet,
     });
+    if (user.email) {
+      const email = user.email.trim().toLocaleLowerCase("fr-FR");
+      const [invite] = await db
+        .select({ id: adminInvites.id })
+        .from(adminInvites)
+        .where(
+          and(eq(adminInvites.email, email), eq(adminInvites.status, "active"))
+        )
+        .limit(1);
+      if (invite) {
+        const [account] = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.openId, user.openId))
+          .limit(1);
+        if (account) {
+          await db
+            .update(users)
+            .set({ role: "admin" })
+            .where(eq(users.id, account.id));
+          await db
+            .update(adminInvites)
+            .set({ acceptedBy: account.id, acceptedAt: new Date() })
+            .where(eq(adminInvites.id, invite.id));
+        }
+      }
+    }
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;

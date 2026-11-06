@@ -1480,13 +1480,13 @@ describe("remboursements Stripe confirmés par relecture SDK", () => {
     ]);
     mockRefunds();
   });
-  it("refuse tout non propriétaire et exige checkbox, mode, montant, référence et motif explicites", async () => {
+  it("refuse les clients et exige checkbox, mode, montant, référence et motif explicites", async () => {
     await expect(caller(user(2)).refund(refundInput())).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
     await expect(
       caller(user(2, "admin")).refundable({ paymentId: 1 })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    ).resolves.toMatchObject({ paymentId: 1 });
     await expect(
       caller(user(1, "admin")).refund({
         ...refundInput(),

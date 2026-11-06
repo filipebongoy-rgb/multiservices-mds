@@ -172,12 +172,7 @@ async function readDetail(
         /* A tracking token does not grant private review access. */
       }
     }
-    return detailData(
-      tx,
-      r,
-      privateReviews,
-      user?.role === "admin" && user.id === p.artisanUserId
-    );
+    return detailData(tx, r, privateReviews, user?.role === "admin");
   });
 }
 async function update(
@@ -389,7 +384,7 @@ export const requestsRouter = router({
             "Une demande d’organisation nécessite une appartenance autorisée, pas un rattachement individuel.",
             "FORBIDDEN"
           );
-        if (p.artisanUserId === ctx.user.id)
+        if (ctx.user.role === "admin")
           fail(
             "Le rattachement client n’est pas disponible pour l’artisan.",
             "FORBIDDEN"

@@ -71,6 +71,18 @@ const dates = () => ({
 });
 const id = () => int("id").autoincrement().primaryKey();
 
+export const adminInvites = mysqlTable("mds_admin_invites", {
+  id: id(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  status: mysqlEnum("status", ["pending", "active", "revoked"])
+    .default("active")
+    .notNull(),
+  invitedBy: int("invitedBy").references(() => users.id),
+  acceptedBy: int("acceptedBy").references(() => users.id),
+  acceptedAt: timestamp("acceptedAt"),
+  ...dates(),
+});
+
 export const settings = mysqlTable("mds_settings", {
   id: int("id").primaryKey(),
   zone: varchar("zone", { length: 300 }).default("").notNull(),

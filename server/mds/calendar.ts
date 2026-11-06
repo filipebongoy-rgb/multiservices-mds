@@ -10,6 +10,7 @@ import {
   procedure,
   recordAudit,
   requireArtisan,
+  workspaceOwnerId,
   type SqlDb,
 } from "./common";
 import { fail, overlaps } from "./workflow";
@@ -279,6 +280,7 @@ export const calendarRouter = router({
   get: artisan.query(async ({ ctx }) => {
     const db = await dbRequired();
     const row = await principal(db);
+    const ownerId = await workspaceOwnerId(db, ctx.user);
     const periods = await db
       .select({
         id: s.availability.id,
@@ -288,7 +290,7 @@ export const calendarRouter = router({
         note: s.availability.note,
       })
       .from(s.availability)
-      .where(eq(s.availability.artisanUserId, ctx.user.id));
+      .where(eq(s.availability.artisanUserId, ownerId));
     const appointments = await db
       .select({
         id: s.appointments.id,
@@ -370,6 +372,7 @@ export const calendarRouter = router({
     return db.transaction(async tx => {
       await principal(tx, true);
       await requireArtisan(tx, ctx.user);
+      const ownerId = await workspaceOwnerId(tx, ctx.user);
       if (input.id) {
         const [existing] = await tx
           .select()
@@ -377,7 +380,7 @@ export const calendarRouter = router({
           .where(
             and(
               eq(s.availability.id, input.id),
-              eq(s.availability.artisanUserId, ctx.user.id)
+              eq(s.availability.artisanUserId, ownerId)
             )
           );
         if (!existing) fail("Cette période n’est pas accessible.", "FORBIDDEN");
@@ -399,7 +402,7 @@ export const calendarRouter = router({
       }
       const values = {
         ...range,
-        artisanUserId: ctx.user.id,
+        artisanUserId: ownerId,
         kind: input.kind,
         note: input.note || null,
       };
@@ -411,7 +414,7 @@ export const calendarRouter = router({
           .where(
             and(
               eq(s.availability.id, id),
-              eq(s.availability.artisanUserId, ctx.user.id)
+              eq(s.availability.artisanUserId, ownerId)
             )
           );
       else {
@@ -436,13 +439,14 @@ export const calendarRouter = router({
     return db.transaction(async tx => {
       await principal(tx, true);
       await requireArtisan(tx, ctx.user);
+      const ownerId = await workspaceOwnerId(tx, ctx.user);
       const [existing] = await tx
         .select()
         .from(s.availability)
         .where(
           and(
             eq(s.availability.id, input.id),
-            eq(s.availability.artisanUserId, ctx.user.id)
+            eq(s.availability.artisanUserId, ownerId)
           )
         );
       if (!existing) fail("Cette période n’est pas accessible.", "FORBIDDEN");
@@ -451,7 +455,7 @@ export const calendarRouter = router({
         .where(
           and(
             eq(s.availability.id, input.id),
-            eq(s.availability.artisanUserId, ctx.user.id)
+            eq(s.availability.artisanUserId, ownerId)
           )
         );
       await recordAudit(

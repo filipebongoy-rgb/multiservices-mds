@@ -73,7 +73,7 @@ function safeService(row: typeof s.services.$inferSelect) {
 async function notificationFilter(db: SqlDb, user: s.User) {
   const p = await principal(db);
   const ids = await orgIds(db, user.id);
-  if (user.role === "admin" && p.artisanUserId === user.id)
+  if (user.role === "admin")
     return or(
       and(
         eq(s.notifications.audience, "artisan"),
@@ -197,9 +197,7 @@ export const mdsRouter = router({
         const p = await principal(db);
         if (
           input?.includeInactive &&
-          (!ctx.user ||
-            ctx.user.role !== "admin" ||
-            p.artisanUserId !== ctx.user.id)
+          (!ctx.user || ctx.user.role !== "admin" || ctx.user.role !== "admin")
         )
           fail("Le catalogue inactif est réservé à l’artisan.", "FORBIDDEN");
         const rows = await db
@@ -413,7 +411,7 @@ export const mdsRouter = router({
               "CONFLICT"
             );
           const authorType =
-            p.artisanUserId === ctx.user.id && ctx.user.role === "admin"
+            ctx.user.role === "admin"
               ? ("artisan" as const)
               : ("client" as const);
           const [existing] = await tx

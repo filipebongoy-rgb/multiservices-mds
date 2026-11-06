@@ -7,7 +7,7 @@ Ce document répond aux questions concrètes de l’artisan sur le fonctionnemen
 ## 1. Comment l’artisan se connecte
 
 - **Rendez-vous sur le site MDS** (`https://mdsservices-73dc9ex8.manus.space`) et cliquez sur **Mon espace** (en haut à droite sur ordinateur, dernier onglet en bas sur mobile).
-- **Le compte artisan est déjà activé** pour **ife369243@gmail.com** (Ngoyone, administrateur MDS). Il n’y a plus de code à saisir : connectez-vous avec ce même e-mail et vous atterrissez directement dans votre espace artisan avec tous les outils.
+- **Les comptes administrateurs autorisés** sont **ife369243@gmail.com**, **multiservicesmds2026@gmail.com** et **filipe.bongoy@gmail.com**. Pour les deux nouvelles adresses, ouvrez une première fois la connexion avec l’identité correspondante : MDS les reconnaît automatiquement comme administrateurs complets. Aucun mot de passe n’est partagé.
 - La redirection après connexion vous amène automatiquement sur l’espace artisan ; vous pouvez ensuite naviguer librement vers le site public grâce au lien « Voir le site public → ».
 
 ---
@@ -26,7 +26,7 @@ Ce document répond aux questions concrètes de l’artisan sur le fonctionnemen
 
 ### À quel compte arrivent les demandes ?
 
-Toutes les demandes arrivent sur le **compte artisan unique** (Ngoyone, admin). MDS n’a **qu’un seul artisan** : aucune demande n’est dispatchée ou partagée. Vous les voyez toutes.
+Toutes les demandes arrivent dans l’**espace MDS partagé par les administrateurs autorisés**. MDS conserve un seul artisan et une seule activité, mais plusieurs administrateurs peuvent traiter les mêmes dossiers sans créer une marketplace.
 
 ### Pourquoi elles ne sont plus oubliées ?
 
@@ -152,21 +152,11 @@ Demande confirmée → Démarrer le trajet → Je suis arrivé → Commencer l�
 
 ## 10. Comment donner l’accès aux futurs collaborateurs
 
-### Situation actuelle
+### Administrateurs complets
 
-Aujourd’hui, MDS est conçu autour d’**un seul artisan** : toutes les demandes lui arrivent et lui seul dispose d’un accès privé. Il n’existe pas encore de console d’équipe.
+Les deux nouvelles adresses ont été préautorisées dans MDS. Elles doivent utiliser leur propre identité de connexion ; au premier accès OAuth, leur compte est créé puis promu automatiquement. Chaque action reste associée à la personne réellement connectée.
 
-### Évolution prévue (sur demande)
-
-Un système d’**invitation par e-mail** est planifié :
-
-1. Depuis votre espace, un panneau **« Équipe »** permettra d’inviter un collaborateur en saisissant son e-mail.
-2. Le collaborateur reçoit un lien/code d’accès personnel et se connecte avec son propre compte.
-3. Il dispose d’un **rôle opérationnel** : il voit *uniquement* les interventions qui lui sont assignées et peut exécuter les actions terrain (démarrer le trajet, photos avant/après obligatoires, fin d’intervention, signature du client).
-4. Il **n’a pas accès** à l’onglet Activité, aux paiements, aux réglages MDS ni aux dossiers qui ne lui sont pas assignés.
-5. Vous pouvez retirer un accès à tout moment depuis le même panneau.
-
-> **Remarque importante** : tant que ce module n’est pas développé, ne communiquez pas vos identifiants à des tiers. Les collaborateurs doivent avoir chacun leur propre compte pour que la traçabilité (qui a fait quoi et quand) reste juridiquement fiable.
+Cette autorisation concerne un administrateur complet, pas un collaborateur opérationnel. Ne partagez jamais un identifiant existant. Le futur module collaborateurs devra utiliser des comptes séparés, des affectations de dossiers et des droits limités aux actions terrain.
 
 ---
 

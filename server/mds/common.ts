@@ -44,8 +44,14 @@ export async function requireArtisan(db: SqlDb, user: Identity) {
   if (!user || user.id <= 0)
     fail("Connectez-vous pour accéder à l’espace artisan.", "UNAUTHORIZED");
   const p = await principal(db);
-  if (user.role !== "admin" || p.artisanUserId !== user.id)
+  if (user.role !== "admin")
     fail("Cet accès est réservé à l’artisan MDS.", "FORBIDDEN");
+}
+export async function workspaceOwnerId(db: SqlDb, user: Identity) {
+  if (!user || user.id <= 0)
+    fail("Connectez-vous pour continuer.", "UNAUTHORIZED");
+  const p = await principal(db);
+  return p.artisanUserId ?? user.id;
 }
 // This middleware also replaces opaque English validation/database errors for MDS APIs.
 export const procedure = publicProcedure.use(async ({ next }) => {
@@ -85,8 +91,7 @@ export async function membership(
     fail("Connectez-vous pour accéder à cette organisation.", "UNAUTHORIZED");
   // Artisan can inspect/manage customer records, but this never adds them as a collaborator.
   const p = await principal(db);
-  if (user.role === "admin" && p.artisanUserId === user.id)
-    return { role: "artisan" as const };
+  if (user.role === "admin") return { role: "artisan" as const };
   const [member] = await db
     .select()
     .from(s.members)
@@ -113,7 +118,7 @@ export async function orgIds(db: SqlDb, userId: number) {
 }
 export async function requestFilter(db: SqlDb, user: s.User) {
   const p = await principal(db);
-  if (user.role === "admin" && p.artisanUserId === user.id) return sql`true`;
+  if (user.role === "admin") return sql`true`;
   const ids = await orgIds(db, user.id);
   return or(
     and(isNull(s.requests.organizationId), eq(s.requests.userId, user.id)),
@@ -138,11 +143,7 @@ export async function authorizeRequest(
       "FORBIDDEN"
     );
   const p = await principal(db);
-  if (
-    (user.role === "admin" && p.artisanUserId === user.id) ||
-    request.userId === user.id
-  )
-    return;
+  if (user.role === "admin" || request.userId === user.id) return;
   fail("Vous n’êtes pas autorisé à consulter ce dossier.", "FORBIDDEN");
 }
 export function publicRequest(row: s.MdsRequest) {

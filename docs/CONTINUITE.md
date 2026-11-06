@@ -232,3 +232,8 @@ Le formulaire propose maintenant une liste d’attente explicite lorsque le clie
 
 ## Carte interactive des lieux d’intervention — 6 novembre 2026
 La carte de l’onglet Planning artisan est maintenant recherchable par client, adresse, code postal, ville ou prestation. Elle géocode les adresses réelles via Mapbox, actualise les résultats à la demande et affiche une liste de résultats ouvrant directement le dossier sélectionné. Une adresse non localisable est ignorée sans bloquer les autres. Le regroupement de marqueurs et le cache serveur restent à prévoir si le volume augmente.
+
+
+## Accès administrateur multiple — 6 novembre 2026
+
+Deux adresses confirmées par le propriétaire ont été préautorisées comme administrateurs complets : `multiservicesmds2026@gmail.com` et `filipe.bongoy@gmail.com`. Elles n’avaient pas encore de compte MDS au moment de l’activation ; aucune session ni aucun mot de passe n’a donc été créé. La table additive `mds_admin_invites` les promeut automatiquement lors de leur première connexion OAuth avec l’adresse correspondante. Les contrôles serveur artisan, demandes, opérations, catalogue, planning et paiements acceptent désormais tout compte ayant le rôle `admin`, tandis que les comptes `user` restent exclus. Validation : 308 tests, typage TypeScript, build et routes locales principales OK.

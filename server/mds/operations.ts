@@ -20,7 +20,11 @@ import { checkVersion, fail, requireState } from "./workflow";
 
 export async function operationPrincipal(tx: Tx, actorId: number) {
   const p = await principal(tx, true);
-  if (p.artisanUserId !== actorId)
+  const [actor] = await tx
+    .select({ role: s.users.role })
+    .from(s.users)
+    .where(eq(s.users.id, actorId));
+  if (actor?.role !== "admin")
     fail("Cet accès est réservé à l’artisan MDS.", "FORBIDDEN");
   return p;
 }
@@ -153,7 +157,7 @@ async function clientRequest(
     .for("update");
   if (!r) fail("Cette demande est introuvable.", "NOT_FOUND");
   await authorizeRequest(tx, r, user, input.token);
-  if (user?.id === p.artisanUserId)
+  if (user?.role === "admin")
     fail(
       "L’accord ou la réclamation client ne peut pas être enregistré par l’artisan.",
       "FORBIDDEN"

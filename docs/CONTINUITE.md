@@ -220,3 +220,7 @@ L’espace artisan reçoit une carte des lieux d’intervention construite à pa
 Une page `/connexion` distingue maintenant la connexion et la création de compte. Le compte local demande prénom, nom, type particulier ou professionnel et mot de passe d’au moins dix caractères. Le rôle artisan/admin reste réservé au mécanisme d’accès MDS existant et ne peut pas être choisi dans un formulaire public. Les comptes Google ne sont pas simulés : l’intégration est volontairement reportée.
 
 Les mots de passe sont traités par scrypt avec sel aléatoire et comparaison résistante au timing. Les sessions locales sont des jetons opaques hashés en base, placés dans un cookie HTTP-only sécurisé, avec expiration et verrouillage temporaire après plusieurs échecs. OAuth Manus reste disponible dans un panneau secondaire pour le compte gestionnaire existant.
+
+
+## Qualification opérationnelle initiale — 6 novembre 2026
+Le parcours de demande permet désormais de préciser un niveau d’urgence standard ou urgent. Cette information reste dans le dossier existant, sans migration destructive ni confirmation automatique. Dans l’espace artisan, les demandes urgentes encore à traiter remontent en premier et portent un badge explicite. Le message rappelle que l’urgence ne remplace pas la vérification réelle de la zone, du planning et de la capacité de l’artisan. La liste d’attente persistante, la messagerie client-MDS et les règles de surcharge restent ouvertes pour une prochaine étape.

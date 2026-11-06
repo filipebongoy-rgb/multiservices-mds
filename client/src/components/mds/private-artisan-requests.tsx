@@ -126,6 +126,12 @@ function quoteRequired(request: RequestRecord) {
 }
 
 function requestPriority(request: RequestRecord) {
+  const urgency = request.answers?.__urgency;
+  if (
+    urgency === "urgent" &&
+    ["needs_information", "to_analyze", "awaiting_mds"].includes(request.status)
+  )
+    return -1;
   if (
     ["needs_information", "to_analyze", "awaiting_mds"].includes(request.status)
   )
@@ -137,6 +143,9 @@ function requestPriority(request: RequestRecord) {
   )
     return 1;
   return 2;
+}
+function urgencyLabel(request: RequestRecord) {
+  return request.answers?.__urgency === "urgent" ? "Urgent" : null;
 }
 
 export function ArtisanRequests({
@@ -286,6 +295,18 @@ export function ArtisanRequests({
                             {request.city}
                           </p>
                           <StatusBadge status={request.status} />
+                          {urgencyLabel(request) && (
+                            <span
+                              className="badge"
+                              style={{
+                                marginLeft: 6,
+                                background: "#fff0e8",
+                                color: "#a53d18",
+                              }}
+                            >
+                              Urgent
+                            </span>
+                          )}
                           {requestPriority(request) < 2 && (
                             <span className="badge" style={{ marginLeft: 6 }}>
                               Action requise

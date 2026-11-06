@@ -818,6 +818,32 @@ export default function Request() {
                 </small>
               </div>
               <div className="field">
+                <label htmlFor="urgency">Niveau d’urgence</label>
+                <select
+                  id="urgency"
+                  value={draft.answers.__urgency || "normal"}
+                  onChange={e =>
+                    setDraft(current => ({
+                      ...current,
+                      answers: {
+                        ...current.answers,
+                        __urgency: e.target.value,
+                      },
+                    }))
+                  }
+                >
+                  <option value="normal">
+                    Standard — intervention à planifier
+                  </option>
+                  <option value="urgent">
+                    Urgent — préciser le besoin rapidement
+                  </option>
+                </select>
+                <small className="muted">
+                  MDS vérifie la capacité réelle avant de confirmer un créneau.
+                </small>
+              </div>
+              <div className="field">
                 <label htmlFor="address">Adresse d’intervention *</label>
                 <div className="input-with-icon">
                   <MapPin size={20} aria-hidden="true" />

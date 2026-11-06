@@ -92,3 +92,10 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 - [x] Une page `/connexion` distingue la connexion et la création de compte. L’inscription demande prénom, nom, type de compte particulier ou professionnel et mot de passe d’au moins 10 caractères. Le rôle artisan/admin n’est jamais sélectionnable publiquement.
 - [x] Les mots de passe sont hashés par scrypt avec sel aléatoire ; les sessions locales utilisent un jeton opaque hashé en base, cookie HTTP-only, SameSite=None et durée limitée. Les tentatives répétées sont temporairement bloquées.
 - [x] OAuth Manus est conservé pour l’accès gestionnaire MDS existant. Google est explicitement laissé pour une intégration ultérieure ; aucun bouton Google fictif n’est présenté.
+
+
+## Qualification opérationnelle initiale — 6 novembre 2026
+- [x] Le client peut déclarer un niveau d’urgence standard ou urgent dans la demande ; la valeur est conservée dans le dossier sans modifier les contrats existants.
+- [x] L’espace artisan trie les demandes urgentes nécessitant une action avant les autres et affiche un badge « Urgent » visible.
+- [x] Le parcours rappelle qu’un niveau urgent ne confirme jamais automatiquement une intervention : la capacité réelle, la zone et le planning doivent être vérifiés par MDS.
+- [ ] Restent à développer : liste d’attente persistante, messagerie client-MDS, règles administrables de surcharge et questions complémentaires ciblées.

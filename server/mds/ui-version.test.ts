@@ -310,3 +310,23 @@ describe("authentification MDS locale", () => {
     expect(layout).toContain('user ? "Se déconnecter" : "Se connecter"');
   });
 });
+
+describe("qualification opérationnelle initiale", () => {
+  it("collecte l’urgence côté client et la met en avant côté artisan", () => {
+    const request = readFileSync(
+      new URL("../../client/src/pages/Request.tsx", import.meta.url),
+      "utf8"
+    );
+    const artisan = readFileSync(
+      new URL(
+        "../../client/src/components/mds/private-artisan-requests.tsx",
+        import.meta.url
+      ),
+      "utf8"
+    );
+    expect(request).toContain('id="urgency"');
+    expect(request).toContain("__urgency");
+    expect(artisan).toContain("urgencyLabel");
+    expect(artisan).toContain('urgency === "urgent"');
+  });
+});

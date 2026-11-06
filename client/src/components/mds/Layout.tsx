@@ -10,6 +10,7 @@ import {
   CalendarDays,
   FileText,
   House,
+  LogIn,
   UserRound,
   Wrench,
 } from "lucide-react";
@@ -169,6 +170,19 @@ export function Header() {
               {!privateWorkspace && !isAdmin && <HeaderCallButton />}
             </div>
           )}
+          <button
+            type="button"
+            className="simple-auth-quick-action"
+            onClick={() => void accountAction()}
+            aria-label={user ? "Se déconnecter" : "Se connecter"}
+          >
+            {user ? (
+              <LogOut size={17} aria-hidden="true" />
+            ) : (
+              <LogIn size={17} aria-hidden="true" />
+            )}
+            <span>{user ? "Se déconnecter" : "Se connecter"}</span>
+          </button>
           <nav
             className="simple-primary-nav"
             aria-label={

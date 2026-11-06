@@ -301,4 +301,12 @@ describe("authentification MDS locale", () => {
     expect(localAuth).toContain("localSessions");
     expect(localAuth).toContain("getSessionCookieOptions");
   });
+  it("affiche une action rapide connexion ou déconnexion dans l’en-tête", () => {
+    const layout = readFileSync(
+      new URL("../../client/src/components/mds/Layout.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(layout).toContain("simple-auth-quick-action");
+    expect(layout).toContain('user ? "Se déconnecter" : "Se connecter"');
+  });
 });

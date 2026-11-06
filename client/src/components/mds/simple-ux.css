@@ -3547,3 +3547,33 @@ input[type="checkbox"] {
     padding: 20px 16px;
   }
 }
+
+.simple-auth-quick-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid #bc4c23;
+  border-radius: 9px;
+  background: #fff8f4;
+  color: #8f3518;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.simple-auth-quick-action:hover {
+  background: #bc4c23;
+  color: #fff;
+}
+@media (max-width: 700px) {
+  .simple-auth-quick-action {
+    min-height: 36px;
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+  .simple-header .simple-auth-quick-action span {
+    display: inline;
+  }
+}

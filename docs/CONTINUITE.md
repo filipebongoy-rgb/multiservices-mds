@@ -213,3 +213,10 @@ Le trajet suit désormais `Démarrer le trajet` → position réellement autoris
 Les cartes de choix de la demande ont été reprises pour empêcher les chevauchements observés sur mobile. Les problèmes peuvent maintenant être cochés en sélection multiple ; le premier reste le champ principal historique et la liste complète est conservée dans les réponses du dossier. Le logo revient toujours vers l’accueil public, un retour accueil est visible dans les pages publiques et la barre mobile est masquée pendant la demande afin de ne plus recouvrir le formulaire.
 
 L’espace artisan reçoit une carte des lieux d’intervention construite à partir des adresses réelles des demandes et géocodée par Mapbox ; aucune position GPS n’est inventée. Le paiement est précédé d’une connexion obligatoire dans l’interface et le serveur bloque l’ouverture d’un paiement Stripe live sans identité authentifiée en production. Le lien privé de suivi reste accessible sans compte, mais il ne permet pas de contourner la protection du paiement.
+
+
+## Authentification locale MDS — 6 novembre 2026
+
+Une page `/connexion` distingue maintenant la connexion et la création de compte. Le compte local demande prénom, nom, type particulier ou professionnel et mot de passe d’au moins dix caractères. Le rôle artisan/admin reste réservé au mécanisme d’accès MDS existant et ne peut pas être choisi dans un formulaire public. Les comptes Google ne sont pas simulés : l’intégration est volontairement reportée.
+
+Les mots de passe sont traités par scrypt avec sel aléatoire et comparaison résistante au timing. Les sessions locales sont des jetons opaques hashés en base, placés dans un cookie HTTP-only sécurisé, avec expiration et verrouillage temporaire après plusieurs échecs. OAuth Manus reste disponible dans un panneau secondaire pour le compte gestionnaire existant.

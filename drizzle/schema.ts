@@ -28,6 +28,10 @@ export const users = mysqlTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
+  localLoginKey: varchar("localLoginKey", { length: 180 }).unique(),
+  accountType: mysqlEnum("accountType", ["particular", "professional"])
+    .default("particular")
+    .notNull(),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -35,6 +39,32 @@ export const users = mysqlTable("users", {
 });
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+export const localCredentials = mysqlTable("mds_local_credentials", {
+  userId: int("userId")
+    .primaryKey()
+    .references(() => users.id),
+  passwordHash: varchar("passwordHash", { length: 128 }).notNull(),
+  passwordSalt: varchar("passwordSalt", { length: 64 }).notNull(),
+  failedAttempts: int("failedAttempts").default(0).notNull(),
+  lockedUntil: timestamp("lockedUntil"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const localSessions = mysqlTable(
+  "mds_local_sessions",
+  {
+    tokenHash: varchar("tokenHash", { length: 64 }).primaryKey(),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id),
+    expiresAt: timestamp("expiresAt").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    lastSeenAt: timestamp("lastSeenAt").defaultNow().notNull(),
+  },
+  table => [index("local_sessions_user_idx").on(table.userId)]
+);
 const dates = () => ({
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

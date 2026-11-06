@@ -85,8 +85,23 @@ export async function getUserByOpenId(openId: string) {
     return undefined;
   }
 
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.openId, openId))
+    .limit(1);
 
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserByLocalLoginKey(localLoginKey: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.localLoginKey, localLoginKey))
+    .limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 

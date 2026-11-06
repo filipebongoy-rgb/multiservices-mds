@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { HeaderCallButton, NotificationBell } from "./HeaderActions";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { startLogin } from "@/const";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,7 +55,7 @@ export function Header() {
     try {
       setError("");
       if (user) await logout();
-      else startLogin();
+      else window.location.href = "/connexion";
     } catch {
       setError("Connexion indisponible. Veuillez réessayer.");
     }

@@ -18,6 +18,7 @@ const Tracking = lazy(() => import("./pages/Tracking"));
 const Artisan = lazy(() => import("./pages/Artisan"));
 const Professional = lazy(() => import("./pages/Professional"));
 const Profile = lazy(() => import("./pages/Profile"));
+const Auth = lazy(() => import("./pages/Auth"));
 import { Privacy, LegalNotice } from "./pages/Legal";
 import NotFound from "./pages/NotFound";
 const titles: Record<string, string> = {
@@ -29,6 +30,7 @@ const titles: Record<string, string> = {
   "/professionnels": "Espace professionnel",
   "/artisan": "Espace artisan",
   "/profil": "Mon profil",
+  "/connexion": "Connexion",
   "/confidentialite": "Confidentialité",
   "/mentions-legales": "Mentions légales",
 };
@@ -53,6 +55,7 @@ function Routes() {
       "/demande",
       "/professionnels",
       "/profil",
+      "/connexion",
     ].includes(location)
       ? "noindex, nofollow"
       : "index, follow";
@@ -76,6 +79,7 @@ function Routes() {
           <Route path="/professionnels" component={Professional} />
           <Route path="/artisan" component={Artisan} />
           <Route path="/profil" component={Profile} />
+          <Route path="/connexion" component={Auth} />
           <Route path="/confidentialite" component={Privacy} />
           <Route path="/mentions-legales" component={LegalNotice} />
           <Route path="/404" component={NotFound} />

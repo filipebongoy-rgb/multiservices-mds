@@ -1,6 +1,7 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
 import { sdk } from "./sdk";
+import { authenticateLocalRequest } from "./local-auth";
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
@@ -16,8 +17,13 @@ export async function createContext(
   try {
     user = await sdk.authenticateRequest(opts.req);
   } catch (error) {
-    // Authentication is optional for public procedures.
-    user = null;
+    // OAuth Manus reste prioritaire ; la page MDS peut aussi utiliser sa
+    // session locale prénom/nom/mot de passe.
+    try {
+      user = await authenticateLocalRequest(opts.req);
+    } catch {
+      user = null;
+    }
   }
 
   return {

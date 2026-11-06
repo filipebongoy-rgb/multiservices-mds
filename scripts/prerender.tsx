@@ -45,6 +45,17 @@ const pages: Record<string, string> = {
       </p>
     </main>
   ),
+  "/connexion": renderToString(
+    <main className="page-shell auth-page">
+      <section className="panel">
+        <span className="eyebrow">Compte MDS</span>
+        <h1>Se connecter ou créer un compte</h1>
+        <p>
+          Retrouvez vos demandes, paiements et informations au même endroit.
+        </p>
+      </section>
+    </main>
+  ),
 };
 mkdirSync("client/public", { recursive: true });
 writeFileSync("client/public/prerender.json", JSON.stringify(pages));

@@ -279,3 +279,26 @@ describe("séparation stricte des rôles et outils planning artisan", () => {
     expect(cal).toContain("Supprimer ce rendez-vous du planning");
   });
 });
+
+describe("authentification MDS locale", () => {
+  const auth = readFileSync(
+    new URL("../../client/src/pages/Auth.tsx", import.meta.url),
+    "utf8"
+  );
+  const localAuth = readFileSync(
+    new URL("../../server/_core/local-auth.ts", import.meta.url),
+    "utf8"
+  );
+  it("propose particulier ou professionnel sans exposer le rôle artisan", () => {
+    expect(auth).toContain("Particulier");
+    expect(auth).toContain("Professionnel");
+    expect(auth).not.toContain('accountType === "admin"');
+    expect(auth).toContain("10 caractères minimum");
+  });
+  it("utilise un hash scrypt et des sessions opaques persistées", () => {
+    expect(localAuth).toContain("scryptSync");
+    expect(localAuth).toContain("timingSafeEqual");
+    expect(localAuth).toContain("localSessions");
+    expect(localAuth).toContain("getSessionCookieOptions");
+  });
+});

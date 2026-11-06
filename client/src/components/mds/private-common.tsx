@@ -15,7 +15,6 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { dateTime, statusLabels } from "@shared/mds";
 import type { PrivateDocument, RequestRecord } from "./private-types";
@@ -66,24 +65,16 @@ export function ErrorNotice({ error }: { error: unknown }) {
   );
 }
 export function LoginButton() {
-  const [error, setError] = useState<string | null>(null);
   return (
-    <div className="stack">
+    <div>
       <ActionButton
         className="primary"
         onClick={() => {
-          try {
-            startLogin();
-          } catch {
-            setError(
-              "La connexion n’est pas configurée pour le moment. Contactez MDS ou réessayez plus tard."
-            );
-          }
+          window.location.href = "/connexion";
         }}
       >
-        <LogIn size={18} aria-hidden="true" /> Se connecter avec Manus
+        <LogIn size={18} aria-hidden="true" /> Ouvrir la page de connexion
       </ActionButton>
-      <ErrorNotice error={error ? new Error(error) : null} />
     </div>
   );
 }

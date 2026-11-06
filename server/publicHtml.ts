@@ -9,6 +9,7 @@ const titles: Record<string, string> = {
   "/professionnels": "Espace professionnel",
   "/artisan": "Espace artisan",
   "/profil": "Mon profil",
+  "/connexion": "Connexion",
   "/confidentialite": "Confidentialité",
   "/mentions-legales": "Mentions légales",
 };

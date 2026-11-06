@@ -7,6 +7,7 @@
     { "path": "/professionnels", "title": "Espace professionnel" },
     { "path": "/artisan", "title": "Espace artisan" },
     { "path": "/profil", "title": "Mon profil" },
+    { "path": "/connexion", "title": "Connexion" },
     { "path": "/confidentialite", "title": "Confidentialité" },
     { "path": "/mentions-legales", "title": "Mentions légales" },
     { "path": "/paiements", "title": "Mes paiements" }

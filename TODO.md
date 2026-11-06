@@ -86,3 +86,9 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 - [x] Le logo revient vers l’accueil public et les pages publiques disposent d’un retour accueil explicite ; la barre mobile ne recouvre plus le formulaire de demande.
 - [x] L’espace artisan dispose d’une carte des lieux d’intervention fondée sur les adresses réelles des dossiers et Mapbox configuré, sans position inventée ; une adresse non localisable ne bloque pas les autres.
 - [x] Le paiement sécurisé demande une connexion dans l’interface ; en production avec Stripe live, le serveur refuse aussi l’ouverture Stripe sans compte authentifié. Le suivi privé reste accessible sans compte.
+
+
+## Authentification MDS locale — 6 novembre 2026
+- [x] Une page `/connexion` distingue la connexion et la création de compte. L’inscription demande prénom, nom, type de compte particulier ou professionnel et mot de passe d’au moins 10 caractères. Le rôle artisan/admin n’est jamais sélectionnable publiquement.
+- [x] Les mots de passe sont hashés par scrypt avec sel aléatoire ; les sessions locales utilisent un jeton opaque hashé en base, cookie HTTP-only, SameSite=None et durée limitée. Les tentatives répétées sont temporairement bloquées.
+- [x] OAuth Manus est conservé pour l’accès gestionnaire MDS existant. Google est explicitement laissé pour une intégration ultérieure ; aucun bouton Google fictif n’est présenté.

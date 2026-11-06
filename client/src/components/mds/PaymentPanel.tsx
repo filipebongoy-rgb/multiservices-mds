@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { startLogin } from "@/const";
 import { money, dateTime } from "@shared/mds";
 import { ApiError, Loading } from "./Layout";
 
@@ -69,7 +68,7 @@ export function PaymentPanel({
   async function pay() {
     if (!user) {
       setError("Connectez-vous pour ouvrir le paiement sécurisé.");
-      startLogin();
+      window.location.href = `/connexion?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`;
       return;
     }
     setError("");
@@ -215,7 +214,9 @@ export function PaymentPanel({
                   <button
                     type="button"
                     className="btn primary"
-                    onClick={() => startLogin()}
+                    onClick={() => {
+                      window.location.href = `/connexion?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                    }}
                   >
                     Se connecter pour payer
                   </button>

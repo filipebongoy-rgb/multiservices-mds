@@ -139,6 +139,18 @@ export default function Request() {
     const id = Number(params.get("service"));
     return Number.isSafeInteger(id) && id > 0 ? id : routeDraft.serviceId;
   });
+  const [selectedProblems, setSelectedProblems] = useState<string[]>(() => {
+    try {
+      const saved = routeDraft.answers.__problemTypes;
+      return saved
+        ? JSON.parse(saved)
+        : routeDraft.problemType
+          ? [routeDraft.problemType]
+          : [];
+    } catch {
+      return routeDraft.problemType ? [routeDraft.problemType] : [];
+    }
+  });
   const { user } = useAuth();
   const catalog = trpc.mds.catalog.list.useQuery({});
   const service = catalog.data?.find(s => s.id === selected);
@@ -308,8 +320,8 @@ export default function Request() {
       return "Choisissez le métier qui correspond à votre besoin.";
     if (step === 1 && !selectedTrade && !isFreeRequest)
       return "Choisissez le service qui correspond à votre besoin.";
-    if (step === 1 && !draft.problemType)
-      return "Choisissez le type de problème qui correspond le mieux.";
+    if (step === 1 && !selectedProblems.length)
+      return "Choisissez au moins un problème à traiter.";
     if (step === 2 && draft.description.trim().length < 10)
       return "Décrivez votre problème en quelques mots (10 caractères minimum).";
     if (step === 2) {
@@ -382,7 +394,7 @@ export default function Request() {
       serviceId: service?.id ?? null,
       pricingFingerprint: pricing.data.fingerprint,
       problemType:
-        draft.problemType ||
+        selectedProblems[0] ||
         trades.find(trade => trade.slug === tradeParam)?.name ||
         "",
       description:
@@ -398,7 +410,10 @@ export default function Request() {
       desiredStart,
       organizationId,
       siteId,
-      answers: draft.answers,
+      answers: {
+        ...draft.answers,
+        __problemTypes: JSON.stringify(selectedProblems),
+      },
       consent: true as const,
       idempotencyKey: draft.key,
     };
@@ -635,6 +650,7 @@ export default function Request() {
                           problemType: "",
                           answers: { ...d.answers, __trade: trade.slug },
                         }));
+                        setSelectedProblems([]);
                         setSelected(null);
                       }}
                     >
@@ -661,9 +677,13 @@ export default function Request() {
                 <>
                   <div
                     className="problem-list"
-                    role="radiogroup"
+                    role="group"
                     aria-label="Quel est votre problème ?"
                   >
+                    <p className="small-text muted request-choice-hint">
+                      Plusieurs choix possibles si plusieurs problèmes
+                      concernent le même lieu.
+                    </p>
                     {problemOptions.map(problem => {
                       const active = catalog.data?.find(
                         item =>
@@ -671,7 +691,7 @@ export default function Request() {
                           item.name.toLocaleLowerCase("fr") ===
                             problem.value.toLocaleLowerCase("fr")
                       );
-                      const checked = draft.problemType === problem.value;
+                      const checked = selectedProblems.includes(problem.value);
                       const photo = problemImage(
                         problem.value,
                         active?.photoUrl
@@ -680,15 +700,27 @@ export default function Request() {
                         <button
                           key={problem.value}
                           type="button"
-                          role="radio"
+                          role="checkbox"
                           aria-checked={checked}
                           className={`problem-choice${checked ? " is-checked" : ""}`}
                           onClick={() => {
-                            setDraft(d => ({
-                              ...d,
-                              problemType: problem.value,
-                            }));
-                            setSelected(active?.id ?? null);
+                            setSelectedProblems(current => {
+                              const next = current.includes(problem.value)
+                                ? current.filter(
+                                    value => value !== problem.value
+                                  )
+                                : [...current, problem.value];
+                              setDraft(d => ({
+                                ...d,
+                                problemType: next[0] || "",
+                                answers: {
+                                  ...d.answers,
+                                  __problemTypes: JSON.stringify(next),
+                                },
+                              }));
+                              setSelected(active?.id ?? null);
+                              return next;
+                            });
                           }}
                         >
                           <span className="problem-radio" aria-hidden="true" />
@@ -711,14 +743,26 @@ export default function Request() {
                     })}
                     <button
                       type="button"
-                      role="radio"
-                      aria-checked={draft.problemType === "Autre problème"}
-                      className={`problem-choice${draft.problemType === "Autre problème" ? " is-checked" : ""}`}
+                      role="checkbox"
+                      aria-checked={selectedProblems.includes("Autre problème")}
+                      className={`problem-choice${selectedProblems.includes("Autre problème") ? " is-checked" : ""}`}
                       onClick={() => {
-                        setDraft(d => ({
-                          ...d,
-                          problemType: "Autre problème",
-                        }));
+                        setSelectedProblems(current => {
+                          const next = current.includes("Autre problème")
+                            ? current.filter(
+                                value => value !== "Autre problème"
+                              )
+                            : [...current, "Autre problème"];
+                          setDraft(d => ({
+                            ...d,
+                            problemType: next[0] || "",
+                            answers: {
+                              ...d.answers,
+                              __problemTypes: JSON.stringify(next),
+                            },
+                          }));
+                          return next;
+                        });
                         setSelected(null);
                       }}
                     >

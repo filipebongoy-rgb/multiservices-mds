@@ -79,3 +79,10 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 - [x] Signature tactile artisan en accès direct (bouton « Faire signer le client sur cet écran », modal dédié, guide tactile, cibles 48 px minimum) — composant `SignaturePad` avec `touchAction: "none"`, touch events réels et aperçu chiffré.
 - [x] Bannière pro (« Vous êtes une entreprise ou une collectivité ? ») et footer restaurés sur l’accueil pour compléter la fidélité à la maquette MDS — `Home.tsx` + `simple-ux.css`.
 - [x] Audit comparatif de l’expérience client vs la maquette MDS (8 écrans) et les principes Uber Eats officiels — rapport : `docs/AUDIT-EXPERIENCE-CLIENT.md`.
+
+
+## Correctifs UX mobiles et paiement — 6 novembre 2026
+- [x] Les choix de métier et de problème restent lisibles sur mobile : titre, explication et action ont des colonnes séparées, sans texte superposé ; plusieurs problèmes peuvent être sélectionnés et sont conservés dans `answers.__problemTypes`, avec le premier choix comme problème principal compatible avec le moteur existant.
+- [x] Le logo revient vers l’accueil public et les pages publiques disposent d’un retour accueil explicite ; la barre mobile ne recouvre plus le formulaire de demande.
+- [x] L’espace artisan dispose d’une carte des lieux d’intervention fondée sur les adresses réelles des dossiers et Mapbox configuré, sans position inventée ; une adresse non localisable ne bloque pas les autres.
+- [x] Le paiement sécurisé demande une connexion dans l’interface ; en production avec Stripe live, le serveur refuse aussi l’ouverture Stripe sans compte authentifié. Le suivi privé reste accessible sans compte.

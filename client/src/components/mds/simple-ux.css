@@ -3326,3 +3326,100 @@ input[type="checkbox"] {
   font-weight: 600;
   color: inherit;
 }
+
+/* Correctifs ciblés MDS : cartes lisibles et carte des lieux artisan. */
+.request-choice-hint {
+  margin: 0 0 2px;
+}
+.request-simple .choice-list .btn {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) auto !important;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  white-space: normal;
+}
+.request-simple .choice-list .btn strong,
+.request-simple .choice-list .btn .muted {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+.request-simple .choice-list .btn > svg:last-child {
+  grid-column: 3;
+  grid-row: 1;
+  flex-shrink: 0;
+}
+.artisan-locations-card {
+  margin-bottom: 18px;
+}
+.artisan-locations-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.artisan-locations-map {
+  min-height: 320px;
+  overflow: hidden;
+  border: 1px solid #dfe3e1;
+  border-radius: 12px;
+}
+.artisan-locations-empty {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+.simple-global-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #263b4c;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+@media (max-width: 420px) {
+  .request-simple .choice-list .btn {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    row-gap: 1px;
+    column-gap: 10px;
+    min-height: 78px;
+  }
+  .request-simple .choice-list .btn strong {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .request-simple .choice-list .btn .muted {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .request-simple .choice-list .btn > svg:last-child {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+  .artisan-locations-map {
+    min-height: 250px;
+  }
+}
+@media (max-width: 700px) {
+  .simple-header.is-request ~ .mobile-bottom-nav {
+    display: none;
+  }
+  .simple-global-back {
+    position: absolute;
+    left: 14px;
+    z-index: 1;
+    font-size: 0;
+  }
+  .simple-global-back svg {
+    width: 24px;
+    height: 24px;
+  }
+  .simple-header:not(.is-request) .brand {
+    max-width: calc(100% - 72px);
+  }
+}

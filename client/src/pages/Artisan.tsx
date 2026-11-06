@@ -38,6 +38,7 @@ import {
 import { ArtisanSettings } from "@/components/mds/private-artisan-settings";
 import { ArtisanCalendar } from "@/components/mds/private-calendar";
 import { AutomationSettings } from "@/components/mds/private-automation";
+import { ArtisanLocationsMap } from "@/components/mds/ArtisanLocationsMap";
 import {
   activeRequestStatuses,
   dayKey,
@@ -343,6 +344,7 @@ function ArtisanWorkspace() {
         )}
         {tab === "planning" && (
           <>
+            <ArtisanLocationsMap requests={requests} />
             <ArtisanCalendar onOpen={openRequest} />
             <details className="panel">
               <summary

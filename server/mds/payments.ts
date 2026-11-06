@@ -414,6 +414,15 @@ export const paymentsRouter = router({
           params: completeParameters(params, payment),
         };
       });
+      if (
+        mode === "live" &&
+        process.env.NODE_ENV === "production" &&
+        (!ctx.user || ctx.user.id <= 0)
+      )
+        fail(
+          "Un compte authentifié est obligatoire avant tout paiement sécurisé.",
+          "UNAUTHORIZED"
+        );
       let session: Stripe.Checkout.Session;
       try {
         session = reserved.payment.checkoutSessionId

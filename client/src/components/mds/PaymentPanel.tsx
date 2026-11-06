@@ -2,6 +2,8 @@ import { ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { startLogin } from "@/const";
 import { money, dateTime } from "@shared/mds";
 import { ApiError, Loading } from "./Layout";
 
@@ -32,6 +34,7 @@ export function PaymentPanel({
     paidAt: Date | string | null;
   } | null;
 }) {
+  const { user, loading: authLoading } = useAuth();
   const utils = trpc.useUtils();
   const config = trpc.mds.payments.config.useQuery(undefined, { retry: false });
   const ledger = trpc.mds.payments.plan.useQuery(
@@ -64,6 +67,11 @@ export function PaymentPanel({
     data?.successfulTestPurposes.includes(purpose);
   const blocked = settled || data?.withheldLive || testDone;
   async function pay() {
+    if (!user) {
+      setError("Connectez-vous pour ouvrir le paiement sécurisé.");
+      startLogin();
+      return;
+    }
     setError("");
     const tab = window.open("about:blank", "_blank");
     if (tab) tab.opener = null;
@@ -197,6 +205,21 @@ export function PaymentPanel({
                 <p className="small-text muted">
                   Essai de cette échéance réussi. Facture réelle non acquittée.
                 </p>
+              ) : !authLoading && !user ? (
+                <div className="notice stack">
+                  <strong>Compte obligatoire pour payer</strong>
+                  <p>
+                    Connectez-vous pour sécuriser votre identité et retrouver le
+                    reçu dans votre espace.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    onClick={() => startLogin()}
+                  >
+                    Se connecter pour payer
+                  </button>
+                </div>
               ) : (
                 <button
                   className="btn primary"

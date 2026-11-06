@@ -25,17 +25,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function Brand({ inverse = false }: { inverse?: boolean }) {
-  const { user } = useAuth();
-  const href = user?.role === "admin" ? "/artisan" : "/";
+  const href = "/";
   return (
     <Link
       href={href}
       className={`brand ${inverse ? "inverse" : ""}`}
-      aria-label={
-        user?.role === "admin"
-          ? "MULTISERVICES MDS — espace artisan"
-          : "MULTISERVICES MDS — accueil"
-      }
+      aria-label="MULTISERVICES MDS — accueil"
     >
       <img
         className="brand-logo"
@@ -144,6 +139,16 @@ export function Header() {
         className={`site-header simple-header ${privateWorkspace ? "is-private" : ""} ${requestPage ? "is-request" : ""}`}
       >
         <div className="header-inner">
+          {!requestPage && !privateWorkspace && location !== "/" && (
+            <Link
+              href="/"
+              className="simple-global-back"
+              aria-label="Retour à l’accueil"
+            >
+              <ArrowLeft size={20} aria-hidden="true" />
+              <span>Accueil</span>
+            </Link>
+          )}
           {requestPage && (
             <Link
               href="/"

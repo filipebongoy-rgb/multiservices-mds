@@ -218,9 +218,9 @@ export default function Payments() {
         >
           <h2>Retrouvez votre facture depuis votre suivi privé.</h2>
           <p className="muted">
-            Aucun compte n’est imposé pour une première demande. Le lien privé
-            de suivi permet d’accéder à votre facture. Connectez-vous pour
-            consulter l’historique de votre compte ou de votre organisation.
+            Le suivi privé reste accessible avec votre lien. En revanche, un
+            compte est obligatoire avant d’ouvrir un paiement sécurisé, afin de
+            protéger votre identité et conserver le reçu dans votre espace.
           </p>
           <Link href="/suivi" className="btn primary">
             Ouvrir mon suivi privé

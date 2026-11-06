@@ -206,3 +206,10 @@ Le trajet suit désormais `Démarrer le trajet` → position réellement autoris
    - Carte artisan retirée du contenu public de la page d'accueil (le propriétaire conserve le lien discret « Accès artisan » dans le footer).
    - Écran de verrouillage de `/artisan` reformulé : « Accès réservé — Atelier de l'artisan », explicitement réservé au propriétaire avec passerelles vers les espaces clients. Formulaire d'activation replié dans un panneau pour ne pas perturber les visiteurs.
 3. **Tests** : 302 tests passent (13 fichiers), incluant les assertions de non-exposition de l'artisan dans les menus publics, l'adaptation de la nav mobile par rôle et le nettoyage du planning.
+
+
+## Correctifs UX mobile, lieux artisan et paiement sécurisé — 6 novembre 2026
+
+Les cartes de choix de la demande ont été reprises pour empêcher les chevauchements observés sur mobile. Les problèmes peuvent maintenant être cochés en sélection multiple ; le premier reste le champ principal historique et la liste complète est conservée dans les réponses du dossier. Le logo revient toujours vers l’accueil public, un retour accueil est visible dans les pages publiques et la barre mobile est masquée pendant la demande afin de ne plus recouvrir le formulaire.
+
+L’espace artisan reçoit une carte des lieux d’intervention construite à partir des adresses réelles des demandes et géocodée par Mapbox ; aucune position GPS n’est inventée. Le paiement est précédé d’une connexion obligatoire dans l’interface et le serveur bloque l’ouverture d’un paiement Stripe live sans identité authentifiée en production. Le lien privé de suivi reste accessible sans compte, mais il ne permet pas de contourner la protection du paiement.

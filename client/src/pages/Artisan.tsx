@@ -391,7 +391,7 @@ function ArtisanWorkspace() {
         )}
         {tab === "planning" && (
           <>
-            <ArtisanLocationsMap requests={requests} />
+            <ArtisanLocationsMap requests={requests} onOpen={openRequest} />
             <ArtisanCalendar onOpen={openRequest} />
             <details className="panel">
               <summary

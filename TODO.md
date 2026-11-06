@@ -106,3 +106,10 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 - [x] Une table `mds_waitlist_entries` conserve la demande, le motif, le statut d’attente et le créneau souhaité éventuel. La migration additive a été appliquée.
 - [x] L’artisan voit les clients en attente dans l’onglet Demandes ; un clic ouvre le dossier correspondant. Le texte rappelle qu’un créneau réellement libre doit être proposé.
 - [ ] Restent à développer : changement de statut contacté/converti depuis l’interface, notifications de disponibilité et règles de priorité administrables.
+
+
+## Carte interactive des lieux d’intervention — 6 novembre 2026
+- [x] L’onglet Planning de l’espace artisan affiche une carte Mapbox fondée sur les adresses réelles des demandes, sans coordonnées inventées.
+- [x] Une recherche permet de filtrer par nom du client, adresse, code postal, ville ou prestation ; un bouton Actualiser relance le géocodage des adresses disponibles.
+- [x] Les résultats de recherche sont cliquables et ouvrent directement le dossier correspondant ; une adresse non localisable ne bloque pas les autres résultats.
+- [ ] Restent à développer : regroupement de marqueurs à grande échelle et géocodage serveur mis en cache pour limiter les appels Mapbox.

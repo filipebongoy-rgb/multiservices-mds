@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
-import { MapPin, RefreshCw } from "lucide-react";
+import { MapPin, RefreshCw, Search, ExternalLink } from "lucide-react";
 import type { RequestRecord } from "./private-types";
 import { MAPBOX_PUBLIC_TOKEN } from "@/config/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -9,8 +9,10 @@ type Coordinates = [number, number];
 
 export function ArtisanLocationsMap({
   requests,
+  onOpen,
 }: {
   requests: RequestRecord[];
+  onOpen?: (id: number) => void;
 }) {
   const node = useRef<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -19,10 +21,16 @@ export function ArtisanLocationsMap({
   >([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [search, setSearch] = useState("");
 
-  const activeRequests = requests
+  const allActiveRequests = requests
     .filter(request => request.address && request.postcode && request.city)
     .slice(0, 50);
+  const activeRequests = allActiveRequests.filter(request =>
+    `${request.name} ${request.address} ${request.postcode} ${request.city} ${request.serviceName || ""}`
+      .toLocaleLowerCase("fr")
+      .includes(search.toLocaleLowerCase("fr"))
+  );
 
   async function locate() {
     if (!MAPBOX_PUBLIC_TOKEN || !activeRequests.length) return;
@@ -52,7 +60,7 @@ export function ArtisanLocationsMap({
 
   useEffect(() => {
     void locate();
-  }, [requests.map(request => request.id).join(",")]);
+  }, [search, requests.map(request => request.id).join(",")]);
 
   useEffect(() => {
     if (!node.current || !MAPBOX_PUBLIC_TOKEN || !points.length) return;
@@ -110,25 +118,58 @@ export function ArtisanLocationsMap({
         <div>
           <strong>Où intervenir</strong>
           <p className="muted">
-            {activeRequests.length} adresse
-            {activeRequests.length !== 1 ? "s" : ""} dans vos demandes
+            {allActiveRequests.length} adresse
+            {allActiveRequests.length !== 1 ? "s" : ""} dans vos demandes
           </p>
         </div>
-        <button
-          type="button"
-          className="btn secondary"
-          onClick={() => void locate()}
-          disabled={loading}
-        >
-          <RefreshCw size={16} aria-hidden="true" />{" "}
-          {loading ? "Recherche…" : "Actualiser"}
-        </button>
+        <div className="artisan-locations-actions">
+          <button
+            type="button"
+            className="btn secondary"
+            onClick={() => void locate()}
+            disabled={loading}
+          >
+            <RefreshCw size={16} aria-hidden="true" />{" "}
+            {loading ? "Recherche…" : "Actualiser"}
+          </button>
+        </div>
       </div>
+      <label className="artisan-locations-search">
+        <Search size={17} aria-hidden="true" />
+        <span className="visually-hidden">Rechercher un lieu</span>
+        <input
+          type="search"
+          value={search}
+          onChange={event => setSearch(event.target.value)}
+          placeholder="Rechercher une ville, une adresse ou un client"
+        />
+      </label>
       {message && <p className="notice">{message}</p>}
       {activeRequests.length ? (
         <div ref={node} className="artisan-locations-map" />
       ) : (
         <p className="muted">Aucune adresse disponible pour le moment.</p>
+      )}
+      {activeRequests.length > 0 && (
+        <div className="artisan-locations-list" aria-label="Lieux trouvés">
+          {activeRequests.map(request => (
+            <button
+              key={request.id}
+              type="button"
+              className="artisan-location-result"
+              onClick={() => onOpen?.(request.id)}
+              disabled={!onOpen}
+            >
+              <span>
+                <strong>{request.name}</strong>
+                <small>
+                  {request.address}, {request.postcode} {request.city}
+                </small>
+              </span>
+              {onOpen && <ExternalLink size={16} aria-hidden="true" />}
+            </button>
+          ))}
+        </div>
       )}
     </section>
   );

@@ -3609,3 +3609,82 @@ input[type="checkbox"] {
   background: #fff4ed;
   box-shadow: 0 0 0 2px rgba(188, 76, 35, 0.12);
 }
+
+.artisan-locations-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.artisan-locations-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  margin-bottom: 12px;
+  padding: 0 12px;
+  border: 1px solid #dfe3e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #5e6870;
+}
+
+.artisan-locations-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #172b3a;
+  font: inherit;
+}
+
+.artisan-locations-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.artisan-location-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #e1e5e2;
+  border-radius: 9px;
+  background: #fff;
+  color: #172b3a;
+  text-align: left;
+  cursor: pointer;
+}
+
+.artisan-location-result:hover,
+.artisan-location-result:focus-visible {
+  border-color: #bc4c23;
+  background: #fff7f1;
+}
+
+.artisan-location-result > span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.artisan-location-result small {
+  overflow-wrap: anywhere;
+  color: #5e6870;
+}
+
+@media (max-width: 700px) {
+  .artisan-locations-heading {
+    align-items: flex-start;
+  }
+  .artisan-locations-actions {
+    width: 100%;
+  }
+  .artisan-locations-actions .btn {
+    width: 100%;
+  }
+}

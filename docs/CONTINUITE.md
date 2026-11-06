@@ -228,3 +228,7 @@ Le parcours de demande permet désormais de préciser un niveau d’urgence stan
 
 ## Liste d’attente persistante — 6 novembre 2026
 Le formulaire propose maintenant une liste d’attente explicite lorsque le client ne peut pas retenir un créneau. Le serveur conserve une entrée relationnelle liée au dossier, sans date ou rendez-vous fictif. L’artisan retrouve ces demandes dans l’onglet Demandes et peut ouvrir le dossier pour proposer ultérieurement un créneau réellement contrôlé par le calendrier. Les transitions contactée/convertie et les notifications de disponibilité restent à compléter.
+
+
+## Carte interactive des lieux d’intervention — 6 novembre 2026
+La carte de l’onglet Planning artisan est maintenant recherchable par client, adresse, code postal, ville ou prestation. Elle géocode les adresses réelles via Mapbox, actualise les résultats à la demande et affiche une liste de résultats ouvrant directement le dossier sélectionné. Une adresse non localisable est ignorée sans bloquer les autres. Le regroupement de marqueurs et le cache serveur restent à prévoir si le volume augmente.

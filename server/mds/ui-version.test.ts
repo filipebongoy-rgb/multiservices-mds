@@ -349,4 +349,22 @@ describe("qualification opérationnelle initiale", () => {
     expect(server).toContain("waitlistEntries");
     expect(server).toContain("waitlistRequested");
   });
+  it("rend la carte des lieux recherchable et reliée aux dossiers", () => {
+    const map = readFileSync(
+      new URL(
+        "../../client/src/components/mds/ArtisanLocationsMap.tsx",
+        import.meta.url
+      ),
+      "utf8"
+    );
+    const artisan = readFileSync(
+      new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(map).toContain('type="search"');
+    expect(map).toContain("Rechercher une ville");
+    expect(map).toContain("onOpen?.(request.id)");
+    expect(artisan).toContain("ArtisanLocationsMap requests={requests}");
+    expect(artisan).toContain("onOpen={openRequest}");
+  });
 });

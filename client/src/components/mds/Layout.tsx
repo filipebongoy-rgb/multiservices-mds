@@ -282,7 +282,11 @@ export function MobileBottomNav() {
         { href: "/", label: "Accueil", Icon: House },
         { href: "/demande", label: "Réserver", Icon: Briefcase },
         { href: "/suivi", label: "Suivi", Icon: CalendarDays },
-        { href: "/profil", label: "Compte", Icon: UserRound },
+        {
+          href: user ? "/profil" : "/connexion",
+          label: "Compte",
+          Icon: UserRound,
+        },
       ];
   return (
     <nav className="mobile-bottom-nav" aria-label="Navigation mobile">

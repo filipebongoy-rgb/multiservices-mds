@@ -77,19 +77,21 @@ export default function Artisan() {
           className="panel stack"
           style={{ maxWidth: 640, margin: "48px auto" }}
         >
-          <span className="eyebrow">Espace privé MDS</span>
+          <span className="eyebrow">Accès réservé</span>
           <LockKeyhole size={30} aria-hidden="true" />
-          <h1 className="page-title">L’atelier de l’artisan</h1>
-          <p className="muted">Connectez-vous pour accéder à vos dossiers.</p>
+          <h1 className="page-title">Atelier de l’artisan</h1>
+          <p className="muted">
+            Cet espace est strictement réservé au propriétaire de MULTISERVICES
+            MDS.
+          </p>
           <LoginButton />
           <p
             className="muted small-text"
             style={{ textAlign: "center", margin: 0 }}
           >
-            Vous êtes une entreprise, mairie ou bailleur ?{" "}
-            <Link href="/professionnels">
-              Accéder à l’espace professionnel →
-            </Link>
+            Vous êtes client ? <Link href="/demande">Demander un devis</Link> ·{" "}
+            <Link href="/suivi">Suivre vos demandes</Link> ·{" "}
+            <Link href="/professionnels">Espace professionnel</Link>
           </p>
           <Link
             className="text-link"
@@ -134,37 +136,54 @@ function ArtisanActivation({
           administrateur.
         </p>
         <p className="muted">
-          Le code privé d’activation est réservé au propriétaire MDS.
+          Cet espace est réservé au propriétaire de MULTISERVICES MDS. Si vous
+          êtes client ou professionnel, utilisez vos espaces dédiés :
         </p>
-        <form
-          className="stack"
-          onSubmit={e => {
-            e.preventDefault();
-            claim.mutate({ code: code.trim() });
-          }}
-        >
-          <Field label="Code privé d’activation">
-            <input
-              type="password"
-              value={code}
-              autoComplete="off"
-              pattern="[a-f0-9]{64}"
-              minLength={64}
-              maxLength={64}
-              title="Code privé de 64 caractères fourni au propriétaire MDS"
-              required
-              onChange={e => setCode(e.target.value)}
-            />
-          </Field>
-          <ErrorNotice error={claim.error} />
-          <ActionButton
-            type="submit"
-            className="primary"
-            disabled={claim.isPending || !code.trim()}
+        <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
+          <Link href="/demande" className="btn primary">
+            Espace particulier →
+          </Link>
+          <Link href="/professionnels" className="btn secondary">
+            Espace professionnel →
+          </Link>
+        </div>
+        <details style={{ marginTop: 12 }}>
+          <summary
+            style={{ cursor: "pointer", fontSize: 13, color: "#6e6a64" }}
           >
-            {claim.isPending ? "Vérification…" : "Activer mon accès artisan"}
-          </ActionButton>
-        </form>
+            Vous êtes le propriétaire ? Activer votre accès artisan
+          </summary>
+          <form
+            className="stack"
+            style={{ marginTop: 12 }}
+            onSubmit={e => {
+              e.preventDefault();
+              claim.mutate({ code: code.trim() });
+            }}
+          >
+            <Field label="Code privé d’activation">
+              <input
+                type="password"
+                value={code}
+                autoComplete="off"
+                pattern="[a-f0-9]{64}"
+                minLength={64}
+                maxLength={64}
+                title="Code privé de 64 caractères fourni au propriétaire MDS"
+                required
+                onChange={e => setCode(e.target.value)}
+              />
+            </Field>
+            <ErrorNotice error={claim.error} />
+            <ActionButton
+              type="submit"
+              className="primary"
+              disabled={claim.isPending || !code.trim()}
+            >
+              {claim.isPending ? "Vérification…" : "Activer mon accès artisan"}
+            </ActionButton>
+          </form>
+        </details>
         <Link className="text-link" href="/">
           Revenir à l’accueil
         </Link>

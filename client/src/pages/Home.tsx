@@ -268,17 +268,6 @@ export default function Home() {
           <ArrowRight size={18} aria-hidden="true" />
         </Link>
       </section>
-
-      {/* Entrée artisan discrète — aucun risque de confusion avec l'espace pro */}
-      <section className="simple-home-artisan" aria-label="Espace artisan">
-        <Link href="/artisan" className="home-artisan-link">
-          <strong>Accès réservé : vous êtes l’artisan MDS ?</strong>
-          <span>
-            Accéder à votre atelier : demandes, planning, interventions.
-          </span>
-          <ArrowRight size={18} aria-hidden="true" />
-        </Link>
-      </section>
     </main>
   );
 }

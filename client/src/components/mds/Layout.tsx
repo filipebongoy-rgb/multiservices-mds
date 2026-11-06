@@ -74,16 +74,27 @@ export function Header() {
           type="button"
           className="simple-nav-link"
           aria-label={
-            privateWorkspace ? "Ouvrir mon compte" : "Choisir un espace"
+            isAdmin ? "Compte artisan" : user ? "Mon compte" : "Menu du site"
           }
         >
-          {privateWorkspace ? "Mon compte" : "Espaces"}
+          {isAdmin
+            ? "Artisan"
+            : user
+              ? user.name
+                ? user.name.split(" ")[0]
+                : "Mon compte"
+              : "Menu"}
           <ChevronDown size={16} aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="simple-space-menu">
         {isAdmin ? (
           <>
+            <DropdownMenuItem asChild>
+              <Link href="/artisan" className="simple-artisan-item">
+                Atelier artisan
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/">Voir le site public</Link>
             </DropdownMenuItem>
@@ -93,26 +104,20 @@ export function Header() {
             <DropdownMenuItem asChild>
               <Link href="/prestations">Catalogue prestations</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/artisan" className="simple-artisan-item">
-                Espace artisan
-              </Link>
-            </DropdownMenuItem>
           </>
         ) : (
           <>
             <DropdownMenuItem asChild>
-              <Link
-                href="/artisan"
-                className={
-                  user?.role === "admin" ? "simple-artisan-item" : undefined
-                }
-              >
-                Espace artisan
-              </Link>
+              <Link href="/demande">Demander un devis (particulier)</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/professionnels">Professionnel</Link>
+              <Link href="/professionnels">Espace professionnel</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/prestations">Catalogue des prestations</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/suivi">Suivi de mes demandes</Link>
             </DropdownMenuItem>
           </>
         )}
@@ -262,14 +267,19 @@ export function MobileBottomNav() {
   )
     return null;
   const isAdmin = user?.role === "admin";
-  const items = [
-    { href: "/", label: "Accueil", Icon: House },
-    { href: "/suivi", label: "Mes demandes", Icon: CalendarDays },
-    { href: "/professionnels", label: "Contrats", Icon: Briefcase },
-    isAdmin
-      ? { href: "/artisan", label: "Artisan", Icon: Wrench }
-      : { href: "/profil", label: "Mon espace", Icon: UserRound },
-  ];
+  const items = isAdmin
+    ? [
+        { href: "/artisan", label: "Atelier", Icon: Wrench },
+        { href: "/", label: "Site public", Icon: House },
+        { href: "/suivi", label: "Demandes", Icon: CalendarDays },
+        { href: "/profil", label: "Profil", Icon: UserRound },
+      ]
+    : [
+        { href: "/", label: "Accueil", Icon: House },
+        { href: "/demande", label: "Réserver", Icon: Briefcase },
+        { href: "/suivi", label: "Suivi", Icon: CalendarDays },
+        { href: "/profil", label: "Compte", Icon: UserRound },
+      ];
   return (
     <nav className="mobile-bottom-nav" aria-label="Navigation mobile">
       {items.map(({ href, label, Icon }) => {

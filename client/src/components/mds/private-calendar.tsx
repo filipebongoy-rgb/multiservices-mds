@@ -1,7 +1,13 @@
 import { useState } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { z } from "zod";
-import { ChevronLeft, ChevronRight, Plus, Settings2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Settings2,
+  Trash2,
+} from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { calendarSettingsSchema } from "@shared/operations";
 import { dateTime } from "@shared/mds";
@@ -79,8 +85,18 @@ export function ArtisanCalendar({ onOpen }: { onOpen: (id: number) => void }) {
     retry: false,
     refetchInterval: 30_000,
   });
+  const deleteAppt = trpc.mds.calendar.deleteAppointment.useMutation({
+    onSuccess: () => void query.refetch(),
+  });
+  const cleanCompleted =
+    trpc.mds.calendar.cleanCompletedAppointments.useMutation({
+      onSuccess: () => void query.refetch(),
+    });
   const [selectedDate, setSelectedDate] = useState(() => dayKey(new Date()));
   const [view, setView] = useState<"day" | "week">("week");
+  const [statusFilter, setStatusFilter] = useState<
+    "upcoming" | "all" | "completed"
+  >("upcoming");
   const first = view === "week" ? monday(selectedDate) : selectedDate;
   const days = Array.from({ length: view === "week" ? 7 : 1 }, (_, i) =>
     shiftDay(first, i)
@@ -171,11 +187,75 @@ export function ArtisanCalendar({ onOpen }: { onOpen: (id: number) => void }) {
                 style={{ minHeight: 44 }}
               />
             </Field>
+            <div
+              className="row"
+              style={{
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 8,
+                alignItems: "center",
+              }}
+            >
+              <div
+                className="row"
+                role="group"
+                aria-label="Filtrer les rendez-vous"
+                style={{ flexWrap: "wrap", gap: 6 }}
+              >
+                <ActionButton
+                  aria-pressed={statusFilter === "upcoming"}
+                  className={
+                    statusFilter === "upcoming" ? "primary" : "secondary"
+                  }
+                  onClick={() => setStatusFilter("upcoming")}
+                >
+                  À venir
+                </ActionButton>
+                <ActionButton
+                  aria-pressed={statusFilter === "all"}
+                  className={statusFilter === "all" ? "primary" : "secondary"}
+                  onClick={() => setStatusFilter("all")}
+                >
+                  Tous
+                </ActionButton>
+                <ActionButton
+                  aria-pressed={statusFilter === "completed"}
+                  className={
+                    statusFilter === "completed" ? "primary" : "secondary"
+                  }
+                  onClick={() => setStatusFilter("completed")}
+                >
+                  Terminés
+                </ActionButton>
+              </div>
+              {query.data.appointments.some(a => a.status === "completed") && (
+                <ActionButton
+                  className="destructive"
+                  disabled={cleanCompleted.isPending}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Supprimer tous les rendez-vous terminés du planning ? L'historique des interventions reste conservé."
+                      )
+                    )
+                      cleanCompleted.mutate();
+                  }}
+                >
+                  Nettoyer les rendez-vous terminés
+                </ActionButton>
+              )}
+            </div>
             <div aria-live="polite" className="stack">
               {days.map(day => {
-                const appointments = query.data.appointments.filter(
-                  a => dayKey(a.startAt) === day
-                );
+                const appointments = query.data.appointments
+                  .filter(a => dayKey(a.startAt) === day)
+                  .filter(a => {
+                    if (statusFilter === "upcoming")
+                      return a.status !== "completed";
+                    if (statusFilter === "completed")
+                      return a.status === "completed";
+                    return true;
+                  });
                 return (
                   <section
                     key={day}
@@ -228,6 +308,21 @@ export function ArtisanCalendar({ onOpen }: { onOpen: (id: number) => void }) {
                         </div>
                         <ActionButton onClick={() => onOpen(a.requestId)}>
                           Ouvrir le dossier
+                        </ActionButton>
+                        <ActionButton
+                          className="destructive"
+                          aria-label="Supprimer ce rendez-vous du planning"
+                          disabled={deleteAppt.isPending}
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                "Supprimer ce rendez-vous du planning ?"
+                              )
+                            )
+                              deleteAppt.mutate({ id: a.id });
+                          }}
+                        >
+                          <Trash2 size={16} aria-hidden="true" />
                         </ActionButton>
                       </div>
                     ))}

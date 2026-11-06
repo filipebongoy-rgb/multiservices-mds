@@ -192,3 +192,17 @@ Le trajet suit désormais `Démarrer le trajet` → position réellement autoris
 - **Bandeau d'intervention** : `requests.mine` filtré strictement par propriété/appartenance (`listClientScoped`) pour que le bandeau « commande en cours » de l'accueil ne s'affiche plus pour l'artisan administrateur avec tous les dossiers système.
 - **Débordement mobile** : `html, body { overflow-x: hidden }`, cartes pro/artisan en largeur fluide sans `white-space: nowrap` — plus aucun contenu coupé sur petit écran, fin du « obligé de décaler pour voir ».
 - **Vérifications** : 297/297 tests (13 fichiers), `pnpm check` OK, `pnpm build` OK, 10 routes HTTP 200.
+
+## Nettoyage du planning et séparation stricte des rôles dans les menus (2026-11-06)
+
+**Problème** : l'artisan devait pouvoir supprimer les rendez-vous terminés ou inutiles de son planning, et tout semblait « mélangé » car les visiteurs voyaient l'espace artisan dans les menus comme un menu public accessible à tous.
+
+**Corrections** :
+1. **Planning artisan nettoyable** : mutation backend `calendar.deleteAppointment` (suppression d'un rendez-vous par son propriétaire, journalisée) + `calendar.cleanCompletedAppointments` (nettoyage en masse des rendez-vous terminés). Dans la vue planning : filtre de statut (« À venir » par défaut, « Tous », « Terminés »), bouton rouge de suppression par rendez-vous avec confirmation, bouton « Nettoyer les rendez-vous terminés ».
+2. **Menus strictement séparés par rôle** :
+   - Header dropdown non-admin : seulement « Demander un devis », « Espace professionnel », « Catalogue des prestations », « Suivi de mes demandes », « Mon profil » — aucun lien vers l'espace artisan.
+   - Dropdown admin uniquement : « Atelier artisan », « Voir le site public », « Espace professionnel », « Catalogue prestations », « Mon profil ».
+   - Mobile bottom nav : clients `[Accueil, Réserver, Suivi, Compte]` / admin `[Atelier, Site public, Demandes, Profil]`.
+   - Carte artisan retirée du contenu public de la page d'accueil (le propriétaire conserve le lien discret « Accès artisan » dans le footer).
+   - Écran de verrouillage de `/artisan` reformulé : « Accès réservé — Atelier de l'artisan », explicitement réservé au propriétaire avec passerelles vers les espaces clients. Formulaire d'activation replié dans un panneau pour ne pas perturber les visiteurs.
+3. **Tests** : 302 tests passent (13 fichiers), incluant les assertions de non-exposition de l'artisan dans les menus publics, l'adaptation de la nav mobile par rôle et le nettoyage du planning.

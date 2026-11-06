@@ -508,4 +508,29 @@ describe("concurrence sérialisée et propositions non réservées", () => {
     });
     expect((await query({ date: "2030-01-08" })).slots).toEqual([]);
   });
+  it("l'artisan peut supprimer un rendez-vous du planning (protection rôle et audit)", async () => {
+    db.put(s.appointments, [appointment("08:30", "09:00", { id: 1 })]);
+    await expect(caller(user(2)).deleteAppointment({ id: 1 })).rejects.toThrow(
+      /artisan MDS/i
+    );
+    await expect(
+      caller(user(1, "admin")).deleteAppointment({ id: 1 })
+    ).resolves.toEqual({ success: true });
+    expect(db.rows(s.appointments)).toHaveLength(0);
+    expect(
+      db.rows(s.audit).some(a => a.action === "calendar.appointment.delete")
+    ).toBe(true);
+  });
+  it("le nettoyage supprime tous les rendez-vous terminés en conservant les non-terminés", async () => {
+    db.put(s.appointments, [
+      appointment("08:30", "09:00", { id: 1, status: "completed" }),
+      appointment("09:00", "09:30", { id: 2, status: "confirmed" }),
+      appointment("09:30", "10:00", { id: 3, status: "completed" }),
+    ]);
+    await expect(
+      caller(user(1, "admin")).cleanCompletedAppointments()
+    ).resolves.toEqual({ deleted: 2 });
+    expect(db.rows(s.appointments)).toHaveLength(1);
+    expect(db.rows(s.appointments)[0].id).toBe(2);
+  });
 });

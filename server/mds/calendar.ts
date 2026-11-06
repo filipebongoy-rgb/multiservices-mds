@@ -464,6 +464,51 @@ export const calendarRouter = router({
       return { success: true as const };
     });
   }),
+  deleteAppointment: artisan
+    .input(identifier)
+    .mutation(async ({ input, ctx }) => {
+      const db = await dbRequired();
+      return db.transaction(async tx => {
+        await principal(tx, true);
+        await requireArtisan(tx, ctx.user);
+        const [row] = await tx
+          .select({ id: s.appointments.id })
+          .from(s.appointments)
+          .where(eq(s.appointments.id, input.id));
+        if (!row) fail("Rendez-vous introuvable.", "NOT_FOUND");
+        await tx.delete(s.appointments).where(eq(s.appointments.id, input.id));
+        await recordAudit(
+          tx,
+          ctx.user.id,
+          "calendar.appointment.delete",
+          "appointment",
+          row.id
+        );
+        return { success: true as const };
+      });
+    }),
+  cleanCompletedAppointments: artisan.mutation(async ({ ctx }) => {
+    const db = await dbRequired();
+    return db.transaction(async tx => {
+      await principal(tx, true);
+      await requireArtisan(tx, ctx.user);
+      const rows = await tx
+        .select({ id: s.appointments.id })
+        .from(s.appointments)
+        .where(eq(s.appointments.status, "completed"));
+      for (const r of rows) {
+        await tx.delete(s.appointments).where(eq(s.appointments.id, r.id));
+        await recordAudit(
+          tx,
+          ctx.user.id,
+          "calendar.appointment.clean_completed",
+          "appointment",
+          r.id
+        );
+      }
+      return { deleted: rows.length };
+    });
+  }),
   slots: procedure.input(slotsInput).query(async ({ input }) => {
     const db = await dbRequired();
     const row = await principal(db),

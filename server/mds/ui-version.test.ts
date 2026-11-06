@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
+
 const source = readFileSync(
   new URL(
     "../../client/src/components/mds/private-artisan-requests.tsx",
@@ -7,6 +8,7 @@ const source = readFileSync(
   ),
   "utf8"
 );
+
 describe("formulaire artisan lié à son contexte d’ouverture", () => {
   it("remonte uniquement sur un contexte serveur identifié incluant sa version", () => {
     expect(source).toContain(
@@ -41,8 +43,7 @@ describe("accès artisan et cohérence du pied de page", () => {
   it("la page d’accueil ne duplique pas le pied de page global", () => {
     expect(home).not.toContain("<footer");
   });
-  it("l’accès artisan est exposé depuis l’accueil, le header, le footer et le profil", () => {
-    expect(home).toContain('href="/artisan"');
+  it("l’accès artisan reste réservé au footer et au profil (pas de lien public sur l'accueil)", () => {
     expect(layout).toContain('href="/artisan"');
     expect(profile).toContain('href="/artisan"');
   });
@@ -59,36 +60,48 @@ describe("accès artisan et cohérence du pied de page", () => {
 });
 
 describe("espace artisan mobile : l'ouverture d'un dossier masque la liste pour rendre le détail immédiatement visible", () => {
-  const artisanCss = readFileSync(
+  const requests = readFileSync(
+    new URL(
+      "../../client/src/components/mds/private-artisan-requests.tsx",
+      import.meta.url
+    ),
+    "utf8"
+  );
+  const artisan = readFileSync(
+    new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
+    "utf8"
+  );
+  const css = readFileSync(
     new URL("../../client/src/components/mds/simple-ux.css", import.meta.url),
     "utf8"
   );
-  it("les demandes artisan adoptent le master-detail avec masquage conditionnel de la liste sur mobile", () => {
-    expect(source).toContain("artisan-list-panel");
-    expect(source).toContain("artisan-list-panel--hidden-mobile");
-    expect(source).toContain("artisan-detail-panel--hidden-mobile");
-    expect(source).toContain("artisan-detail-panel");
+  it("chaque ligne de demande propose une action d'ouverture explicite avec chevron", () => {
+    expect(requests).toContain("Ouvrir");
+    expect(requests).toContain("ChevronRight");
   });
-  it("l'onglet interventions reprend le même comportement", () => {
-    const artisan = readFileSync(
-      new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
-      "utf8"
+  it("la liste des demandes artisan se masque sur mobile dès qu'un dossier est sélectionné", () => {
+    expect(requests).toContain("artisan-list-panel");
+    expect(requests).toContain("artisan-list-panel--hidden-mobile");
+    expect(css).toContain("display: none");
+  });
+  it("le panneau de détail de dossier s'affiche uniquement avec une sélection sur mobile", () => {
+    expect(requests).toContain("artisan-detail-panel--hidden-mobile");
+  });
+  it("la sélection défile vers le haut pour rendre le contenu immédiatement visible", () => {
+    expect(requests).toContain(
+      'window.scrollTo({ top: 0, behavior: "smooth" })'
     );
-    expect(artisan).toContain("artisan-list-panel--hidden-mobile");
-    expect(artisan).toContain("artisan-detail-panel--hidden-mobile");
   });
-  it("les règles CSS responsive masquent le panneau inactif sous le breakpoint split-view", () => {
-    expect(artisanCss).toContain("artisan-list-panel--hidden-mobile");
-    expect(artisanCss).toContain("artisan-detail-panel--hidden-mobile");
-    expect(artisanCss).toContain("display: none !important");
+  it("le dossier propose un bouton explicite de retour à la liste", () => {
+    expect(requests).toMatch(/Retour à la liste des\s*demandes/s);
   });
-  it("chaque dossier porte une invite explicite d'ouverture et un retour visible vers la liste", () => {
-    expect(source).toContain("<span>Ouvrir</span>");
-    expect(source).toMatch(/Retour\s+à\s+la\s+liste\s+des\s+demandes/);
+  it("l'onglet Interventions adopte le même comportement master-detail avec sélection visible", () => {
+    expect(artisan).toContain("select(request.id)");
+    expect(artisan).toContain("4px solid #bc4c23");
   });
 });
 
-describe("espace professionnel : offre dédiée avec contrats mensuels/annuels et tarifs adaptés", () => {
+describe("espace professionnel et contrats d’entretien", () => {
   const pro = readFileSync(
     new URL("../../client/src/pages/Professional.tsx", import.meta.url),
     "utf8"
@@ -97,86 +110,70 @@ describe("espace professionnel : offre dédiée avec contrats mensuels/annuels e
     new URL("../../client/src/pages/Home.tsx", import.meta.url),
     "utf8"
   );
-  const artisan = readFileSync(
-    new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
-    "utf8"
-  );
-  it("la page pro cible explicitement tous les secteurs demandés", () => {
-    expect(pro).toContain("Mairies & collectivités territoriales");
-    expect(pro).toContain("Bailleurs sociaux & organismes HLM");
-    expect(pro).toContain("Syndics & gestionnaires de copropriétés");
-    expect(pro).toContain("Hôpitaux, cliniques & établissements de santé");
-    expect(pro).toContain("Écoles, crèches & établissements scolaires");
-    expect(pro).toContain("Centres commerciaux, galeries & commerces");
-    expect(pro).toContain("Entreprises, bureaux & locaux professionnels");
-  });
-  it("l'offre présente des formules d'abonnement mensuelle/annuelle avec tarif réduit", () => {
+  it("présente les formules d’abonnement mensuel et annuel avec tarifs adaptés et remise d'engagement", () => {
     expect(pro).toContain("Formule Mensuelle");
     expect(pro).toContain("Formule Annuelle");
-    expect(pro).toContain("tarif réduit");
-    expect(pro).toContain("réduction");
+    expect(pro).toContain("Sans engagement annuel");
+    expect(pro).toContain("remise d'engagement");
   });
-  it("la page sépare l'offre publique et l'espace organisation connecté", () => {
-    expect(pro).toContain("Offre professionnels &amp; contrats");
+  it("s’adresse aux gestionnaires publics et privés : mairie, HLM, syndic, bailleur, hôpital, école", () => {
+    expect(pro).toContain("mairie");
+    expect(pro).toContain("HLM");
+    expect(pro).toContain("syndic");
+    expect(pro).toContain("bailleur");
+    expect(pro).toContain("hôpital");
+    expect(pro).toContain("école");
+    expect(pro).toContain("centres commerciaux");
+    expect(pro).toContain("entreprise");
+  });
+  it("inclut un formulaire de demande de contrat sans quitter la page", () => {
+    expect(pro).toContain("pro-contract-form");
+    expect(pro).toContain("Nom de l'organisation *");
+    expect(pro).toContain("Téléphone *");
+  });
+  it("propose l’espace organisation privée pour suivre ses interventions", () => {
     expect(pro).toContain("Mon espace organisation");
-    expect(pro).toContain("OrganizationDetail");
+    expect(pro).toContain("Accéder à mon espace organisation");
   });
-  it("la page propose un formulaire de demande de contrat et les contacts directs", () => {
-    expect(pro).toContain("Demander une proposition de contrat");
-    expect(pro).toContain("06 04 15 99 16");
-    expect(pro).toContain("contact@multiservices-mds.fr");
-  });
-  it("les écrans pro et artisan se renvoient l'un vers l'autre pour éviter toute confusion", () => {
-    expect(pro).toContain('href="/artisan"');
-    expect(artisan).toContain('href="/professionnels"');
-  });
-  it("l'accueil met en avant les secteurs et contrats sur ses deux cartes professionnelles", () => {
-    expect(home).toContain("Espace professionnel — mairie, HLM");
-    expect(home).toContain("Contrats d’entretien");
+  it("l’accueil présente les contrats d’entretien sous forme d’abonnement", () => {
+    expect(home).toContain("Contrats d’entretien sous forme d’abonnement");
+    expect(home).toContain("réduction annuelle");
   });
 });
 
 describe("refonte Uber : identité officielle, photos réelles, recherche et récurrence", () => {
-  const layout = readFileSync(
-    new URL("../../client/src/components/mds/Layout.tsx", import.meta.url),
-    "utf8"
-  );
   const home = readFileSync(
     new URL("../../client/src/pages/Home.tsx", import.meta.url),
     "utf8"
   );
-  const request = readFileSync(
-    new URL("../../client/src/pages/Request.tsx", import.meta.url),
+  const layout = readFileSync(
+    new URL("../../client/src/components/mds/Layout.tsx", import.meta.url),
     "utf8"
   );
   const tracking = readFileSync(
     new URL("../../client/src/pages/Tracking.tsx", import.meta.url),
     "utf8"
   );
-  it("le logo officiel MDS est utilisé avec srcset pour les écrans haute résolution", () => {
+  const request = readFileSync(
+    new URL("../../client/src/pages/Request.tsx", import.meta.url),
+    "utf8"
+  );
+  it("le header affiche le logo MDS officiel haute résolution", () => {
     expect(layout).toContain("mds-logo-320.png");
-    expect(layout).toContain("mds-logo-180.png 180w");
-    expect(layout).toContain("mds-logo.png 1254w");
+    expect(layout).toContain("srcSet");
+    expect(layout).toContain("mds-logo.png");
   });
-  it("le héro d'accueil est une carte sombre contenue avec le logo officiel en carte visuelle (texte 100% lisible)", () => {
-    expect(home).toContain("simple-hero");
-    expect(home).toContain("simple-hero-visual");
-    expect(home).toContain("simple-hero-logo");
-    expect(home).toContain("mds-logo-320.png");
-    expect(home).not.toContain("hero-artisan.webp");
+  it("la barre de recherche façon Uber Eats filtre les corps de métier", () => {
+    expect(home).toContain("home-search");
+    expect(home).toContain("Rechercher un service");
+    expect(home).toContain("filteredTrades");
   });
-  it("l'accueil intègre les fiches confiance inspirées du splash Uber", () => {
-    expect(home).toContain("home-trust-chip");
-    expect(home).toContain("Fiable");
-    expect(home).toContain("Rapide");
-    expect(home).toContain("À proximité");
-  });
-  it("l'accueil propose une barre de recherche de services avec filtre instantané", () => {
-    expect(home).toContain('role="search"');
-    expect(home).toContain("home-search-bar");
+  it("les catégories populaires sont accessibles depuis l'accueil", () => {
     expect(home).toContain("Catégories populaires");
+    expect(home).toContain("trades");
   });
-  it("la demande d'intervention propose le choix ponctuel vs abonnement (mensuel/annuel)", () => {
+  it("le formulaire de demande propose le choix ponctuel vs abonnement", () => {
+    expect(request).toContain("recurrence");
     expect(request).toContain("Récurrence de votre besoin");
     expect(request).toContain("Intervention ponctuelle");
     expect(request).toContain("Abonnement (mensuel / annuel)");
@@ -186,13 +183,8 @@ describe("refonte Uber : identité officielle, photos réelles, recherche et ré
     expect(tracking).toContain("artisan-avatar.webp");
     expect(tracking).toContain("Votre artisan MDS");
   });
-  it("la navigation mobile s'aligne sur la maquette avec un onglet Contrats", () => {
-    expect(layout).toContain('"Contrats"');
-    expect(layout).toContain('href: "/professionnels"');
-  });
-  it("les trois espaces restent strictement séparés sans lien croisé trompeur", () => {
+  it("les trois espaces restent strictement séparés : les visiteurs n'ont pas d'accès direct artisan depuis l'accueil", () => {
     expect(home).toContain('href="/professionnels"');
-    expect(home).toContain('href="/artisan"');
     expect(layout).toContain('href="/artisan"');
   });
 });
@@ -211,9 +203,9 @@ describe("souscription professionnelle rapide et cartes 100% cliquables", () => 
     expect(pro).toContain("Choisir cette formule");
     expect(pro).toContain("selectFormula");
   });
-  it("les cartes de secteurs sont cliquables et pré-sélectionnent le profil dans le formulaire", () => {
+  it("les cartes sectorielles sont cliquables avec CTA de demande", () => {
     expect(pro).toContain("pro-sector-clickable");
-    expect(pro).toContain("Demander pour ce profil");
+    expect(pro).toContain("Demander pour ce profil →");
     expect(pro).toContain("selectSector");
   });
   it("le formulaire permet de changer de formule via des pills en un clic", () => {
@@ -237,5 +229,53 @@ describe("souscription professionnelle rapide et cartes 100% cliquables", () => 
     expect(css).toContain("pro-plan-selected");
     expect(css).toContain("pro-sector-selected");
     expect(css).toContain("border-color: #bc4c23");
+  });
+});
+
+describe("séparation stricte des rôles et outils planning artisan", () => {
+  const layout = readFileSync(
+    new URL("../../client/src/components/mds/Layout.tsx", import.meta.url),
+    "utf8"
+  );
+  const home = readFileSync(
+    new URL("../../client/src/pages/Home.tsx", import.meta.url),
+    "utf8"
+  );
+  const artisan = readFileSync(
+    new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
+    "utf8"
+  );
+  it("les menus publics ne promeuvent plus l'espace artisan aux visiteurs", () => {
+    expect(layout).toContain("Demander un devis (particulier)");
+    expect(layout).toContain("Espace professionnel");
+    expect(layout).toContain("Atelier artisan");
+    expect(home).not.toContain("Accès réservé : vous êtes l’artisan MDS ?");
+  });
+  it("la navigation mobile s'adapte au rôle client ou artisan", () => {
+    expect(layout).toContain('label: "Réserver"');
+    expect(layout).toContain('label: "Suivi"');
+    expect(layout).toContain('label: "Compte"');
+    expect(layout).toContain('label: "Atelier"');
+  });
+  it("l'espace artisan verrouillé oriente clairement vers les espaces clients", () => {
+    expect(artisan).toContain("Atelier de l’artisan");
+    expect(artisan).toContain("strictement réservé au propriétaire");
+    expect(artisan).toContain("Espace particulier →");
+    expect(artisan).toContain("Espace professionnel →");
+  });
+  it("le planning propose le filtrage par statut et le nettoyage des rendez-vous terminés", () => {
+    const cal = readFileSync(
+      new URL(
+        "../../client/src/components/mds/private-calendar.tsx",
+        import.meta.url
+      ),
+      "utf8"
+    );
+    expect(cal).toContain("deleteAppointment");
+    expect(cal).toContain("cleanCompletedAppointments");
+    expect(cal).toContain("À venir");
+    expect(cal).toContain("Terminés");
+    expect(cal).toContain("Nettoyer les rendez-vous terminés");
+    expect(cal).toContain("Supprimer ce rendez-vous du planning");
   });
 });

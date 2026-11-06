@@ -158,9 +158,12 @@ describe("refonte Uber : identité officielle, photos réelles, recherche et ré
     expect(layout).toContain("mds-logo-180.png 180w");
     expect(layout).toContain("mds-logo.png 1254w");
   });
-  it("la photo du héro d'accueil est une photo réelle avec srcset et lazy/eager correct", () => {
-    expect(home).toContain("hero-artisan.webp");
-    expect(home).toContain("hero-artisan-700.webp");
+  it("le héro d'accueil est une carte sombre contenue avec le logo officiel en carte visuelle (texte 100% lisible)", () => {
+    expect(home).toContain("simple-hero");
+    expect(home).toContain("simple-hero-visual");
+    expect(home).toContain("simple-hero-logo");
+    expect(home).toContain("mds-logo-320.png");
+    expect(home).not.toContain("hero-artisan.webp");
   });
   it("l'accueil intègre les fiches confiance inspirées du splash Uber", () => {
     expect(home).toContain("home-trust-chip");

@@ -53,16 +53,9 @@ export default function Home() {
     <main id="main-content" className="simple-home page-shell">
       <ActiveRequestBanner />
 
-      {/* Hero inspiré Uber Eats : photo réelle, bandeau orange, CTA clair */}
+      {/* Hero inspiré de la maquette : carte sombre, texte blanc net, CTA orange */}
       <section className="simple-home-intro" aria-labelledby="home-title">
-        <figure className="simple-hero">
-          <img
-            src="/hero-artisan.webp"
-            srcSet="/hero-artisan-700.webp 700w, /hero-artisan.webp 1387w"
-            sizes="(max-width: 700px) 100vw, 600px"
-            alt="Photo réelle d'un artisan MDS en intervention"
-            loading="eager"
-          />
+        <div className="simple-hero">
           <div className="simple-hero-copy">
             <span
               className="eyebrow"
@@ -103,7 +96,18 @@ export default function Home() {
               </Link>
             </div>
           </div>
-        </figure>
+          <div className="simple-hero-visual" aria-hidden="true">
+            <img
+              className="simple-hero-logo"
+              src="/mds-logo-320.png"
+              srcSet="/mds-logo-180.png 180w, /mds-logo-320.png 320w"
+              sizes="180px"
+              alt="MULTISERVICES MDS"
+              loading="lazy"
+            />
+            <span className="simple-hero-seal">Artisan de confiance</span>
+          </div>
+        </div>
 
         {/* Adresse de référence façon Uber Eats */}
         <div className="home-location-bar">

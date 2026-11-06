@@ -844,4 +844,14 @@ describe("création de demande libre (sans prestation du catalogue)", () => {
       })
     ).rejects.toThrow(/Choisissez un créneau/);
   });
+
+  it("requests.mine exige une authentification", async () => {
+    await expect(caller().requests.mine()).rejects.toThrow(/Connectez-vous/i);
+  });
+  it("requests.mine renvoie uniquement les demandes propres de l'utilisateur, jamais tous les dossiers (même pour l'admin)", async () => {
+    // Admin sees only their own requests, not request(1) owned by userId: 2
+    expect(await caller(user(1, "admin")).requests.mine()).toHaveLength(0);
+    expect(await caller(user(2)).requests.mine()).toHaveLength(1);
+    expect(await caller(user(3)).requests.mine()).toHaveLength(0);
+  });
 });

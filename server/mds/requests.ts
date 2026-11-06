@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID } from "node:crypto";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { router } from "../_core/trpc";
 import {
@@ -21,6 +21,7 @@ import {
   event,
   hash,
   membership,
+  orgIds,
   principal,
   procedure,
   publicRequest,
@@ -114,6 +115,24 @@ export async function listScoped(user: s.User) {
       .select()
       .from(s.requests)
       .where(await requestFilter(tx, user))
+      .orderBy(s.requests.createdAt)
+      .for("update");
+    for (const row of rows) await expire(tx, row);
+    return rows.reverse().map(publicRequest);
+  });
+}
+export async function listClientScoped(user: s.User) {
+  const db = await dbRequired();
+  return db.transaction(async tx => {
+    const ids = await orgIds(tx, user.id);
+    const filter = or(
+      and(isNull(s.requests.organizationId), eq(s.requests.userId, user.id)),
+      ids.length ? inArray(s.requests.organizationId, ids) : sql`false`
+    )!;
+    const rows = await tx
+      .select()
+      .from(s.requests)
+      .where(filter)
       .orderBy(s.requests.createdAt)
       .for("update");
     for (const row of rows) await expire(tx, row);
@@ -415,7 +434,7 @@ export const requestsRouter = router({
   detail: authenticated
     .input(z.object({ id: z.number().int().positive() }))
     .query(({ input, ctx }) => readDetail(input, ctx.user)),
-  mine: authenticated.query(({ ctx }) => listScoped(ctx.user)),
+  mine: authenticated.query(({ ctx }) => listClientScoped(ctx.user)),
   list: artisan.query(({ ctx }) => listScoped(ctx.user)),
   artisanAction: artisan
     .input(artisanActionSchema)

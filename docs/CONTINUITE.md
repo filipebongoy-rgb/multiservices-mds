@@ -185,3 +185,10 @@ Le trajet suit désormais `Démarrer le trajet` → position réellement autoris
 - **Secteurs cliquables** : les 7 cartes secteurs pré-remplissent le type d'organisation et défilent vers le formulaire.
 - **Souscription express 1 minute** : 4 champs obligatoires seulement (nom, organisation, téléphone, email), sélecteur de formule en pills, détails facultatifs repliés, message de confirmation avec référence et contact direct.
 - **Vérifications** : 295/295 tests (13 fichiers), `pnpm check` OK, `pnpm build` OK, routes HTTP 200.
+
+## Correctifs : héro lisible sans fond d'image, bandeau réservé aux clients, zéro débordement mobile (2026-11-06)
+
+- **Héro accueil** : suppression du fond d'image illisible (prospectus tarifaire) au profit d'une **carte sombre contenue** (anthracite, texte blanc net, zéro artefact IA) avec le **logo officiel MDS** en carte visuelle sur desktop ; typographie 100 % lisible sur mobile et desktop.
+- **Bandeau d'intervention** : `requests.mine` filtré strictement par propriété/appartenance (`listClientScoped`) pour que le bandeau « commande en cours » de l'accueil ne s'affiche plus pour l'artisan administrateur avec tous les dossiers système.
+- **Débordement mobile** : `html, body { overflow-x: hidden }`, cartes pro/artisan en largeur fluide sans `white-space: nowrap` — plus aucun contenu coupé sur petit écran, fin du « obligé de décaler pour voir ».
+- **Vérifications** : 297/297 tests (13 fichiers), `pnpm check` OK, `pnpm build` OK, 10 routes HTTP 200.

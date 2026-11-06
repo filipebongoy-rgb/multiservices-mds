@@ -310,6 +310,32 @@ export const requests = mysqlTable(
   ]
 );
 export type MdsRequest = typeof requests.$inferSelect;
+export const waitlistEntries = mysqlTable(
+  "mds_waitlist_entries",
+  {
+    id: id(),
+    requestId: int("requestId")
+      .notNull()
+      .unique()
+      .references(() => requests.id),
+    reason: mysqlEnum("reason", ["no_slot", "client_preference", "capacity"])
+      .notNull()
+      .default("no_slot"),
+    status: mysqlEnum("status", [
+      "waiting",
+      "contacted",
+      "converted",
+      "cancelled",
+    ])
+      .notNull()
+      .default("waiting"),
+    requestedStart: timestamp("requestedStart"),
+    contactedAt: timestamp("contactedAt"),
+    convertedAt: timestamp("convertedAt"),
+    ...dates(),
+  },
+  t => [index("waitlist_status_created").on(t.status, t.createdAt)]
+);
 export const events = mysqlTable("mds_events", {
   id: id(),
   requestId: int("requestId")

@@ -3577,3 +3577,35 @@ input[type="checkbox"] {
     display: inline;
   }
 }
+
+.waitlist-choice {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 15px 16px;
+  border: 1px solid #d8d4ce;
+  border-radius: 12px;
+  background: #fff;
+  color: #172b3a;
+  text-align: left;
+  cursor: pointer;
+}
+
+.waitlist-choice span {
+  display: grid;
+  gap: 4px;
+}
+
+.waitlist-choice small {
+  color: #5e6870;
+  line-height: 1.35;
+}
+
+.waitlist-choice.is-selected {
+  border-color: #bc4c23;
+  background: #fff4ed;
+  box-shadow: 0 0 0 2px rgba(188, 76, 35, 0.12);
+}

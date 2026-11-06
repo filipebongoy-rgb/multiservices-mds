@@ -99,3 +99,10 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 - [x] L’espace artisan trie les demandes urgentes nécessitant une action avant les autres et affiche un badge « Urgent » visible.
 - [x] Le parcours rappelle qu’un niveau urgent ne confirme jamais automatiquement une intervention : la capacité réelle, la zone et le planning doivent être vérifiés par MDS.
 - [ ] Restent à développer : liste d’attente persistante, messagerie client-MDS, règles administrables de surcharge et questions complémentaires ciblées.
+
+
+## Liste d’attente persistante — 6 novembre 2026
+- [x] Si aucun créneau ne convient, le client peut choisir « Rejoindre la liste d’attente » dans l’étape Disponibilités. La demande est envoyée sans date inventée et sans réservation.
+- [x] Une table `mds_waitlist_entries` conserve la demande, le motif, le statut d’attente et le créneau souhaité éventuel. La migration additive a été appliquée.
+- [x] L’artisan voit les clients en attente dans l’onglet Demandes ; un clic ouvre le dossier correspondant. Le texte rappelle qu’un créneau réellement libre doit être proposé.
+- [ ] Restent à développer : changement de statut contacté/converti depuis l’interface, notifications de disponibilité et règles de priorité administrables.

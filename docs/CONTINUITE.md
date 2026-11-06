@@ -224,3 +224,7 @@ Les mots de passe sont traités par scrypt avec sel aléatoire et comparaison r�
 
 ## Qualification opérationnelle initiale — 6 novembre 2026
 Le parcours de demande permet désormais de préciser un niveau d’urgence standard ou urgent. Cette information reste dans le dossier existant, sans migration destructive ni confirmation automatique. Dans l’espace artisan, les demandes urgentes encore à traiter remontent en premier et portent un badge explicite. Le message rappelle que l’urgence ne remplace pas la vérification réelle de la zone, du planning et de la capacité de l’artisan. La liste d’attente persistante, la messagerie client-MDS et les règles de surcharge restent ouvertes pour une prochaine étape.
+
+
+## Liste d’attente persistante — 6 novembre 2026
+Le formulaire propose maintenant une liste d’attente explicite lorsque le client ne peut pas retenir un créneau. Le serveur conserve une entrée relationnelle liée au dossier, sans date ou rendez-vous fictif. L’artisan retrouve ces demandes dans l’onglet Demandes et peut ouvrir le dossier pour proposer ultérieurement un créneau réellement contrôlé par le calendrier. Les transitions contactée/convertie et les notifications de disponibilité restent à compléter.

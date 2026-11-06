@@ -332,7 +332,12 @@ export default function Request() {
       )
         return "Complétez l’adresse, le code postal et la ville.";
     }
-    if (step === 3 && slots.data?.configured && !selectedSlot)
+    if (
+      step === 3 &&
+      slots.data?.configured &&
+      !selectedSlot &&
+      draft.answers.__waitlist !== "true"
+    )
       return "Choisissez l’un des créneaux disponibles avant de continuer.";
     if (step === 3 && draft.date) {
       if (
@@ -988,7 +993,12 @@ export default function Request() {
                       aria-checked={checked}
                       className={checked ? "selected" : ""}
                       onClick={() => {
-                        setDraft(d => ({ ...d, date: day.value, time: "" }));
+                        setDraft(d => ({
+                          ...d,
+                          date: day.value,
+                          time: "",
+                          answers: { ...d.answers, __waitlist: "false" },
+                        }));
                         setSelectedSlot("");
                       }}
                     >
@@ -1029,6 +1039,7 @@ export default function Request() {
                               ...d,
                               date: local[0],
                               time: local[1],
+                              answers: { ...d.answers, __waitlist: "false" },
                             }));
                             setSelectedSlot(slot.startAt);
                             setConsent(false);
@@ -1057,7 +1068,11 @@ export default function Request() {
                       type="time"
                       value={draft.time}
                       onChange={e => {
-                        set("time", e.target.value);
+                        setDraft(d => ({
+                          ...d,
+                          time: e.target.value,
+                          answers: { ...d.answers, __waitlist: "false" },
+                        }));
                         setSelectedSlot("");
                       }}
                     />
@@ -1070,6 +1085,29 @@ export default function Request() {
                   » et MDS vous proposera un horaire.
                 </p>
               )}
+              <button
+                type="button"
+                className={`waitlist-choice${draft.answers.__waitlist === "true" ? " is-selected" : ""}`}
+                onClick={() => {
+                  setDraft(d => ({
+                    ...d,
+                    date: "",
+                    time: "",
+                    answers: { ...d.answers, __waitlist: "true" },
+                  }));
+                  setSelectedSlot("");
+                  setConsent(false);
+                }}
+                aria-pressed={draft.answers.__waitlist === "true"}
+              >
+                <span>
+                  <strong>Aucun créneau ne convient ?</strong>
+                  <small>
+                    Rejoindre la liste d’attente, sans réserver de faux créneau.
+                  </small>
+                </span>
+                <ChevronRight size={20} aria-hidden="true" />
+              </button>
               <p className="muted small-text">
                 {slots.data?.configured
                   ? "Le créneau choisi est contrôlé une dernière fois par MDS avant confirmation."

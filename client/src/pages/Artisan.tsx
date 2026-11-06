@@ -200,6 +200,10 @@ function ArtisanWorkspace() {
     retry: false,
     refetchInterval: 30_000,
   });
+  const waitlistQuery = trpc.mds.requests.waitlist.useQuery(undefined, {
+    retry: false,
+    refetchInterval: 30_000,
+  });
   const catalogQuery = trpc.mds.catalog.list.useQuery(
     { includeInactive: true },
     { retry: false }
@@ -234,6 +238,7 @@ function ArtisanWorkspace() {
   };
   const refreshRequests = () => {
     void requestsQuery.refetch();
+    void waitlistQuery.refetch();
     void appointmentsQuery.refetch();
     void utils.mds.calendar.get.invalidate();
   };
@@ -316,6 +321,48 @@ function ArtisanWorkspace() {
                 </button>
               </div>
             </div>
+            {waitlistQuery.data && waitlistQuery.data.length > 0 && (
+              <section
+                className="panel artisan-waitlist-panel"
+                aria-labelledby="waitlist-title"
+              >
+                <div
+                  className="row"
+                  style={{ justifyContent: "space-between", gap: 12 }}
+                >
+                  <div>
+                    <span className="eyebrow">À recontacter</span>
+                    <h2 id="waitlist-title" style={{ margin: "4px 0 0" }}>
+                      Liste d’attente ({waitlistQuery.data.length})
+                    </h2>
+                  </div>
+                  <Clock size={22} aria-hidden="true" />
+                </div>
+                <p className="muted" style={{ marginBottom: 0 }}>
+                  Ces clients n’ont pas de rendez-vous confirmé. Proposez
+                  uniquement un créneau réellement libre.
+                </p>
+                <div className="stack" style={{ marginTop: 12 }}>
+                  {waitlistQuery.data.map(entry => (
+                    <button
+                      key={entry.id}
+                      type="button"
+                      className="data-row"
+                      onClick={() => openRequest(entry.requestId)}
+                      style={{ textAlign: "left", width: "100%" }}
+                    >
+                      <strong>{entry.name}</strong>
+                      <span>
+                        {entry.serviceName || "Demande libre"} · {entry.city}
+                      </span>
+                      <small>
+                        {entry.reference} · {dateTime(entry.createdAt)}
+                      </small>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
             <ArtisanRequests
               requests={requests.filter(
                 request =>

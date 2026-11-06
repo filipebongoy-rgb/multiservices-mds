@@ -265,21 +265,26 @@ export const requestsRouter = router({
           input.serviceId,
           input.postcode
         );
+        const waitlistRequested = input.answers.__waitlist === "true";
         if (p.calendarEnabled && service) {
-          if (!input.desiredStart)
-            fail(
-              "Choisissez un créneau disponible avant d’envoyer la demande.",
-              "CONFLICT"
+          if (waitlistRequested) {
+            // Une entrée d’attente ne réserve jamais un créneau.
+          } else {
+            if (!input.desiredStart)
+              fail(
+                "Choisissez un créneau disponible avant d’envoyer la demande.",
+                "CONFLICT"
+              );
+            const startAt = new Date(input.desiredStart);
+            await checkCalendar(
+              tx,
+              {
+                startAt,
+                endAt: new Date(+startAt + service.durationMinutes * 60_000),
+              },
+              { id: 0, postcode: input.postcode }
             );
-          const startAt = new Date(input.desiredStart);
-          await checkCalendar(
-            tx,
-            {
-              startAt,
-              endAt: new Date(+startAt + service.durationMinutes * 60_000),
-            },
-            { id: 0, postcode: input.postcode }
-          );
+          }
         }
         if (service && input.pricingFingerprint !== fingerprint)
           fail(
@@ -331,6 +336,15 @@ export const requestsRouter = router({
           })
           .$returningId();
         const r = await load(tx, created);
+        if (waitlistRequested) {
+          await tx.insert(s.waitlistEntries).values({
+            requestId: r.id,
+            reason: input.desiredStart ? "client_preference" : "no_slot",
+            requestedStart: input.desiredStart
+              ? new Date(input.desiredStart)
+              : null,
+          });
+        }
         await event(
           tx,
           r,
@@ -344,7 +358,9 @@ export const requestsRouter = router({
           r,
           r.status,
           service
-            ? "La demande attend l’analyse et l’accord de MDS."
+            ? waitlistRequested
+              ? "La demande est inscrite sur la liste d’attente ; MDS vous recontactera lorsqu’un créneau réel sera disponible."
+              : "La demande attend l’analyse et l’accord de MDS."
             : "Demande libre conservée pour analyse par MDS.",
           "system",
           null
@@ -436,6 +452,27 @@ export const requestsRouter = router({
     .query(({ input, ctx }) => readDetail(input, ctx.user)),
   mine: authenticated.query(({ ctx }) => listClientScoped(ctx.user)),
   list: artisan.query(({ ctx }) => listScoped(ctx.user)),
+  waitlist: artisan.query(async ({ ctx }) => {
+    const db = await dbRequired();
+    await principal(db);
+    const rows = await db
+      .select({ entry: s.waitlistEntries, request: s.requests })
+      .from(s.waitlistEntries)
+      .innerJoin(s.requests, eq(s.waitlistEntries.requestId, s.requests.id))
+      .where(eq(s.waitlistEntries.status, "waiting"))
+      .orderBy(s.waitlistEntries.createdAt);
+    return rows.map(({ entry, request }) => ({
+      id: entry.id,
+      requestId: request.id,
+      reference: request.reference,
+      name: request.name,
+      city: request.city,
+      serviceName: request.serviceName,
+      reason: entry.reason,
+      requestedStart: entry.requestedStart,
+      createdAt: entry.createdAt,
+    }));
+  }),
   artisanAction: artisan
     .input(artisanActionSchema)
     .mutation(async ({ input, ctx }) => {

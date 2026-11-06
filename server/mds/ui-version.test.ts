@@ -329,4 +329,24 @@ describe("qualification opérationnelle initiale", () => {
     expect(artisan).toContain("urgencyLabel");
     expect(artisan).toContain('urgency === "urgent"');
   });
+  it("propose une liste d’attente persistante sans rendez-vous fictif", () => {
+    const request = readFileSync(
+      new URL("../../client/src/pages/Request.tsx", import.meta.url),
+      "utf8"
+    );
+    const artisan = readFileSync(
+      new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
+      "utf8"
+    );
+    const server = readFileSync(
+      new URL("./requests.ts", import.meta.url),
+      "utf8"
+    );
+    expect(request).toContain("Rejoindre la liste d’attente");
+    expect(request).toContain("__waitlist");
+    expect(artisan).toContain("Liste d’attente");
+    expect(artisan).toContain("requests.waitlist");
+    expect(server).toContain("waitlistEntries");
+    expect(server).toContain("waitlistRequested");
+  });
 });

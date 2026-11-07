@@ -491,3 +491,22 @@ describe("carte publique de zone d’intervention", () => {
     expect(map).toContain("30");
   });
 });
+
+describe("analyse artisan des demandes clients", () => {
+  it("expose des indicateurs d’aide à la décision sans suivi de navigation caché", () => {
+    const artisan = readFileSync(
+      new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
+      "utf8"
+    );
+    const admin = readFileSync(
+      new URL("../../server/mds/admin.ts", import.meta.url),
+      "utf8"
+    );
+    expect(artisan).toContain("Comprendre les demandes clients");
+    expect(artisan).toContain("Clients récurrents");
+    expect(artisan).toContain("surveillance des pages consultées");
+    expect(admin).toContain("serviceDemand");
+    expect(admin).toContain("conversionRate");
+    expect(admin).toContain("recentActivity");
+  });
+});

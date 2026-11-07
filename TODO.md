@@ -186,3 +186,10 @@ Le catalogue MDS comprend maintenant quatre prestations actives dans le métier 
 ## Passe globale interface et interactions — 8 novembre 2026
 
 Toutes les pages bénéficient maintenant d’une finition commune non destructive : entrée progressive courte, transitions de boutons, retour tactile, survols discrets des cartes et focus visibles. Les animations sont désactivées automatiquement avec `prefers-reduced-motion`, et le mobile ne reçoit pas d’effet de déplacement au survol. Les styles historiques des parcours client, professionnel et artisan sont conservés.
+
+
+## Analyse artisan des demandes clients
+
+- [x] L’espace artisan expose une analyse fondée sur les actions réellement effectuées : demandes acceptées, demandes terminées, demandes abandonnées, clients récurrents, services les plus demandés, zones les plus demandées et dernières demandes ouvrables depuis l’activité.
+- [x] Les taux sont calculés côté serveur à partir des statuts réels des dossiers ; aucune statistique fictive, aucun suivi des frappes, aucune lecture cachée des pages consultées et aucune décision automatique de profilage n’est ajoutée.
+- [ ] Prévoir ultérieurement une politique RGPD détaillée de conservation, d’export et d’effacement des données analytiques avant toute mesure de navigation facultative.

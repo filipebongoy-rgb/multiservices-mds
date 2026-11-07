@@ -10,8 +10,16 @@ export const adminRouter = router({
     // 1. Stats
     const allRequests = await db
       .select({
+        id: s.requests.id,
+        clientId: s.requests.clientId,
         status: s.requests.status,
         email: s.requests.email,
+        name: s.requests.name,
+        serviceName: s.requests.serviceName,
+        problemType: s.requests.problemType,
+        city: s.requests.city,
+        createdAt: s.requests.createdAt,
+        lastAction: s.requests.lastAction,
       })
       .from(s.requests);
     const succeedPayments = await db
@@ -132,6 +140,69 @@ export const adminRouter = router({
       .from(s.settings)
       .limit(1);
 
+    const countBy = (values: (string | null | undefined)[]) => {
+      const counts = new Map<string, number>();
+      for (const value of values) {
+        const label = value?.trim() || "Non renseigné";
+        counts.set(label, (counts.get(label) || 0) + 1);
+      }
+      return [...counts.entries()]
+        .map(([label, count]) => ({ label, count }))
+        .sort(
+          (a, b) =>
+            b.count - a.count || a.label.localeCompare(b.label, "fr")
+        )
+        .slice(0, 8);
+    };
+    const requestsByClient = new Map<number, number>();
+    for (const request of allRequests) {
+      requestsByClient.set(
+        request.clientId,
+        (requestsByClient.get(request.clientId) || 0) + 1
+      );
+    }
+    const completedStatuses = ["completed", "invoiced", "paid", "closed"];
+    const abandonedStatuses = [
+      "refused",
+      "cancelled",
+      "expired",
+      "quote_refused",
+    ];
+    const acceptedStatuses = [
+      "accepted_mds",
+      "proposed_slot",
+      "needs_information",
+      "awaiting_client",
+      "confirmed",
+      "planned",
+      "en_route",
+      "in_progress",
+      ...completedStatuses,
+    ];
+    const totalRequests = allRequests.length;
+    const completedRequests = allRequests.filter(request =>
+      completedStatuses.includes(request.status)
+    ).length;
+    const acceptedRequests = allRequests.filter(request =>
+      acceptedStatuses.includes(request.status)
+    ).length;
+    const repeatClients = [...requestsByClient.values()].filter(
+      count => count > 1
+    ).length;
+    const recentClientActivity = [...allRequests]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, 12)
+      .map(request => ({
+        id: request.id,
+        clientId: request.clientId,
+        name: request.name,
+        serviceName: request.serviceName || request.problemType,
+        city: request.city,
+        status: request.status,
+        lastAction: request.lastAction,
+        createdAt: request.createdAt,
+      }));
+
     return {
       stats: {
         totalRequests: allRequests.length,
@@ -161,6 +232,26 @@ export const adminRouter = router({
       contactPhone: settingsRow?.contactPhone || "",
       contactEmail: settingsRow?.contactEmail || "",
       calendarEnabled: Boolean(settingsRow?.calendarEnabled),
+      clientInsights: {
+        totalRequests,
+        acceptedRequests,
+        completedRequests,
+        abandonedRequests: allRequests.filter(request =>
+          abandonedStatuses.includes(request.status)
+        ).length,
+        conversionRate: totalRequests
+          ? Math.round((completedRequests / totalRequests) * 100)
+          : 0,
+        acceptanceRate: totalRequests
+          ? Math.round((acceptedRequests / totalRequests) * 100)
+          : 0,
+        repeatClients,
+        serviceDemand: countBy(
+          allRequests.map(request => request.serviceName || request.problemType)
+        ),
+        cityDemand: countBy(allRequests.map(request => request.city)),
+        recentActivity: recentClientActivity,
+      },
     };
   }),
 });

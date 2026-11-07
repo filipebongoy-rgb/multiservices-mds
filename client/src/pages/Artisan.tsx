@@ -918,8 +918,99 @@ function AdminActivity({
               <span className="small-text muted">Clients uniques</span>
               <strong style={{ fontSize: 28 }}>{stats?.clients ?? 0}</strong>
               <small className="muted">par e-mail distinct</small>
-            </article>
-          </div>
+              </article>
+            </div>
+          <article className="panel stack" aria-labelledby="client-insights-title">
+            <div>
+              <strong id="client-insights-title">Comprendre les demandes clients</strong>
+              <p className="muted small-text" style={{ margin: "4px 0 0" }}>
+                Analyse basée sur les demandes réellement envoyées, pas sur une
+                surveillance des pages consultées.
+              </p>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(145px, 1fr))",
+                gap: 10,
+              }}
+            >
+              <div className="data-row stack">
+                <span className="small-text muted">Demandes acceptées</span>
+                <strong>{d.clientInsights.acceptanceRate}%</strong>
+                <small className="muted">
+                  {d.clientInsights.acceptedRequests} dossier{d.clientInsights.acceptedRequests !== 1 ? "s" : ""}
+                </small>
+              </div>
+              <div className="data-row stack">
+                <span className="small-text muted">Terminées</span>
+                <strong>{d.clientInsights.conversionRate}%</strong>
+                <small className="muted">
+                  {d.clientInsights.completedRequests} sur {d.clientInsights.totalRequests}
+                </small>
+              </div>
+              <div className="data-row stack">
+                <span className="small-text muted">Clients récurrents</span>
+                <strong>{d.clientInsights.repeatClients}</strong>
+                <small className="muted">plus d’une demande</small>
+              </div>
+              <div className="data-row stack">
+                <span className="small-text muted">Abandonnées</span>
+                <strong>{d.clientInsights.abandonedRequests}</strong>
+                <small className="muted">refus, annulations ou expiration</small>
+              </div>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: 16,
+              }}
+            >
+              <div className="stack" style={{ gap: 8 }}>
+                <strong>Services les plus demandés</strong>
+                {d.clientInsights.serviceDemand.length ? d.clientInsights.serviceDemand.map(item => (
+                  <div className="row" key={item.label} style={{ justifyContent: "space-between", gap: 12 }}>
+                    <span className="small-text">{item.label}</span><strong>{item.count}</strong>
+                  </div>
+                )) : <span className="muted small-text">Pas encore de données.</span>}
+              </div>
+              <div className="stack" style={{ gap: 8 }}>
+                <strong>Zones les plus demandées</strong>
+                {d.clientInsights.cityDemand.length ? d.clientInsights.cityDemand.map(item => (
+                  <div className="row" key={item.label} style={{ justifyContent: "space-between", gap: 12 }}>
+                    <span className="small-text">{item.label}</span><strong>{item.count}</strong>
+                  </div>
+                )) : <span className="muted small-text">Pas encore de données.</span>}
+              </div>
+            </div>
+            <details>
+              <summary style={{ cursor: "pointer" }}>Dernières actions réelles</summary>
+              <div className="stack" style={{ paddingTop: 10, gap: 8 }}>
+                {d.clientInsights.recentActivity.length ? d.clientInsights.recentActivity.map(item => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="data-row row"
+                    style={{ width: "100%", justifyContent: "space-between", textAlign: "left", gap: 10 }}
+                    onClick={() => onSelectRequest(item.id)}
+                  >
+                    <span>
+                      <strong>{item.name}</strong>
+                      <small className="muted" style={{ display: "block" }}>
+                        {item.serviceName} · {item.city} · {dateTime(item.createdAt)}
+                      </small>
+                    </span>
+                    <StatusBadge status={item.status} />
+                  </button>
+                )) : <span className="muted small-text">Aucune activité client enregistrée.</span>}
+              </div>
+            </details>
+            <p className="muted small-text" style={{ margin: 0 }}>
+              Utilisez ces tendances pour ajuster vos prestations, vos créneaux
+              et vos messages, sans profilage individuel ni décision automatique.
+            </p>
+          </article>
           <article
             className="panel stack"
             style={{ background: "#fcf6f2", borderColor: "#e4cbbd" }}

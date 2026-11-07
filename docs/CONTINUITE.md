@@ -297,3 +297,8 @@ Ajout de quatre prestations actives au catalogue partagé et à la base MDS : In
 ## Passe globale interface et interactions — 8 novembre 2026
 
 Ajout d’une couche d’interaction commune sur toutes les pages MDS : animations d’entrée très courtes, transitions de boutons et cartes, retour tactile, focus accessibles et prise en compte de la réduction des mouvements. Aucune feuille CSS historique n’a été remplacée. Validation : check TypeScript, 316 tests et build production réussis.
+
+
+## Analyse d’activité client — 8 novembre 2026
+
+L’onglet Activité de l’espace artisan comprend maintenant un tableau d’aide à la décision calculé côté serveur depuis les demandes réellement envoyées : taux d’acceptation, taux de dossiers terminés, abandons, clients récurrents, services demandés, villes demandées et dernières actions ouvrables. Cette vue ne collecte pas les pages consultées, les frappes clavier, les mouvements de souris ni une navigation cachée. Toute future mesure de navigation devra être facultative, documentée, limitée et soumise à une politique RGPD de conservation, export et effacement.

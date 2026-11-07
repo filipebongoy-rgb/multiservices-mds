@@ -3893,3 +3893,71 @@ input[type="checkbox"] {
 @media (prefers-reduced-motion: reduce) {
   .simple-trade, .home-access-card, .artisan-tab, .mobile-bottom-nav a, .pro-plan-card, .pro-sector-card { will-change: auto; transition: none !important; }
 }
+
+
+.service-area-map-card {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid #e1e3df;
+  border-radius: 14px;
+  background: #fff;
+}
+.service-area-map-heading,
+.service-area-map-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.service-area-map-heading {
+  justify-content: space-between;
+}
+.service-area-map-heading > div {
+  display: grid;
+  gap: 3px;
+}
+.service-area-map-heading strong { font-size: 17px; }
+.service-area-map-search {
+  min-height: 46px;
+  padding: 0 10px;
+  border: 1px solid #dfe3e1;
+  border-radius: 10px;
+  color: #5e6870;
+}
+.service-area-map-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #172b3a;
+}
+.service-area-map-canvas {
+  min-height: 280px;
+  overflow: hidden;
+  border-radius: 11px;
+  background: #e8ece9;
+}
+.service-area-map-message {
+  margin: 0;
+  color: #52606b;
+  font-size: 13px;
+}
+.service-area-map-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 16px;
+}
+.service-area-map-empty p { margin-top: 4px; }
+@media (max-width: 700px) {
+  .service-area-map-card { padding: 12px; }
+  .service-area-map-heading { align-items: flex-start; flex-direction: column; }
+  .service-area-map-heading .btn { width: 100%; }
+  .service-area-map-search { align-items: stretch; flex-wrap: wrap; padding: 8px; }
+  .service-area-map-search input { min-height: 38px; flex-basis: calc(100% - 32px); }
+  .service-area-map-search .btn { width: 100%; }
+  .service-area-map-canvas { min-height: 250px; }
+}

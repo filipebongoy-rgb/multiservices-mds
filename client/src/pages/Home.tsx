@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { trades } from "@shared/mds";
 import { ActiveRequestBanner } from "@/components/mds/ActiveRequestBanner";
+import { ServiceAreaMap } from "@/components/mds/ServiceAreaMap";
 
 const icons = [Droplets, Zap, Flame, Paintbrush, Wrench];
 
@@ -117,6 +118,8 @@ export default function Home() {
             jusqu’à 30 km
           </span>
         </div>
+
+        <ServiceAreaMap />
 
         {/* Barre de recherche de service */}
         <form className="home-search-bar" onSubmit={handleSearch} role="search">

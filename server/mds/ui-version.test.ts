@@ -478,3 +478,16 @@ describe("prestations VMC et sécurité incendie", () => {
     expect(shared).toContain("Entretien de détecteur de fumée");
   });
 });
+
+
+describe("carte publique de zone d’intervention", () => {
+  it("branche une carte interactive avec recherche et géolocalisation volontaire", () => {
+    const home = readFileSync(new URL("../../client/src/pages/Home.tsx", import.meta.url), "utf8");
+    const map = readFileSync(new URL("../../client/src/components/mds/ServiceAreaMap.tsx", import.meta.url), "utf8");
+    expect(home).toContain("ServiceAreaMap");
+    expect(map).toContain("mapboxgl.Map");
+    expect(map).toContain("api.mapbox.com/geocoding");
+    expect(map).toContain("navigator.geolocation");
+    expect(map).toContain("30");
+  });
+});

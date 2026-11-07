@@ -258,8 +258,9 @@ describe("séparation stricte des rôles et outils planning artisan", () => {
     expect(layout).toContain('label: "Atelier"');
   });
   it("l'espace artisan verrouillé oriente clairement vers les espaces clients", () => {
-    expect(artisan).toContain("Atelier de l’artisan");
-    expect(artisan).toContain("strictement réservé au propriétaire");
+    expect(artisan).toContain("Espace réservé à l’équipe MDS");
+    expect(artisan).toContain("Aucun code d’activation n’est demandé aux");
+    expect(artisan).not.toContain("Code privé d’activation");
     expect(artisan).toContain("Espace particulier →");
     expect(artisan).toContain("Espace professionnel →");
   });

@@ -268,9 +268,11 @@ export function Footer() {
         <nav aria-label="Informations légales">
           <Link href="/confidentialite">Confidentialité</Link>
           <Link href="/mentions-legales">Mentions légales</Link>
-          <Link href="/artisan" className="simple-footer-artisan">
-            Accès artisan
-          </Link>
+          {user?.role === "admin" && (
+            <Link href="/artisan" className="simple-footer-artisan">
+              Accès équipe MDS
+            </Link>
+          )}
         </nav>
       </div>
     </footer>

@@ -247,3 +247,8 @@ L’inscription locale demande désormais une adresse e-mail et la promotion des
 ## Espace compte complet — 7 novembre 2026
 
 La page Profil a été refondue en espace de compte mobile-first : modification du nom, e-mail, type particulier/professionnel, téléphone et adresse ; changement de mot de passe local avec vérification ; déconnexion visible ; suppression protégée par confirmation. La suppression anonymise le compte au lieu de casser les demandes, paiements et preuves liés à l’historique. Le dernier administrateur propriétaire reste protégé. Migration 0015 appliquée pour les coordonnées utilisateur. Validation : 308 tests, check TypeScript et build de production réussis.
+
+
+## Séparation client / équipe MDS — 7 novembre 2026
+
+L’analyse de la vidéo a confirmé un défaut de navigation : un compte client voyait le vocabulaire et la structure artisan, puis était bloqué par une vérification serveur. Le parcours est maintenant séparé. Les clients n’ont plus de lien public vers l’atelier, ne voient plus le formulaire d’activation ni les menus de gestion, et sont orientés vers Réserver, Suivi, Professionnels et Compte. Les administrateurs autorisés sont redirigés vers l’atelier après connexion et peuvent traiter les demandes ; la vérification d’action ne dépend plus uniquement de l’ancien propriétaire. Validation : check TypeScript, 70 tests ciblés et toutes les routes principales HTTP 200.

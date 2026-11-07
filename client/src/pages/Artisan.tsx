@@ -105,25 +105,10 @@ export default function Artisan() {
       </main>
     );
   if (auth.user.role !== "admin")
-    return (
-      <ArtisanActivation name={auth.user.name} onActivated={auth.refresh} />
-    );
+    return <ArtisanAccessDenied name={auth.user.name} />;
   return <ArtisanWorkspace />;
 }
-function ArtisanActivation({
-  name,
-  onActivated,
-}: {
-  name: string | null;
-  onActivated: () => unknown;
-}) {
-  const [code, setCode] = useState("");
-  const claim = trpc.mds.claimArtisan.useMutation({
-    onSuccess: () => {
-      setCode("");
-      void onActivated();
-    },
-  });
+function ArtisanAccessDenied({ name }: { name: string | null }) {
   return (
     <main className="page-shell">
       <section
@@ -131,14 +116,15 @@ function ArtisanActivation({
         style={{ maxWidth: 640, margin: "48px auto" }}
       >
         <span className="eyebrow">Accès réservé</span>
-        <h1 className="page-title">Activer l’espace artisan</h1>
+        <h1 className="page-title">Espace réservé à l’équipe MDS</h1>
         <p>
-          Vous êtes connecté{name ? ` en tant que ${name}` : ""}, sans accès
-          administrateur.
+          {name ? `Bonjour ${name}. ` : ""}Votre compte client ne donne pas
+          accès aux demandes, au planning ou aux règlements de l’artisan.
         </p>
         <p className="muted">
-          Cet espace est réservé au propriétaire de MULTISERVICES MDS. Si vous
-          êtes client ou professionnel, utilisez vos espaces dédiés :
+          Vous restez dans votre propre espace : vos demandes, votre suivi et
+          vos contrats professionnels. Aucun code d’activation n’est demandé aux
+          clients.
         </p>
         <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
           <Link href="/demande" className="btn primary">
@@ -148,43 +134,6 @@ function ArtisanActivation({
             Espace professionnel →
           </Link>
         </div>
-        <details style={{ marginTop: 12 }}>
-          <summary
-            style={{ cursor: "pointer", fontSize: 13, color: "#6e6a64" }}
-          >
-            Vous êtes le propriétaire ? Activer votre accès artisan
-          </summary>
-          <form
-            className="stack"
-            style={{ marginTop: 12 }}
-            onSubmit={e => {
-              e.preventDefault();
-              claim.mutate({ code: code.trim() });
-            }}
-          >
-            <Field label="Code privé d’activation">
-              <input
-                type="password"
-                value={code}
-                autoComplete="off"
-                pattern="[a-f0-9]{64}"
-                minLength={64}
-                maxLength={64}
-                title="Code privé de 64 caractères fourni au propriétaire MDS"
-                required
-                onChange={e => setCode(e.target.value)}
-              />
-            </Field>
-            <ErrorNotice error={claim.error} />
-            <ActionButton
-              type="submit"
-              className="primary"
-              disabled={claim.isPending || !code.trim()}
-            >
-              {claim.isPending ? "Vérification…" : "Activer mon accès artisan"}
-            </ActionButton>
-          </form>
-        </details>
         <Link className="text-link" href="/">
           Revenir à l’accueil
         </Link>

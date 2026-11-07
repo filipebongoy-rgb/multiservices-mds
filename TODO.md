@@ -127,3 +127,11 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 - [x] Une rubrique Sécurité permet de modifier le mot de passe des comptes locaux avec vérification de l’ancien mot de passe et hashage scrypt.
 - [x] La déconnexion est visible en haut de la page et fonctionne en un clic.
 - [x] La suppression du compte est protégée par la saisie exacte de « SUPPRIMER ». Elle anonymise les données personnelles, supprime les identifiants locaux et conserve uniquement les données nécessaires à l’historique légal. Le dernier administrateur propriétaire ne peut pas supprimer l’accès MDS depuis son profil.
+
+
+## Séparation stricte client / équipe MDS — 7 novembre 2026
+- [x] Un client connecté conserve uniquement sa navigation : Accueil, Réserver, Suivi et Compte. Les onglets Demandes, Planning, Interventions, Règlements et Activité ne lui sont pas présentés.
+- [x] La page `/artisan` ne montre plus de formulaire de code d’activation à un client connecté ; elle explique que l’accès est réservé à l’équipe et renvoie vers les espaces client ou professionnel.
+- [x] Le lien public « Accès artisan » a été retiré du footer des visiteurs et clients. Les administrateurs voient seulement « Accès équipe MDS ».
+- [x] Après connexion, un administrateur autorisé arrive directement dans l’atelier ; un client arrive dans son profil ou revient à la page demandée.
+- [x] Les actions de traitement des demandes ne vérifient plus uniquement l’ancien propriétaire : tout administrateur MDS autorisé peut réellement ouvrir et traiter les demandes.

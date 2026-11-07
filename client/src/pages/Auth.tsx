@@ -33,16 +33,20 @@ export default function Auth() {
   const returnTo = safeReturnTo(params.get("returnTo"));
   const utils = trpc.useUtils();
   const register = trpc.auth.registerLocal.useMutation({
-    onSuccess: async () => {
+    onSuccess: async user => {
       await utils.auth.me.invalidate();
-      setLocation(returnTo);
+      setLocation(
+        user.role === "admin" && returnTo === "/profil" ? "/artisan" : returnTo
+      );
     },
     onError: cause => setError(cause),
   });
   const login = trpc.auth.loginLocal.useMutation({
-    onSuccess: async () => {
+    onSuccess: async user => {
       await utils.auth.me.invalidate();
-      setLocation(returnTo);
+      setLocation(
+        user.role === "admin" && returnTo === "/profil" ? "/artisan" : returnTo
+      );
     },
     onError: cause => setError(cause),
   });

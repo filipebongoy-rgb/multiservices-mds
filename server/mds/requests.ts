@@ -474,7 +474,7 @@ export const requestsRouter = router({
       const db = await dbRequired();
       const result = await db.transaction(async tx => {
         const p = await principal(tx, true);
-        if (p.artisanUserId !== ctx.user.id)
+        if (ctx.user.role !== "admin")
           fail("Cet accès est réservé à l’artisan MDS.", "FORBIDDEN");
         const r = await load(tx, input);
         if (await expire(tx, r)) return { expired: true as const };

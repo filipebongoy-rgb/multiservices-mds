@@ -87,10 +87,10 @@ describe("espace artisan mobile : l'ouverture d'un dossier masque la liste pour 
   it("le panneau de détail de dossier s'affiche uniquement avec une sélection sur mobile", () => {
     expect(requests).toContain("artisan-detail-panel--hidden-mobile");
   });
-  it("la sélection défile vers le haut pour rendre le contenu immédiatement visible", () => {
-    expect(requests).toContain(
-      'window.scrollTo({ top: 0, behavior: "smooth" })'
-    );
+  it("la sélection ouvre directement le panneau détail et y défile sur mobile", () => {
+    expect(requests).toContain("detailRef");
+    expect(requests).toContain("scrollIntoView");
+    expect(requests).toContain('block: "start"');
   });
   it("le dossier propose un bouton explicite de retour à la liste", () => {
     expect(requests).toMatch(/Retour à la liste des\s*demandes/s);

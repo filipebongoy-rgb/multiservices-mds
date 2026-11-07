@@ -213,9 +213,6 @@ function ArtisanWorkspace() {
   const openRequest = (id: number) => {
     setSelectedId(id);
     setTab("requests");
-    try {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch {}
   };
   const refreshRequests = () => {
     void requestsQuery.refetch();

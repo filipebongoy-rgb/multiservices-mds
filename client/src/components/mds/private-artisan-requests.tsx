@@ -169,13 +169,17 @@ export function ArtisanRequests({
 }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const detailRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (selectedId === null) return;
+    const frame = window.requestAnimationFrame(() => {
+      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      detailRef.current?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [selectedId]);
   const select = (id: number | null) => {
     onSelect(id);
-    if (id !== null) {
-      try {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } catch {}
-    }
   };
   const filtered = requests
     .filter(
@@ -342,7 +346,9 @@ export function ArtisanRequests({
             className={`artisan-detail-panel${
               !selectedId ? " artisan-detail-panel--hidden-mobile" : ""
             }`}
-            style={{ minWidth: 0 }}
+            ref={detailRef}
+            tabIndex={selectedId ? -1 : undefined}
+            style={{ minWidth: 0, scrollMarginTop: 16 }}
           >
             {selectedId ? (
               <RequestDetail

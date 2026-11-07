@@ -1,5 +1,5 @@
 
 
-## Priorité d’accès aux services — 8 novembre 2026
+## Ouverture directe des dossiers — 8 novembre 2026
 
-La carte interactive de zone a été déplacée en bas de l’accueil. Le visiteur voit d’abord la demande de devis, la recherche de service, les accès Particulier/Professionnel et les catégories ; la carte reste disponible après les informations principales sans bloquer l’action prioritaire.
+Le bouton « Ouvrir le dossier » de l’espace artisan sélectionne désormais la demande puis fait défiler automatiquement vers le panneau détail avec `scrollIntoView({ block: "start" })`. Le précédent `scrollTo(0)` pouvait laisser le détail sous la zone d’action ; il a été supprimé. Le panneau reçoit le focus pour faciliter l’usage au clavier et sur mobile.

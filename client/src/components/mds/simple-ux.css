@@ -3409,6 +3409,20 @@ input[type="checkbox"] {
   .simple-header.is-request ~ .mobile-bottom-nav {
     display: none;
   }
+  .simple-header.is-request .header-inner {
+    min-height: 64px;
+    padding: 8px 16px;
+    overflow: hidden;
+  }
+  .simple-header.is-request .simple-request-title,
+  .simple-header.is-request .simple-auth-quick-action {
+    display: none;
+  }
+  .request-simple .page-title {
+    display: block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
   .simple-global-back {
     position: absolute;
     left: 14px;

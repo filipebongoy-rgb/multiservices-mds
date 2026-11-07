@@ -375,3 +375,17 @@ describe("qualification opérationnelle initiale", () => {
     expect(artisan).toContain("onOpen={openRequest}");
   });
 });
+
+describe("lisibilité mobile de la demande", () => {
+  it("sépare le retour, le header et le titre de contenu sur mobile", () => {
+    const css = readFileSync(
+      new URL("../../client/src/components/mds/simple-ux.css", import.meta.url),
+      "utf8"
+    );
+    expect(css).toContain(".simple-header.is-request .simple-request-title");
+    expect(css).toContain(
+      ".simple-header.is-request .simple-auth-quick-action"
+    );
+    expect(css).toContain(".request-simple .page-title");
+  });
+});

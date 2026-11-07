@@ -135,3 +135,9 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 - [x] Le lien public « Accès artisan » a été retiré du footer des visiteurs et clients. Les administrateurs voient seulement « Accès équipe MDS ».
 - [x] Après connexion, un administrateur autorisé arrive directement dans l’atelier ; un client arrive dans son profil ou revient à la page demandée.
 - [x] Les actions de traitement des demandes ne vérifient plus uniquement l’ancien propriétaire : tout administrateur MDS autorisé peut réellement ouvrir et traiter les demandes.
+
+
+## Inscription sécurisée — 7 novembre 2026
+- [x] L’adresse e-mail est obligatoire à la création du compte et doit respecter un format valide.
+- [x] Le mot de passe est obligatoire avec un minimum de 10 caractères.
+- [x] Le champ « Confirmer le mot de passe » est obligatoire ; l’interface bloque l’envoi si les deux valeurs diffèrent et le serveur vérifie aussi leur égalité.

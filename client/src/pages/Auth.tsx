@@ -25,6 +25,7 @@ export default function Auth() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [accountType, setAccountType] = useState<"particular" | "professional">(
     "particular"
   );
@@ -56,7 +57,14 @@ export default function Auth() {
     event.preventDefault();
     setError(null);
     if (mode === "register") {
-      register.mutate({ firstName, lastName, email, password, accountType });
+      register.mutate({
+        firstName,
+        lastName,
+        email,
+        password,
+        passwordConfirmation,
+        accountType,
+      });
     } else {
       login.mutate({ firstName, lastName, password });
     }
@@ -190,11 +198,44 @@ export default function Auth() {
               required
             />
           </Field>
+          {mode === "register" && (
+            <Field
+              label="Confirmer le mot de passe"
+              hint="Saisissez exactement le même mot de passe."
+            >
+              <input
+                type="password"
+                value={passwordConfirmation}
+                onChange={event => setPasswordConfirmation(event.target.value)}
+                autoComplete="new-password"
+                minLength={10}
+                maxLength={200}
+                required
+                aria-invalid={
+                  passwordConfirmation.length > 0 &&
+                  password !== passwordConfirmation
+                }
+              />
+            </Field>
+          )}
+          {mode === "register" &&
+            passwordConfirmation.length > 0 &&
+            password !== passwordConfirmation && (
+              <p className="error-message" role="alert">
+                Les deux mots de passe doivent être identiques.
+              </p>
+            )}
           <ErrorNotice error={error} />
           <button
             type="submit"
             className="btn primary auth-submit"
-            disabled={pending}
+            disabled={
+              pending ||
+              (mode === "register" &&
+                (!email.trim() ||
+                  password.length < 10 ||
+                  password !== passwordConfirmation))
+            }
           >
             {pending
               ? "Traitement…"

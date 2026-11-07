@@ -252,3 +252,8 @@ La page Profil a été refondue en espace de compte mobile-first : modification 
 ## Séparation client / équipe MDS — 7 novembre 2026
 
 L’analyse de la vidéo a confirmé un défaut de navigation : un compte client voyait le vocabulaire et la structure artisan, puis était bloqué par une vérification serveur. Le parcours est maintenant séparé. Les clients n’ont plus de lien public vers l’atelier, ne voient plus le formulaire d’activation ni les menus de gestion, et sont orientés vers Réserver, Suivi, Professionnels et Compte. Les administrateurs autorisés sont redirigés vers l’atelier après connexion et peuvent traiter les demandes ; la vérification d’action ne dépend plus uniquement de l’ancien propriétaire. Validation : check TypeScript, 70 tests ciblés et toutes les routes principales HTTP 200.
+
+
+## Inscription avec e-mail et confirmation — 7 novembre 2026
+
+L’inscription MDS exige maintenant une adresse e-mail valide, un mot de passe d’au moins 10 caractères et un second champ de confirmation. L’interface bloque immédiatement les valeurs différentes et le serveur applique une validation indépendante avant la création du compte. Validation : 71 tests ciblés, contrôle TypeScript et build de production réussis.

@@ -18,13 +18,19 @@ export const appRouter = router({
     me: publicProcedure.query(opts => opts.ctx.user),
     registerLocal: publicProcedure
       .input(
-        z.object({
-          firstName: z.string().trim().min(2).max(60),
-          lastName: z.string().trim().min(2).max(80),
-          email: z.string().trim().email().max(320),
-          password: z.string().min(10).max(200),
-          accountType: z.enum(["particular", "professional"]),
-        })
+        z
+          .object({
+            firstName: z.string().trim().min(2).max(60),
+            lastName: z.string().trim().min(2).max(80),
+            email: z.string().trim().email().max(320),
+            password: z.string().min(10).max(200),
+            passwordConfirmation: z.string().min(10).max(200),
+            accountType: z.enum(["particular", "professional"]),
+          })
+          .refine(input => input.password === input.passwordConfirmation, {
+            message: "Les deux mots de passe doivent être identiques.",
+            path: ["passwordConfirmation"],
+          })
       )
       .mutation(async ({ input, ctx }) =>
         registerLocalUser({ ...input, req: ctx.req, res: ctx.res })

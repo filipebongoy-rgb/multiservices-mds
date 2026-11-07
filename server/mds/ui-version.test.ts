@@ -290,6 +290,12 @@ describe("authentification MDS locale", () => {
     new URL("../../server/_core/local-auth.ts", import.meta.url),
     "utf8"
   );
+  it("impose un e-mail et une confirmation de mot de passe à l’inscription", () => {
+    expect(auth).toContain('label="Adresse e-mail"');
+    expect(auth).toContain('label="Confirmer le mot de passe"');
+    expect(auth).toContain("passwordConfirmation");
+    expect(auth).toContain("Les deux mots de passe doivent être identiques.");
+  });
   it("propose particulier ou professionnel sans exposer le rôle artisan", () => {
     expect(auth).toContain("Particulier");
     expect(auth).toContain("Professionnel");

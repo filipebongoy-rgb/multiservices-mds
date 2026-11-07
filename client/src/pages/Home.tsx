@@ -120,9 +120,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* La carte est la source unique de la zone et de la recherche d’adresse. */}
-        <ServiceAreaMap />
-
         {/* Barre de recherche de service */}
         <form className="home-search-bar" onSubmit={handleSearch} role="search">
           <Search size={20} color="#7a7872" aria-hidden="true" />
@@ -273,6 +270,9 @@ export default function Home() {
           <ArrowRight size={18} aria-hidden="true" />
         </Link>
       </section>
+
+      {/* La carte reste accessible en bas, après les actions prioritaires. */}
+      <ServiceAreaMap />
     </main>
   );
 }

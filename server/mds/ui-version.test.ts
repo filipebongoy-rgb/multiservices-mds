@@ -547,6 +547,18 @@ describe("accueil et actions de suivi", () => {
     expect(home).toContain("<ServiceAreaMap />");
     expect(home).not.toContain("home-location-bar");
   });
+  it("place la carte après les accès et le contenu principal de l’accueil", () => {
+    const home = readFileSync(
+      new URL("../../client/src/pages/Home.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(home.indexOf('href="/demande"')).toBeLessThan(
+      home.indexOf("<ServiceAreaMap />")
+    );
+    expect(home.indexOf('href="/professionnels"')).toBeLessThan(
+      home.indexOf("<ServiceAreaMap />")
+    );
+  });
   it("déclare explicitement les deux soumissions du suivi", () => {
     const tracking = readFileSync(
       new URL("../../client/src/pages/Tracking.tsx", import.meta.url),

@@ -1,5 +1,5 @@
 
 
-## Stabilisation UX et audit des actions — 8 novembre 2026
+## Priorité d’accès aux services — 8 novembre 2026
 
-Le doublon de texte de zone présent sur l’accueil a été retiré : `ServiceAreaMap` porte maintenant la zone Rennes + 30 km et la recherche d’adresse. Un audit des liens internes n’a trouvé aucun lien vide ni lien `#`. Les deux actions de soumission de la page de suivi ont un type HTML explicite. La suite de tests atteint 321 tests, le typage et le build sont propres ; le warning de taille Mapbox reste non bloquant.
+La carte interactive de zone a été déplacée en bas de l’accueil. Le visiteur voit d’abord la demande de devis, la recherche de service, les accès Particulier/Professionnel et les catégories ; la carte reste disponible après les informations principales sans bloquer l’action prioritaire.

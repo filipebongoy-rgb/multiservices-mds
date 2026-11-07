@@ -3877,3 +3877,19 @@ input[type="checkbox"] {
     width: 100%;
   }
 }
+
+
+/* Couche d’interaction commune : visible, rapide et sans effet artificiel. */
+.simple-trade, .home-access-card, .artisan-tab, .mobile-bottom-nav a, .pro-plan-card, .pro-sector-card {
+  will-change: transform;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+.simple-trade:hover, .home-access-card:hover, .artisan-tab:hover, .mobile-bottom-nav a:hover, .pro-plan-card:hover, .pro-sector-card:hover { transform: translateY(-2px); }
+.simple-trade:active, .home-access-card:active, .artisan-tab:active, .mobile-bottom-nav a:active, .pro-plan-card:active, .pro-sector-card:active { transform: translateY(0) scale(0.99); }
+.simple-trade:focus-visible, .home-access-card:focus-visible, .artisan-tab:focus-visible, .mobile-bottom-nav a:focus-visible, .pro-plan-card:focus-visible, .pro-sector-card:focus-visible { outline: 3px solid #bc4c23; outline-offset: 3px; }
+@media (max-width: 700px) {
+  .simple-trade:hover, .home-access-card:hover, .artisan-tab:hover, .mobile-bottom-nav a:hover, .pro-plan-card:hover, .pro-sector-card:hover { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .simple-trade, .home-access-card, .artisan-tab, .mobile-bottom-nav a, .pro-plan-card, .pro-sector-card { will-change: auto; transition: none !important; }
+}

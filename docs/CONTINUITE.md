@@ -292,3 +292,8 @@ Le chevauchement visible sur le parcours de demande provenait d’un titre prés
 ## Nouvelles prestations ventilation et sécurité — 8 novembre 2026
 
 Ajout de quatre prestations actives au catalogue partagé et à la base MDS : Installation de VMC, Entretien de VMC, Installation de détecteur de fumée et Entretien de détecteur de fumée. Les quatre prestations utilisent une tarification sur devis après analyse, avec durée indicative et zone d’intervention renseignées. Validation : 316 tests, TypeScript et build réussis ; présence active vérifiée en base.
+
+
+## Passe globale interface et interactions — 8 novembre 2026
+
+Ajout d’une couche d’interaction commune sur toutes les pages MDS : animations d’entrée très courtes, transitions de boutons et cartes, retour tactile, focus accessibles et prise en compte de la réduction des mouvements. Aucune feuille CSS historique n’a été remplacée. Validation : check TypeScript, 316 tests et build production réussis.

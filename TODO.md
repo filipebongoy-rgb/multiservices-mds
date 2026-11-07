@@ -181,3 +181,8 @@ Le header de la demande ne rend plus un second titre « Demande d’intervention
 ## Nouvelles prestations ventilation et sécurité — 8 novembre 2026
 
 Le catalogue MDS comprend maintenant quatre prestations actives dans le métier Électricité : installation de VMC, entretien de VMC, installation de détecteur de fumée et entretien de détecteur de fumée. Elles sont proposées sur devis après analyse, dans la zone Rennes et métropole jusqu’à 30 km selon l’adresse. Aucun prix ou créneau fictif n’est affiché.
+
+
+## Passe globale interface et interactions — 8 novembre 2026
+
+Toutes les pages bénéficient maintenant d’une finition commune non destructive : entrée progressive courte, transitions de boutons, retour tactile, survols discrets des cartes et focus visibles. Les animations sont désactivées automatiquement avec `prefers-reduced-motion`, et le mobile ne reçoit pas d’effet de déplacement au survol. Les styles historiques des parcours client, professionnel et artisan sont conservés.

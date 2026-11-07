@@ -2194,3 +2194,34 @@ label.btn:has(+ input:focus-visible) {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
+
+
+/* Finition globale MDS : mouvements courts, utiles et sans décoration excessive. */
+html { scroll-behavior: smooth; }
+.page-shell { animation: mds-page-enter 220ms ease-out both; }
+.btn, .text-link, button, a { -webkit-tap-highlight-color: transparent; }
+.btn {
+  transform: translateZ(0);
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.btn:hover:not(:disabled) { transform: translateY(-1px); }
+.btn:active:not(:disabled) { transform: translateY(0) scale(0.985); }
+.panel, .notice, .empty, .home-access-card, .simple-trade, .card, .data-row {
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease, background-color 160ms ease;
+}
+.panel:hover, .home-access-card:hover, .simple-trade:hover, .card:hover, .data-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(38, 42, 39, 0.08);
+}
+.notice[role="status"] svg { animation: mds-spin 900ms linear infinite; }
+@keyframes mds-page-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes mds-spin { to { transform: rotate(360deg); } }
+@media (max-width: 700px) {
+  .page-shell { animation-duration: 180ms; }
+  .panel:hover, .home-access-card:hover, .simple-trade:hover, .card:hover, .data-row:hover { transform: none; box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .page-shell, .notice[role="status"] svg { animation: none !important; }
+  .btn, .panel, .notice, .empty, .home-access-card, .simple-trade, .card, .data-row { transition: none !important; }
+}

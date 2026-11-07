@@ -48,8 +48,7 @@ export function Header() {
   const { user, logout } = useAuth();
   const isAdmin = user?.role === "admin";
   const [error, setError] = useState("");
-  const privateWorkspace =
-    !!user && ["/artisan", "/professionnels"].includes(location);
+  const privateWorkspace = !!user && location === "/artisan";
   const requestPage = location === "/demande";
 
   async function accountAction() {

@@ -388,4 +388,19 @@ describe("lisibilité mobile de la demande", () => {
     );
     expect(css).toContain(".request-simple .page-title");
   });
+  it("ne mélange pas l’espace professionnel client avec l’atelier artisan", () => {
+    const layout = readFileSync(
+      new URL("../../client/src/components/mds/Layout.tsx", import.meta.url),
+      "utf8"
+    );
+    const professional = readFileSync(
+      new URL("../../client/src/pages/Professional.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(layout).toContain(
+      'const privateWorkspace = !!user && location === "/artisan";'
+    );
+    expect(professional).toContain('auth.user?.role === "admin"');
+    expect(professional).toContain("Accéder à l’atelier");
+  });
 });

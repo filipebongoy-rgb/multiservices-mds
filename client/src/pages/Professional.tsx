@@ -226,12 +226,14 @@ export default function Professional() {
         </div>
       )}
 
-      <footer className="pro-footer-switch">
-        <p className="muted small-text">
-          Vous êtes l'artisan MDS ?{" "}
-          <Link href="/artisan">Accéder à votre atelier →</Link>
-        </p>
-      </footer>
+      {auth.user?.role === "admin" && (
+        <footer className="pro-footer-switch">
+          <p className="muted small-text">
+            Vous êtes l’équipe MDS ?{" "}
+            <Link href="/artisan">Accéder à l’atelier →</Link>
+          </p>
+        </footer>
+      )}
     </main>
   );
 }

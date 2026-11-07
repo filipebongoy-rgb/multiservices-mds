@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
   ArrowRight,
@@ -28,6 +28,16 @@ const icons = [Droplets, Zap, Flame, Paintbrush, Wrench];
 export default function Home() {
   const [, setLocation] = useLocation();
   const [query, setQuery] = useState("");
+  useEffect(() => {
+    void fetch("/api/site-visit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: "/" }),
+      keepalive: true,
+    }).catch(() => {
+      // Le compteur ne doit jamais bloquer l’accueil si le réseau est indisponible.
+    });
+  }, []);
   const normalized = query.trim().toLowerCase();
   const filteredTrades = normalized
     ? trades.filter(

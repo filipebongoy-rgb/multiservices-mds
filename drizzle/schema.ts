@@ -11,6 +11,7 @@ import type {
 } from "../shared/pricing";
 import {
   int,
+  date,
   mysqlEnum,
   mysqlTable,
   text,
@@ -579,6 +580,17 @@ export const audit = mysqlTable("mds_audit", {
   entityId: int("entityId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+export const siteVisits = mysqlTable(
+  "mds_site_visits",
+  {
+    id: id(),
+    visitorHash: varchar("visitorHash", { length: 64 }).notNull(),
+    visitDay: date("visitDay", { mode: "string" }).notNull(),
+    path: varchar("path", { length: 120 }).notNull().default("/"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  t => [uniqueIndex("site_visits_visitor_day").on(t.visitorHash, t.visitDay)]
+);
 
 export const payments = mysqlTable(
   "mds_payments",

@@ -302,3 +302,8 @@ Ajout d’une couche d’interaction commune sur toutes les pages MDS : animatio
 ## Analyse d’activité client — 8 novembre 2026
 
 L’onglet Activité de l’espace artisan comprend maintenant un tableau d’aide à la décision calculé côté serveur depuis les demandes réellement envoyées : taux d’acceptation, taux de dossiers terminés, abandons, clients récurrents, services demandés, villes demandées et dernières actions ouvrables. Cette vue ne collecte pas les pages consultées, les frappes clavier, les mouvements de souris ni une navigation cachée. Toute future mesure de navigation devra être facultative, documentée, limitée et soumise à une politique RGPD de conservation, export et effacement.
+
+
+## Compteur de visites — 8 novembre 2026
+
+L’accueil appelle `POST /api/site-visit`. Le serveur calcule une empreinte SHA-256 à partir de l’adresse réseau, de l’agent navigateur, du jour Europe/Paris et d’un sel serveur ; il ne conserve pas l’IP en clair. La table `mds_site_visits` impose une unicité `(visitorHash, visitDay)`, ce qui empêche une double visite identique le même jour même si le navigateur recharge la page. L’espace artisan affiche les visiteurs uniques du jour et le total cumulé. Cette mesure résiste aux doubles appels ordinaires mais ne peut pas certifier l’audience contre VPN, réseaux partagés, robots ou changement d’appareil. La durée de conservation et l’information RGPD doivent être finalisées avant ouverture commerciale.

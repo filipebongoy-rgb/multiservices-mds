@@ -193,3 +193,11 @@ Toutes les pages bénéficient maintenant d’une finition commune non destructi
 - [x] L’espace artisan expose une analyse fondée sur les actions réellement effectuées : demandes acceptées, demandes terminées, demandes abandonnées, clients récurrents, services les plus demandés, zones les plus demandées et dernières demandes ouvrables depuis l’activité.
 - [x] Les taux sont calculés côté serveur à partir des statuts réels des dossiers ; aucune statistique fictive, aucun suivi des frappes, aucune lecture cachée des pages consultées et aucune décision automatique de profilage n’est ajoutée.
 - [ ] Prévoir ultérieurement une politique RGPD détaillée de conservation, d’export et d’effacement des données analytiques avant toute mesure de navigation facultative.
+
+
+## Compteur réel des visites du site
+
+- [x] L’accueil enregistre une visite côté serveur dans une table relationnelle dédiée ; l’onglet Activité affiche les visiteurs uniques du jour et le total cumulé.
+- [x] Une même empreinte IP/navigateur hachée ne peut compter qu’une fois par jour grâce à une contrainte unique en base ; l’adresse IP et l’agent utilisateur ne sont jamais stockés en clair et l’enregistrement ne bloque jamais la navigation.
+- [x] Le compteur reste une mesure de visiteurs uniques approximative : les VPN, réseaux partagés, suppression des cookies, changement d’appareil et robots peuvent modifier le résultat. Il ne doit pas être présenté comme une audience certifiée.
+- [ ] Avant ouverture commerciale, compléter la notice de confidentialité et la durée de conservation du registre de visites avec validation RGPD.

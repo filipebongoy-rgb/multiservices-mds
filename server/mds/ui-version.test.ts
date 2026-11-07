@@ -510,3 +510,30 @@ describe("analyse artisan des demandes clients", () => {
     expect(admin).toContain("recentActivity");
   });
 });
+
+describe("compteur réel de visites", () => {
+  it("enregistre l’accueil côté serveur et déduplique une empreinte par jour", () => {
+    const home = readFileSync(
+      new URL("../../client/src/pages/Home.tsx", import.meta.url),
+      "utf8"
+    );
+    const server = readFileSync(
+      new URL("../../server/_core/index.ts", import.meta.url),
+      "utf8"
+    );
+    const schema = readFileSync(
+      new URL("../../drizzle/schema.ts", import.meta.url),
+      "utf8"
+    );
+    const artisan = readFileSync(
+      new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(home).toContain('fetch("/api/site-visit"');
+    expect(server).toContain("siteVisits");
+    expect(server).toContain("visitorHash");
+    expect(server).toContain("ER_DUP_ENTRY");
+    expect(schema).toContain("site_visits_visitor_day");
+    expect(artisan).toContain("Visiteurs du site");
+  });
+});

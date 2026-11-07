@@ -918,7 +918,17 @@ function AdminActivity({
               <span className="small-text muted">Clients uniques</span>
               <strong style={{ fontSize: 28 }}>{stats?.clients ?? 0}</strong>
               <small className="muted">par e-mail distinct</small>
-              </article>
+            </article>
+            <article className="panel stack" aria-label="Compteur réel des visites du site">
+              <span className="small-text muted">Visiteurs du site</span>
+              <strong style={{ fontSize: 28 }}>{d.siteVisits.today}</strong>
+              <small className="muted">
+                aujourd’hui · {d.siteVisits.total} au total
+              </small>
+              <small className="muted">
+                Visiteurs uniques par jour, empreinte hachée anti-doublon.
+              </small>
+            </article>
             </div>
           <article className="panel stack" aria-labelledby="client-insights-title">
             <div>

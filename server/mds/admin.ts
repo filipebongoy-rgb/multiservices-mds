@@ -139,6 +139,19 @@ export const adminRouter = router({
       })
       .from(s.settings)
       .limit(1);
+    const visitDay = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Paris",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    const [visitTotals] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(s.siteVisits);
+    const [todayVisitTotals] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(s.siteVisits)
+      .where(sql`${s.siteVisits.visitDay} = ${visitDay}`);
 
     const countBy = (values: (string | null | undefined)[]) => {
       const counts = new Map<string, number>();
@@ -232,6 +245,11 @@ export const adminRouter = router({
       contactPhone: settingsRow?.contactPhone || "",
       contactEmail: settingsRow?.contactEmail || "",
       calendarEnabled: Boolean(settingsRow?.calendarEnabled),
+      siteVisits: {
+        total: Number(visitTotals?.total || 0),
+        today: Number(todayVisitTotals?.total || 0),
+        definition: "Visiteurs uniques par empreinte hachée et par jour",
+      },
       clientInsights: {
         totalRequests,
         acceptedRequests,

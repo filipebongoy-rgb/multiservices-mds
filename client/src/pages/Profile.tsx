@@ -34,6 +34,7 @@ export default function Profile() {
   const [city, setCity] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [newPasswordConfirmation, setNewPasswordConfirmation] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -59,6 +60,7 @@ export default function Profile() {
     onSuccess: () => {
       setCurrentPassword("");
       setNewPassword("");
+      setNewPasswordConfirmation("");
       setNotice("Votre mot de passe a été modifié.");
     },
   });
@@ -272,7 +274,11 @@ export default function Profile() {
               className="stack"
               onSubmit={event => {
                 event.preventDefault();
-                changePassword.mutate({ currentPassword, newPassword });
+                changePassword.mutate({
+                  currentPassword,
+                  newPassword,
+                  newPasswordConfirmation,
+                });
               }}
             >
               <Field label="Mot de passe actuel">
@@ -294,11 +300,37 @@ export default function Profile() {
                   onChange={event => setNewPassword(event.target.value)}
                 />
               </Field>
+              <Field label="Confirmer le nouveau mot de passe">
+                <input
+                  type="password"
+                  value={newPasswordConfirmation}
+                  minLength={10}
+                  autoComplete="new-password"
+                  required
+                  aria-invalid={
+                    newPasswordConfirmation.length > 0 &&
+                    newPassword !== newPasswordConfirmation
+                  }
+                  onChange={event =>
+                    setNewPasswordConfirmation(event.target.value)
+                  }
+                />
+              </Field>
+              {newPasswordConfirmation.length > 0 &&
+                newPassword !== newPasswordConfirmation && (
+                  <p className="error-message" role="alert">
+                    Les deux nouveaux mots de passe doivent être identiques.
+                  </p>
+                )}
               <ErrorNotice error={changePassword.error} />
               <ActionButton
                 className="secondary"
                 type="submit"
-                disabled={changePassword.isPending}
+                disabled={
+                  changePassword.isPending ||
+                  newPassword.length < 10 ||
+                  newPassword !== newPasswordConfirmation
+                }
               >
                 {changePassword.isPending
                   ? "Modification…"

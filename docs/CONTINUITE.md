@@ -277,3 +277,8 @@ Le parcours urgent est maintenant directement relié : depuis l’alerte d’une
 ## Identifiant e-mail uniforme — 8 novembre 2026
 
 Le parcours de compte a été aligné. L’écran « Créer un compte » affiche et exige l’adresse e-mail ; l’écran « Se connecter » affiche le même champ et authentifie désormais par e-mail et mot de passe ; l’écran Profil rend l’e-mail obligatoire et modifiable. Le serveur contrôle le format, normalise en minuscules et refuse les doublons. Validation effectuée par 76 tests ciblés, vérification TypeScript et build de production réussis.
+
+
+## Sécurité du changement de mot de passe — 8 novembre 2026
+
+Le changement de mot de passe depuis Profil est maintenant aligné sur l’inscription : mot de passe actuel, nouveau mot de passe d’au moins 10 caractères et confirmation obligatoire. La validation existe côté interface et côté serveur. Les 314 tests, la vérification TypeScript et le build de production passent.

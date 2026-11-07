@@ -298,6 +298,17 @@ describe("authentification MDS locale", () => {
     expect(auth).toContain("passwordConfirmation");
     expect(auth).toContain("Les deux mots de passe doivent être identiques.");
   });
+  it("protège aussi le changement de mot de passe dans le profil", () => {
+    const profile = readFileSync(
+      new URL("../../client/src/pages/Profile.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(profile).toContain("Confirmer le nouveau mot de passe");
+    expect(profile).toContain("newPasswordConfirmation");
+    expect(profile).toContain(
+      "Les deux nouveaux mots de passe doivent être identiques."
+    );
+  });
   it("propose particulier ou professionnel sans exposer le rôle artisan", () => {
     expect(auth).toContain("Particulier");
     expect(auth).toContain("Professionnel");

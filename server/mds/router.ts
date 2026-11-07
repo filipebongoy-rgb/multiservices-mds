@@ -171,10 +171,20 @@ export const mdsRouter = router({
       }),
     changePassword: authenticated
       .input(
-        z.object({
-          currentPassword: z.string().min(1).max(200),
-          newPassword: z.string().min(10).max(200),
-        })
+        z
+          .object({
+            currentPassword: z.string().min(1).max(200),
+            newPassword: z.string().min(10).max(200),
+            newPasswordConfirmation: z.string().min(10).max(200),
+          })
+          .refine(
+            input => input.newPassword === input.newPasswordConfirmation,
+            {
+              message:
+                "Les deux nouveaux mots de passe doivent être identiques.",
+              path: ["newPasswordConfirmation"],
+            }
+          )
       )
       .mutation(async ({ input, ctx }) => {
         const { changeLocalPassword } = await import("../_core/local-auth");

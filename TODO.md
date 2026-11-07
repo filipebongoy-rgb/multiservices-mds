@@ -166,3 +166,8 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 ## Identifiant e-mail uniforme — 8 novembre 2026
 
 L’inscription demande désormais l’adresse e-mail, la connexion utilise cette même adresse avec le mot de passe, et le profil impose un e-mail valide lors de chaque enregistrement. Le serveur normalise les adresses en minuscules et refuse qu’une adresse soit utilisée par un autre compte. Les comptes locaux conservent leur clé technique historique pour compatibilité, mais l’utilisateur n’a plus à connaître ni prénom ni nom pour se connecter.
+
+
+## Sécurité du changement de mot de passe — 8 novembre 2026
+
+Le profil demande maintenant le mot de passe actuel, un nouveau mot de passe d’au moins 10 caractères et sa confirmation. Le serveur refuse toute différence entre les deux nouveaux mots de passe ; le bouton reste désactivé tant que la confirmation n’est pas correcte.

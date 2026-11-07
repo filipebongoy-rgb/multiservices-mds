@@ -38,8 +38,7 @@ export const appRouter = router({
     loginLocal: publicProcedure
       .input(
         z.object({
-          firstName: z.string().trim().min(2).max(60),
-          lastName: z.string().trim().min(2).max(80),
+          email: z.string().trim().email().max(320),
           password: z.string().min(1).max(200),
         })
       )

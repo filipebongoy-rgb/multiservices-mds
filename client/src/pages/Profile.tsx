@@ -173,6 +173,7 @@ export default function Profile() {
                 value={email}
                 maxLength={320}
                 autoComplete="email"
+                required
                 onChange={event => setEmail(event.target.value)}
               />
             </Field>

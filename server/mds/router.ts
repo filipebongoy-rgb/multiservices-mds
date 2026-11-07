@@ -2,7 +2,7 @@ import { calendarRouter } from "./calendar";
 import { operationsRouter } from "./operations";
 import { quoteBuilderRouter } from "./quote-builder";
 import { automationRouter } from "./automation";
-import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { router } from "../_core/trpc";
 import * as s from "../../drizzle/schema";
@@ -121,7 +121,7 @@ export const mdsRouter = router({
       .input(
         z.object({
           name: z.string().trim().min(2).max(120),
-          email: z.union([z.literal(""), z.email().max(320)]),
+          email: z.string().trim().email().max(320),
           accountType: z.enum(["particular", "professional"]),
           phone: z.string().trim().max(30),
           address: z.string().trim().max(500),
@@ -131,12 +131,25 @@ export const mdsRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         const db = await dbRequired();
+        const normalizedEmail = input.email.toLocaleLowerCase("fr-FR");
+        const [existing] = await db
+          .select({ id: s.users.id })
+          .from(s.users)
+          .where(
+            and(eq(s.users.email, normalizedEmail), ne(s.users.id, ctx.user.id))
+          )
+          .limit(1);
+        if (existing)
+          fail(
+            "Cette adresse e-mail est déjà utilisée par un autre compte.",
+            "CONFLICT"
+          );
         return db.transaction(async tx => {
           const [changed] = await tx
             .update(s.users)
             .set({
               name: input.name,
-              email: input.email || null,
+              email: normalizedEmail,
               accountType: input.accountType,
               phone: input.phone || null,
               address: input.address || null,

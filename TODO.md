@@ -161,3 +161,8 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 ## Branchement visible alerte urgente → carte — 7 novembre 2026
 - [x] Depuis l’alerte « Nouvelle demande urgente », le bouton « Voir sur la carte » ouvre directement l’onglet Planning et active automatiquement le filtre « Urgentes uniquement ».
 - [x] Le changement de filtre relance réellement le géocodage et la liste des marqueurs ; il ne s’agit plus seulement d’un contrôle visuel non branché.
+
+
+## Identifiant e-mail uniforme — 8 novembre 2026
+
+L’inscription demande désormais l’adresse e-mail, la connexion utilise cette même adresse avec le mot de passe, et le profil impose un e-mail valide lors de chaque enregistrement. Le serveur normalise les adresses en minuscules et refuse qu’une adresse soit utilisée par un autre compte. Les comptes locaux conservent leur clé technique historique pour compatibilité, mais l’utilisateur n’a plus à connaître ni prénom ni nom pour se connecter.

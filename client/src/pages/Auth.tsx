@@ -66,7 +66,7 @@ export default function Auth() {
         accountType,
       });
     } else {
-      login.mutate({ firstName, lastName, password });
+      login.mutate({ email, password });
     }
   }
 
@@ -108,43 +108,47 @@ export default function Auth() {
           </button>
         </div>
         <form className="stack" onSubmit={submit}>
-          <div className="auth-name-grid">
-            <Field label="Prénom">
-              <input
-                value={firstName}
-                onChange={event => setFirstName(event.target.value)}
-                autoComplete="given-name"
-                minLength={2}
-                maxLength={60}
-                required
-              />
-            </Field>
-            <Field label="Nom">
-              <input
-                value={lastName}
-                onChange={event => setLastName(event.target.value)}
-                autoComplete="family-name"
-                minLength={2}
-                maxLength={80}
-                required
-              />
-            </Field>
-          </div>
           {mode === "register" && (
-            <Field
-              label="Adresse e-mail"
-              hint="Utilisez l’adresse qui doit recevoir les confirmations MDS."
-            >
-              <input
-                type="email"
-                value={email}
-                onChange={event => setEmail(event.target.value)}
-                autoComplete="email"
-                maxLength={320}
-                required
-              />
-            </Field>
+            <div className="auth-name-grid">
+              <Field label="Prénom">
+                <input
+                  value={firstName}
+                  onChange={event => setFirstName(event.target.value)}
+                  autoComplete="given-name"
+                  minLength={2}
+                  maxLength={60}
+                  required
+                />
+              </Field>
+              <Field label="Nom">
+                <input
+                  value={lastName}
+                  onChange={event => setLastName(event.target.value)}
+                  autoComplete="family-name"
+                  minLength={2}
+                  maxLength={80}
+                  required
+                />
+              </Field>
+            </div>
           )}
+          <Field
+            label="Adresse e-mail"
+            hint={
+              mode === "register"
+                ? "Utilisez l’adresse qui doit recevoir les confirmations MDS."
+                : "Utilisez l’adresse e-mail de votre compte MDS."
+            }
+          >
+            <input
+              type="email"
+              value={email}
+              onChange={event => setEmail(event.target.value)}
+              autoComplete="email"
+              maxLength={320}
+              required
+            />
+          </Field>
           {mode === "register" && (
             <fieldset className="auth-account-type">
               <legend>Votre espace</legend>

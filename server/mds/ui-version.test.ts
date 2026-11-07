@@ -292,6 +292,8 @@ describe("authentification MDS locale", () => {
   );
   it("impose un e-mail et une confirmation de mot de passe à l’inscription", () => {
     expect(auth).toContain('label="Adresse e-mail"');
+    expect(auth).toContain('autoComplete="email"');
+    expect(auth).toContain("login.mutate({ email, password })");
     expect(auth).toContain('label="Confirmer le mot de passe"');
     expect(auth).toContain("passwordConfirmation");
     expect(auth).toContain("Les deux mots de passe doivent être identiques.");

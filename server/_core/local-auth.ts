@@ -140,8 +140,7 @@ export async function registerLocalUser(input: {
 }
 
 export async function loginLocalUser(input: {
-  firstName: string;
-  lastName: string;
+  email: string;
   password: string;
   req: Request;
   res: Response;
@@ -149,15 +148,15 @@ export async function loginLocalUser(input: {
   const database = await db.getDb();
   if (!database)
     throw new Error("La base de données est momentanément indisponible.");
-  const loginKey = normalizeLocalLoginKey(input.firstName, input.lastName);
+  const email = input.email.trim().toLocaleLowerCase("fr-FR");
   const found = await database
     .select({ user: users, credentials: localCredentials })
     .from(users)
     .innerJoin(localCredentials, eq(localCredentials.userId, users.id))
-    .where(eq(users.localLoginKey, loginKey))
+    .where(eq(users.email, email))
     .limit(1);
   const record = found[0];
-  if (!record) throw new Error("Prénom, nom ou mot de passe incorrect.");
+  if (!record) throw new Error("Adresse e-mail ou mot de passe incorrect.");
   if (
     record.credentials.lockedUntil &&
     record.credentials.lockedUntil > new Date()
@@ -181,7 +180,7 @@ export async function loginLocalUser(input: {
           attempts >= 5 ? new Date(Date.now() + 10 * 60 * 1000) : null,
       })
       .where(eq(localCredentials.userId, record.user.id));
-    throw new Error("Prénom, nom ou mot de passe incorrect.");
+    throw new Error("Adresse e-mail ou mot de passe incorrect.");
   }
   await database
     .update(localCredentials)

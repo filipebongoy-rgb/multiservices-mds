@@ -272,3 +272,8 @@ La carte Planning de l’espace artisan permet maintenant d’afficher uniquemen
 ## Branchement visible alerte urgente → carte — 7 novembre 2026
 
 Le parcours urgent est maintenant directement relié : depuis l’alerte d’une nouvelle demande, « Voir sur la carte » bascule sur Planning et active « Urgentes uniquement ». Le changement de filtre relance le géocodage des demandes visibles ; la fonctionnalité n’est donc pas limitée à un affichage statique. Les contrôles restent fondés sur les adresses réelles et la permission GPS du navigateur.
+
+
+## Identifiant e-mail uniforme — 8 novembre 2026
+
+Le parcours de compte a été aligné. L’écran « Créer un compte » affiche et exige l’adresse e-mail ; l’écran « Se connecter » affiche le même champ et authentifie désormais par e-mail et mot de passe ; l’écran Profil rend l’e-mail obligatoire et modifiable. Le serveur contrôle le format, normalise en minuscules et refuse les doublons. Validation effectuée par 76 tests ciblés, vérification TypeScript et build de production réussis.

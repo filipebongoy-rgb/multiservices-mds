@@ -242,3 +242,8 @@ Deux adresses confirmées par le propriétaire ont été préautorisées comme a
 ## Correction inscription locale et accès administrateur — 7 novembre 2026
 
 L’inscription locale demande désormais une adresse e-mail et la promotion des administrateurs autorisés est appliquée aussi aux comptes locaux, lors de l’inscription comme lors de la connexion. Les erreurs de contrainte SQL sont transformées en message utilisateur compréhensible. Le compte local existant « Filipe Bongoy » a été relié à `filipe.bongoy@gmail.com`, promu administrateur et associé à l’invitation active correspondante. Il faut renouveler la session par déconnexion/reconnexion pour que l’interface reflète le rôle.
+
+
+## Espace compte complet — 7 novembre 2026
+
+La page Profil a été refondue en espace de compte mobile-first : modification du nom, e-mail, type particulier/professionnel, téléphone et adresse ; changement de mot de passe local avec vérification ; déconnexion visible ; suppression protégée par confirmation. La suppression anonymise le compte au lieu de casser les demandes, paiements et preuves liés à l’historique. Le dernier administrateur propriétaire reste protégé. Migration 0015 appliquée pour les coordonnées utilisateur. Validation : 308 tests, check TypeScript et build de production réussis.

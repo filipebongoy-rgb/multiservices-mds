@@ -120,3 +120,10 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 - [x] Les erreurs de doublon SQL ne sont plus affichées brutes à l’utilisateur ; elles deviennent un message clair indiquant qu’un compte existe déjà.
 - [x] La promotion administrateur fonctionne aussi après inscription ou connexion locale, et pas seulement avec OAuth.
 - [x] Le compte local existant « Filipe Bongoy » a été rattaché à `filipe.bongoy@gmail.com`, marqué administrateur et associé à son invitation active. Il doit se déconnecter puis se reconnecter pour renouveler sa session.
+
+
+## Espace compte complet — 7 novembre 2026
+- [x] La page Profil permet de modifier le nom affiché, l’adresse e-mail, le type d’espace particulier/professionnel, le téléphone et l’adresse complète.
+- [x] Une rubrique Sécurité permet de modifier le mot de passe des comptes locaux avec vérification de l’ancien mot de passe et hashage scrypt.
+- [x] La déconnexion est visible en haut de la page et fonctionne en un clic.
+- [x] La suppression du compte est protégée par la saisie exacte de « SUPPRIMER ». Elle anonymise les données personnelles, supprime les identifiants locaux et conserve uniquement les données nécessaires à l’historique légal. Le dernier administrateur propriétaire ne peut pas supprimer l’accès MDS depuis son profil.

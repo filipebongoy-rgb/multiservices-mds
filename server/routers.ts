@@ -21,6 +21,7 @@ export const appRouter = router({
         z.object({
           firstName: z.string().trim().min(2).max(60),
           lastName: z.string().trim().min(2).max(80),
+          email: z.string().trim().email().max(320),
           password: z.string().min(10).max(200),
           accountType: z.enum(["particular", "professional"]),
         })

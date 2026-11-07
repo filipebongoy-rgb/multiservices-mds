@@ -10,6 +10,7 @@ import * as db from "../db";
 import {
   localCredentials,
   localSessions,
+  adminInvites,
   users,
   type User,
 } from "../../drizzle/schema";
@@ -48,6 +49,7 @@ function cookieOptions(req: Request) {
 export async function registerLocalUser(input: {
   firstName: string;
   lastName: string;
+  email: string;
   password: string;
   accountType: "particular" | "professional";
   req: Request;
@@ -58,6 +60,7 @@ export async function registerLocalUser(input: {
     throw new Error("La base de données est momentanément indisponible.");
   const firstName = input.firstName.trim();
   const lastName = input.lastName.trim();
+  const email = input.email.trim().toLocaleLowerCase("fr-FR");
   const loginKey = normalizeLocalLoginKey(firstName, lastName);
   const salt = randomBytes(32).toString("hex");
   const openId = `local_${randomBytes(24).toString("hex")}`;
@@ -66,7 +69,7 @@ export async function registerLocalUser(input: {
       await tx.insert(users).values({
         openId,
         name: `${firstName} ${lastName}`,
-        email: null,
+        email,
         loginMethod: "local-password",
         localLoginKey: loginKey,
         accountType: input.accountType,
@@ -86,7 +89,7 @@ export async function registerLocalUser(input: {
       });
     });
   } catch (error) {
-    if (String(error).toLowerCase().includes("localLoginKey")) {
+    if (/(localLoginKey|duplicate|unique)/i.test(String(error))) {
       throw new Error(
         "Un compte existe déjà avec ce prénom et ce nom. Ajoutez un deuxième prénom ou contactez MDS."
       );
@@ -95,8 +98,9 @@ export async function registerLocalUser(input: {
   }
   const user = await db.getUserByLocalLoginKey(loginKey);
   if (!user) throw new Error("Compte créé mais introuvable.");
-  await createLocalSession(user, input.req, input.res);
-  return user;
+  const readyUser = await promoteLocalAdminIfInvited(user);
+  await createLocalSession(readyUser, input.req, input.res);
+  return readyUser;
 }
 
 export async function loginLocalUser(input: {
@@ -151,8 +155,33 @@ export async function loginLocalUser(input: {
     .update(users)
     .set({ lastSignedIn: new Date() })
     .where(eq(users.id, record.user.id));
-  await createLocalSession(record.user, input.req, input.res);
-  return record.user;
+  const readyUser = await promoteLocalAdminIfInvited(record.user);
+  await createLocalSession(readyUser, input.req, input.res);
+  return readyUser;
+}
+
+async function promoteLocalAdminIfInvited(user: User) {
+  if (!user.email) return user;
+  const database = await db.getDb();
+  if (!database) return user;
+  const email = user.email.trim().toLocaleLowerCase("fr-FR");
+  const [invite] = await database
+    .select({ id: adminInvites.id })
+    .from(adminInvites)
+    .where(
+      and(eq(adminInvites.email, email), eq(adminInvites.status, "active"))
+    )
+    .limit(1);
+  if (!invite) return user;
+  await database
+    .update(users)
+    .set({ role: "admin" })
+    .where(eq(users.id, user.id));
+  await database
+    .update(adminInvites)
+    .set({ acceptedBy: user.id, acceptedAt: new Date() })
+    .where(eq(adminInvites.id, invite.id));
+  return { ...user, role: "admin" as const };
 }
 
 export async function authenticateLocalRequest(req: Request) {

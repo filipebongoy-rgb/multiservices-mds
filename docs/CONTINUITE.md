@@ -237,3 +237,8 @@ La carte de l’onglet Planning artisan est maintenant recherchable par client, 
 ## Accès administrateur multiple — 6 novembre 2026
 
 Deux adresses confirmées par le propriétaire ont été préautorisées comme administrateurs complets : `multiservicesmds2026@gmail.com` et `filipe.bongoy@gmail.com`. Elles n’avaient pas encore de compte MDS au moment de l’activation ; aucune session ni aucun mot de passe n’a donc été créé. La table additive `mds_admin_invites` les promeut automatiquement lors de leur première connexion OAuth avec l’adresse correspondante. Les contrôles serveur artisan, demandes, opérations, catalogue, planning et paiements acceptent désormais tout compte ayant le rôle `admin`, tandis que les comptes `user` restent exclus. Validation : 308 tests, typage TypeScript, build et routes locales principales OK.
+
+
+## Correction inscription locale et accès administrateur — 7 novembre 2026
+
+L’inscription locale demande désormais une adresse e-mail et la promotion des administrateurs autorisés est appliquée aussi aux comptes locaux, lors de l’inscription comme lors de la connexion. Les erreurs de contrainte SQL sont transformées en message utilisateur compréhensible. Le compte local existant « Filipe Bongoy » a été relié à `filipe.bongoy@gmail.com`, promu administrateur et associé à l’invitation active correspondante. Il faut renouveler la session par déconnexion/reconnexion pour que l’interface reflète le rôle.

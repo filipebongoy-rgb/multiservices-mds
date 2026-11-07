@@ -23,6 +23,7 @@ export default function Auth() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [accountType, setAccountType] = useState<"particular" | "professional">(
     "particular"
@@ -51,7 +52,7 @@ export default function Auth() {
     event.preventDefault();
     setError(null);
     if (mode === "register") {
-      register.mutate({ firstName, lastName, password, accountType });
+      register.mutate({ firstName, lastName, email, password, accountType });
     } else {
       login.mutate({ firstName, lastName, password });
     }
@@ -117,6 +118,21 @@ export default function Auth() {
               />
             </Field>
           </div>
+          {mode === "register" && (
+            <Field
+              label="Adresse e-mail"
+              hint="Utilisez l’adresse qui doit recevoir les confirmations MDS."
+            >
+              <input
+                type="email"
+                value={email}
+                onChange={event => setEmail(event.target.value)}
+                autoComplete="email"
+                maxLength={320}
+                required
+              />
+            </Field>
+          )}
           {mode === "register" && (
             <fieldset className="auth-account-type">
               <legend>Votre espace</legend>

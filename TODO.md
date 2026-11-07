@@ -113,3 +113,10 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 - [x] Une recherche permet de filtrer par nom du client, adresse, code postal, ville ou prestation ; un bouton Actualiser relance le géocodage des adresses disponibles.
 - [x] Les résultats de recherche sont cliquables et ouvrent directement le dossier correspondant ; une adresse non localisable ne bloque pas les autres résultats.
 - [ ] Restent à développer : regroupement de marqueurs à grande échelle et géocodage serveur mis en cache pour limiter les appels Mapbox.
+
+
+## Correction inscription et activation administrateur — 7 novembre 2026
+- [x] La création de compte demande désormais une adresse e-mail, en plus du prénom, du nom et du mot de passe.
+- [x] Les erreurs de doublon SQL ne sont plus affichées brutes à l’utilisateur ; elles deviennent un message clair indiquant qu’un compte existe déjà.
+- [x] La promotion administrateur fonctionne aussi après inscription ou connexion locale, et pas seulement avec OAuth.
+- [x] Le compte local existant « Filipe Bongoy » a été rattaché à `filipe.bongoy@gmail.com`, marqué administrateur et associé à son invitation active. Il doit se déconnecter puis se reconnecter pour renouveler sa session.

@@ -16,9 +16,11 @@ type Coordinates = [number, number];
 export function ArtisanLocationsMap({
   requests,
   onOpen,
+  focusUrgent = false,
 }: {
   requests: RequestRecord[];
   onOpen?: (id: number) => void;
+  focusUrgent?: boolean;
 }) {
   const node = useRef<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -29,7 +31,7 @@ export function ArtisanLocationsMap({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [search, setSearch] = useState("");
-  const [urgentOnly, setUrgentOnly] = useState(false);
+  const [urgentOnly, setUrgentOnly] = useState(focusUrgent);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
 
   const allActiveRequests = requests
@@ -44,6 +46,9 @@ export function ArtisanLocationsMap({
       !urgentOnly || request.answers?.__urgency === "urgent";
     return matchesSearch && matchesUrgency;
   });
+  useEffect(() => {
+    setUrgentOnly(focusUrgent);
+  }, [focusUrgent]);
 
   async function locate() {
     if (!MAPBOX_PUBLIC_TOKEN || !activeRequests.length) return;
@@ -92,7 +97,7 @@ export function ArtisanLocationsMap({
 
   useEffect(() => {
     void locate();
-  }, [search, requests.map(request => request.id).join(",")]);
+  }, [search, urgentOnly, requests.map(request => request.id).join(",")]);
 
   useEffect(() => {
     if (!node.current || !MAPBOX_PUBLIC_TOKEN || !points.length) return;

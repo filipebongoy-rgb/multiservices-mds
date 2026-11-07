@@ -267,3 +267,8 @@ L’espace artisan interroge maintenant les demandes toutes les dix secondes lor
 ## Géolocalisation des interventions urgentes — 7 novembre 2026
 
 La carte Planning de l’espace artisan permet maintenant d’afficher uniquement les demandes urgentes, d’utiliser des marqueurs rouges et d’ouvrir directement le dossier depuis un lieu. Le bouton « Ma position » utilise l’autorisation GPS du navigateur pour ajouter un repère local et recentrer la carte ; cette position n’est ni stockée ni transmise par cette fonctionnalité. Les adresses sont géocodées à partir des dossiers réels, sans coordonnées inventées. Le partage GPS d’un trajet reste soumis au bouton de départ et aux contrôles existants.
+
+
+## Branchement visible alerte urgente → carte — 7 novembre 2026
+
+Le parcours urgent est maintenant directement relié : depuis l’alerte d’une nouvelle demande, « Voir sur la carte » bascule sur Planning et active « Urgentes uniquement ». Le changement de filtre relance le géocodage des demandes visibles ; la fonctionnalité n’est donc pas limitée à un affichage statique. Les contrôles restent fondés sur les adresses réelles et la permission GPS du navigateur.

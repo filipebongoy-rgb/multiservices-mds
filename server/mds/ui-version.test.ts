@@ -371,7 +371,7 @@ describe("qualification opérationnelle initiale", () => {
     expect(map).toContain('type="search"');
     expect(map).toContain("Rechercher une ville");
     expect(map).toContain("onOpen?.(request.id)");
-    expect(artisan).toContain("ArtisanLocationsMap requests={requests}");
+    expect(artisan).toContain("<ArtisanLocationsMap");
     expect(artisan).toContain("onOpen={openRequest}");
   });
 });
@@ -432,10 +432,17 @@ describe("lisibilité mobile de la demande", () => {
       ),
       "utf8"
     );
+    const artisan = readFileSync(
+      new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
+      "utf8"
+    );
     expect(map).toContain("Urgentes uniquement");
     expect(map).toContain("navigator.geolocation.getCurrentPosition");
     expect(map).toContain("Ma position");
     expect(map).toContain('request.answers?.__urgency === "urgent"');
     expect(map).toContain("Votre position");
+    expect(map).toContain("focusUrgent");
+    expect(artisan).toContain("Voir sur la carte");
+    expect(artisan).toContain("setUrgentMapOnly(true)");
   });
 });

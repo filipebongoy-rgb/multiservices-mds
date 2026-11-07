@@ -146,6 +146,7 @@ function ArtisanWorkspace() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [urgentNotice, setUrgentNotice] = useState<RequestRecord | null>(null);
+  const [urgentMapOnly, setUrgentMapOnly] = useState(false);
   const knownUrgentIds = useRef<Set<number> | null>(null);
   const requestsQuery = trpc.mds.requests.list.useQuery(undefined, {
     retry: false,
@@ -341,6 +342,17 @@ function ArtisanWorkspace() {
           </button>
           <button
             type="button"
+            className="btn secondary"
+            onClick={() => {
+              setUrgentMapOnly(true);
+              setTab("planning");
+              setUrgentNotice(null);
+            }}
+          >
+            Voir sur la carte
+          </button>
+          <button
+            type="button"
             className="artisan-live-alert-close"
             aria-label="Fermer l’alerte de demande urgente"
             onClick={() => setUrgentNotice(null)}
@@ -446,7 +458,11 @@ function ArtisanWorkspace() {
         )}
         {tab === "planning" && (
           <>
-            <ArtisanLocationsMap requests={requests} onOpen={openRequest} />
+            <ArtisanLocationsMap
+              requests={requests}
+              onOpen={openRequest}
+              focusUrgent={urgentMapOnly}
+            />
             <ArtisanCalendar onOpen={openRequest} />
             <details className="panel">
               <summary

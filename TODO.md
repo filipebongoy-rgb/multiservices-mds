@@ -156,3 +156,8 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 - [x] Les demandes urgentes utilisent un marqueur rouge et affichent un badge « Urgent » dans la liste ; cliquer sur un lieu ouvre directement le dossier.
 - [x] Le bouton « Ma position » demande l’autorisation GPS du navigateur, ajoute un repère local et recentre la carte. La position n’est ni enregistrée ni envoyée au serveur par cette fonctionnalité.
 - [x] Une adresse impossible à géocoder ne bloque pas les autres interventions. Le trajet GPS réel reste séparé et ne démarre qu’après l’action artisan correspondante.
+
+
+## Branchement visible alerte urgente → carte — 7 novembre 2026
+- [x] Depuis l’alerte « Nouvelle demande urgente », le bouton « Voir sur la carte » ouvre directement l’onglet Planning et active automatiquement le filtre « Urgentes uniquement ».
+- [x] Le changement de filtre relance réellement le géocodage et la liste des marqueurs ; il ne s’agit plus seulement d’un contrôle visuel non branché.

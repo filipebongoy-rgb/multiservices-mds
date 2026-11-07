@@ -413,4 +413,15 @@ describe("lisibilité mobile de la demande", () => {
     expect(artisan).toContain("Actualisation…");
     expect(artisan).toContain("Traiter cette demande urgente");
   });
+  it("surveille les nouvelles demandes urgentes sans alerte initiale répétée", () => {
+    const artisan = readFileSync(
+      new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(artisan).toContain("refetchInterval: 10_000");
+    expect(artisan).toContain("knownUrgentIds");
+    expect(artisan).toContain("Nouvelle demande urgente");
+    expect(artisan).toContain('role="alert"');
+    expect(artisan).toContain("Ouvrir");
+  });
 });

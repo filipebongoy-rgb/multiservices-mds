@@ -2706,6 +2706,47 @@ input[type="checkbox"] {
   gap: 6px;
   white-space: nowrap;
 }
+.artisan-live-alert {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 13px 14px;
+  border: 1px solid #e6a08b;
+  border-radius: 12px;
+  background: #fff0eb;
+  color: #7d2e1d;
+}
+.artisan-live-alert > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.artisan-live-alert span {
+  color: #5c625f;
+  overflow-wrap: anywhere;
+}
+.artisan-live-alert .btn {
+  min-height: 40px;
+  padding: 8px 14px;
+}
+.artisan-live-alert-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #7d2e1d;
+  cursor: pointer;
+}
+.artisan-live-alert-close:hover,
+.artisan-live-alert-close:focus-visible {
+  background: #ffe0d6;
+}
 .artisan-chip-group {
   display: inline-flex;
   gap: 6px;
@@ -2784,6 +2825,13 @@ input[type="checkbox"] {
     grid-column: 1 / -1;
     width: 100%;
     justify-content: center;
+  }
+  .artisan-live-alert {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .artisan-live-alert .btn {
+    grid-column: 1 / -1;
+    width: 100%;
   }
   .artisan-mobile-bar {
     position: fixed;

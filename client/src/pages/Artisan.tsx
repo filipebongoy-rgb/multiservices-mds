@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import {
   Activity,
@@ -145,9 +145,11 @@ function ArtisanWorkspace() {
   const [tab, setTab] = useState<Tab>("requests");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [urgentNotice, setUrgentNotice] = useState<RequestRecord | null>(null);
+  const knownUrgentIds = useRef<Set<number> | null>(null);
   const requestsQuery = trpc.mds.requests.list.useQuery(undefined, {
     retry: false,
-    refetchInterval: 30_000,
+    refetchInterval: 10_000,
   });
   const waitlistQuery = trpc.mds.requests.waitlist.useQuery(undefined, {
     retry: false,
@@ -168,6 +170,26 @@ function ArtisanWorkspace() {
   const pending = requests.filter(request =>
     activeRequestStatuses.includes(request.status)
   );
+  useEffect(() => {
+    if (!requestsQuery.data) return;
+    const urgent = requestsQuery.data.filter(
+      request =>
+        request.answers?.__urgency === "urgent" &&
+        activeRequestStatuses.includes(request.status)
+    );
+    const currentIds = new Set(urgent.map(request => request.id));
+    if (knownUrgentIds.current === null) {
+      knownUrgentIds.current = currentIds;
+      return;
+    }
+    const newlyUrgent = urgent.find(
+      request => !knownUrgentIds.current?.has(request.id)
+    );
+    if (newlyUrgent) {
+      setUrgentNotice(newlyUrgent);
+    }
+    knownUrgentIds.current = currentIds;
+  }, [requestsQuery.data]);
   const nextRequest = [...pending].sort((a, b) => {
     const aUrgent = a.answers?.__urgency === "urgent" ? 0 : 1;
     const bUrgent = b.answers?.__urgency === "urgent" ? 0 : 1;
@@ -290,6 +312,40 @@ function ArtisanWorkspace() {
             onClick={() => openRequest(nextRequest.id)}
           >
             Ouvrir le dossier <ChevronRight size={18} aria-hidden="true" />
+          </button>
+        </section>
+      )}
+      {urgentNotice && (
+        <section
+          className="artisan-live-alert"
+          role="alert"
+          aria-live="assertive"
+        >
+          <AlertTriangle size={22} aria-hidden="true" />
+          <div>
+            <strong>Nouvelle demande urgente</strong>
+            <span>
+              {urgentNotice.serviceName || "Demande libre"} ·{" "}
+              {urgentNotice.name}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="btn primary"
+            onClick={() => {
+              openRequest(urgentNotice.id);
+              setUrgentNotice(null);
+            }}
+          >
+            Ouvrir
+          </button>
+          <button
+            type="button"
+            className="artisan-live-alert-close"
+            aria-label="Fermer l’alerte de demande urgente"
+            onClick={() => setUrgentNotice(null)}
+          >
+            <XCircle size={20} aria-hidden="true" />
           </button>
         </section>
       )}

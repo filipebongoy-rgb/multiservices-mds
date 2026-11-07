@@ -395,11 +395,17 @@ describe("lisibilité mobile de la demande", () => {
       new URL("../../client/src/components/mds/simple-ux.css", import.meta.url),
       "utf8"
     );
+    const layout = readFileSync(
+      new URL("../../client/src/components/mds/Layout.tsx", import.meta.url),
+      "utf8"
+    );
     expect(css).toContain(".simple-header.is-request .simple-request-title");
     expect(css).toContain(
       ".simple-header.is-request .simple-auth-quick-action"
     );
     expect(css).toContain(".request-simple .page-title");
+    expect(layout).not.toContain("simple-request-title");
+    expect(css).toContain(".site-header.simple-header.is-request");
   });
   it("ne mélange pas l’espace professionnel client avec l’atelier artisan", () => {
     const layout = readFileSync(

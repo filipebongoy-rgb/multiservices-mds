@@ -282,3 +282,8 @@ Le parcours de compte a été aligné. L’écran « Créer un compte » affiche
 ## Sécurité du changement de mot de passe — 8 novembre 2026
 
 Le changement de mot de passe depuis Profil est maintenant aligné sur l’inscription : mot de passe actuel, nouveau mot de passe d’au moins 10 caractères et confirmation obligatoire. La validation existe côté interface et côté serveur. Les 314 tests, la vérification TypeScript et le build de production passent.
+
+
+## Correction globale des en-têtes mobiles — 8 novembre 2026
+
+Le chevauchement visible sur le parcours de demande provenait d’un titre présent dans le header et d’une règle mobile qui masquait le titre principal. Le titre du header a été supprimé ; le titre de contenu est maintenant conservé et séparé du bouton retour. Une régression UI dédiée confirme qu’aucun doublon ne revient. Validation : 315 tests, TypeScript et build réussis.

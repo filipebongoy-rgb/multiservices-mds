@@ -171,3 +171,8 @@ L’inscription demande désormais l’adresse e-mail, la connexion utilise cett
 ## Sécurité du changement de mot de passe — 8 novembre 2026
 
 Le profil demande maintenant le mot de passe actuel, un nouveau mot de passe d’au moins 10 caractères et sa confirmation. Le serveur refuse toute différence entre les deux nouveaux mots de passe ; le bouton reste désactivé tant que la confirmation n’est pas correcte.
+
+
+## Correction globale des en-têtes mobiles — 8 novembre 2026
+
+Le header de la demande ne rend plus un second titre « Demande d’intervention ». Le titre est affiché une seule fois dans le contenu, sous le bouton de retour. Une règle responsive finale réserve l’espace du header, empêche le recouvrement et conserve le titre lisible sur petits écrans. Les contrôles recherchent aussi les régressions similaires dans les règles de navigation et les titres.

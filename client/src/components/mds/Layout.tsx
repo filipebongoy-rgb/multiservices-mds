@@ -158,11 +158,6 @@ export function Header() {
             </Link>
           )}
           <Brand />
-          {requestPage && (
-            <strong className="simple-request-title">
-              Demande d’intervention
-            </strong>
-          )}
           {!requestPage && (
             <div className="header-quick-actions">
               <NotificationBell />

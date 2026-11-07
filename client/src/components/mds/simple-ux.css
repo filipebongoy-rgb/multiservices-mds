@@ -1078,9 +1078,6 @@
     font-size: 19px;
     white-space: nowrap;
   }
-  .request-simple .page-title {
-    display: none;
-  }
   .request-simple .request-kicker {
     display: none;
   }
@@ -3581,6 +3578,38 @@ input[type="checkbox"] {
   }
   .simple-header:not(.is-request) .brand {
     max-width: calc(100% - 72px);
+  }
+}
+
+/* La demande possède un seul titre, dans son contenu. Le header ne doit
+   jamais lui réserver une seconde ligne ni le recouvrir sur petit écran. */
+@media (max-width: 700px) {
+  .site-header.simple-header.is-request {
+    min-height: 60px;
+  }
+
+  .simple-header.is-request .header-inner {
+    min-height: 60px;
+    padding: 8px 16px;
+    overflow: visible;
+  }
+
+  .simple-header.is-request .simple-request-back {
+    position: relative;
+    flex: 0 0 42px;
+    margin: 0;
+  }
+
+  .request-simple {
+    padding-top: 12px;
+  }
+
+  .request-simple .page-title {
+    display: block;
+    margin: 0;
+    font-size: clamp(26px, 7vw, 34px);
+    line-height: 1.12;
+    overflow-wrap: normal;
   }
 }
 

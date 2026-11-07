@@ -537,3 +537,24 @@ describe("compteur réel de visites", () => {
     expect(artisan).toContain("Visiteurs du site");
   });
 });
+
+describe("accueil et actions de suivi", () => {
+  it("utilise la carte comme source unique de la zone d’intervention", () => {
+    const home = readFileSync(
+      new URL("../../client/src/pages/Home.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(home).toContain("<ServiceAreaMap />");
+    expect(home).not.toContain("home-location-bar");
+  });
+  it("déclare explicitement les deux soumissions du suivi", () => {
+    const tracking = readFileSync(
+      new URL("../../client/src/pages/Tracking.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(tracking).toContain('<button type="submit" className="btn primary">');
+    expect(tracking).toContain(
+      '<button type="submit" className="btn primary" disabled={act.isPending}>'
+    );
+  });
+});

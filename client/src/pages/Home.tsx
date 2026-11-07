@@ -120,15 +120,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Adresse de référence façon Uber Eats */}
-        <div className="home-location-bar">
-          <MapPin size={18} color="#bc4c23" aria-hidden="true" />
-          <span>
-            Zone d’intervention : <strong>Rennes et son agglomération</strong> —
-            jusqu’à 30 km
-          </span>
-        </div>
-
+        {/* La carte est la source unique de la zone et de la recherche d’adresse. */}
         <ServiceAreaMap />
 
         {/* Barre de recherche de service */}

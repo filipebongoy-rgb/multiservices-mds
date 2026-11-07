@@ -288,7 +288,7 @@ export default function Tracking() {
                 personnelles.
               </small>
             </div>
-            <button className="btn primary">
+            <button type="submit" className="btn primary">
               Ouvrir mon suivi
               <ArrowRight size={18} />
             </button>
@@ -662,7 +662,7 @@ export default function Tracking() {
                       required={editor === "information"}
                     />
                   </div>
-                  <button className="btn primary" disabled={act.isPending}>
+                  <button type="submit" className="btn primary" disabled={act.isPending}>
                     Envoyer ma réponse
                   </button>
                   <button

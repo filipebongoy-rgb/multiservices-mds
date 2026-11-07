@@ -465,3 +465,16 @@ describe("lisibilité mobile de la demande", () => {
     expect(artisan).toContain("setUrgentMapOnly(true)");
   });
 });
+
+describe("prestations VMC et sécurité incendie", () => {
+  it("expose installation et entretien de VMC et de détecteurs de fumée", () => {
+    const shared = readFileSync(
+      new URL("../../shared/mds.ts", import.meta.url),
+      "utf8"
+    );
+    expect(shared).toContain("Installation de VMC");
+    expect(shared).toContain("Entretien de VMC");
+    expect(shared).toContain("Installation de détecteur de fumée");
+    expect(shared).toContain("Entretien de détecteur de fumée");
+  });
+});

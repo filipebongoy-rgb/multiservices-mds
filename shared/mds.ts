@@ -30,6 +30,8 @@ export const trades = [
       "Tableau électrique",
       "Mise en sécurité",
       "VMC",
+      "Installation de VMC",
+      "Entretien de VMC",
     ],
   },
   {
@@ -69,6 +71,8 @@ export const trades = [
       "Réglages",
       "Petites réparations",
       "Entretien courant",
+      "Installation de détecteur de fumée",
+      "Entretien de détecteur de fumée",
     ],
   },
 ] as const;

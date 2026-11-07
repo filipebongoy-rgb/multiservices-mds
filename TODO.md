@@ -176,3 +176,8 @@ Le profil demande maintenant le mot de passe actuel, un nouveau mot de passe d�
 ## Correction globale des en-têtes mobiles — 8 novembre 2026
 
 Le header de la demande ne rend plus un second titre « Demande d’intervention ». Le titre est affiché une seule fois dans le contenu, sous le bouton de retour. Une règle responsive finale réserve l’espace du header, empêche le recouvrement et conserve le titre lisible sur petits écrans. Les contrôles recherchent aussi les régressions similaires dans les règles de navigation et les titres.
+
+
+## Nouvelles prestations ventilation et sécurité — 8 novembre 2026
+
+Le catalogue MDS comprend maintenant quatre prestations actives dans le métier Électricité : installation de VMC, entretien de VMC, installation de détecteur de fumée et entretien de détecteur de fumée. Elles sont proposées sur devis après analyse, dans la zone Rennes et métropole jusqu’à 30 km selon l’adresse. Aucun prix ou créneau fictif n’est affiché.

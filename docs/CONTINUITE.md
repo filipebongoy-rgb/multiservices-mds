@@ -287,3 +287,8 @@ Le changement de mot de passe depuis Profil est maintenant aligné sur l’inscr
 ## Correction globale des en-têtes mobiles — 8 novembre 2026
 
 Le chevauchement visible sur le parcours de demande provenait d’un titre présent dans le header et d’une règle mobile qui masquait le titre principal. Le titre du header a été supprimé ; le titre de contenu est maintenant conservé et séparé du bouton retour. Une régression UI dédiée confirme qu’aucun doublon ne revient. Validation : 315 tests, TypeScript et build réussis.
+
+
+## Nouvelles prestations ventilation et sécurité — 8 novembre 2026
+
+Ajout de quatre prestations actives au catalogue partagé et à la base MDS : Installation de VMC, Entretien de VMC, Installation de détecteur de fumée et Entretien de détecteur de fumée. Les quatre prestations utilisent une tarification sur devis après analyse, avec durée indicative et zone d’intervention renseignées. Validation : 316 tests, TypeScript et build réussis ; présence active vérifiée en base.

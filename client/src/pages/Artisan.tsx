@@ -168,6 +168,15 @@ function ArtisanWorkspace() {
   const pending = requests.filter(request =>
     activeRequestStatuses.includes(request.status)
   );
+  const nextRequest = [...pending].sort((a, b) => {
+    const aUrgent = a.answers?.__urgency === "urgent" ? 0 : 1;
+    const bUrgent = b.answers?.__urgency === "urgent" ? 0 : 1;
+    if (aUrgent !== bUrgent) return aUrgent - bUrgent;
+    return (
+      new Date(a.expiresAt ?? a.createdAt).getTime() -
+      new Date(b.expiresAt ?? b.createdAt).getTime()
+    );
+  })[0];
   const todayAppointments = appointments.filter(
     a => a.status !== "cancelled" && dayKey(a.startAt) === dayKey(new Date())
   );
@@ -212,6 +221,14 @@ function ArtisanWorkspace() {
           <Link href="/" className="text-link" aria-label="Voir le site public">
             Voir le site public →
           </Link>
+          <button
+            type="button"
+            className="text-link"
+            onClick={refreshRequests}
+            disabled={requestsQuery.isFetching}
+          >
+            {requestsQuery.isFetching ? "Actualisation…" : "Actualiser"}
+          </button>
           {todayAppointments.length > 0 && (
             <button
               type="button"
@@ -243,6 +260,39 @@ function ArtisanWorkspace() {
           </button>
         ))}
       </nav>
+      {tab === "requests" && nextRequest && (
+        <section
+          className="artisan-next-action"
+          aria-labelledby="next-action-title"
+        >
+          <div className="artisan-next-action-icon" aria-hidden="true">
+            {nextRequest.answers?.__urgency === "urgent" ? (
+              <AlertTriangle size={22} />
+            ) : (
+              <Clock size={22} />
+            )}
+          </div>
+          <div className="artisan-next-action-copy">
+            <span className="eyebrow">Prochaine action</span>
+            <h2 id="next-action-title">
+              {nextRequest.answers?.__urgency === "urgent"
+                ? "Traiter cette demande urgente"
+                : "Traiter la prochaine demande"}
+            </h2>
+            <p>
+              {nextRequest.serviceName || "Demande libre"} · {nextRequest.name}{" "}
+              · {nextRequest.city || "Adresse à vérifier"}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn primary artisan-next-action-button"
+            onClick={() => openRequest(nextRequest.id)}
+          >
+            Ouvrir le dossier <ChevronRight size={18} aria-hidden="true" />
+          </button>
+        </section>
+      )}
       <div className="stack" style={{ minWidth: 0 }}>
         {tab === "requests" && (
           <>

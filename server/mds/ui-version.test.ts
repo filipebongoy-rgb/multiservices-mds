@@ -403,4 +403,14 @@ describe("lisibilité mobile de la demande", () => {
     expect(professional).toContain('auth.user?.role === "admin"');
     expect(professional).toContain("Accéder à l’atelier");
   });
+  it("affiche une prochaine action et un rafraîchissement explicite", () => {
+    const artisan = readFileSync(
+      new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(artisan).toContain("Prochaine action");
+    expect(artisan).toContain("Ouvrir le dossier");
+    expect(artisan).toContain("Actualisation…");
+    expect(artisan).toContain("Traiter cette demande urgente");
+  });
 });

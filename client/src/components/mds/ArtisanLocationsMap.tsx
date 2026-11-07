@@ -97,7 +97,16 @@ export function ArtisanLocationsMap({
 
   useEffect(() => {
     void locate();
-  }, [search, urgentOnly, requests.map(request => request.id).join(",")]);
+  }, [
+    search,
+    urgentOnly,
+    requests
+      .map(
+        request =>
+          `${request.id}:${request.answers?.__urgency ?? ""}:${request.address ?? ""}:${request.postcode ?? ""}:${request.city ?? ""}`
+      )
+      .join("|"),
+  ]);
 
   useEffect(() => {
     if (!node.current || !MAPBOX_PUBLIC_TOKEN || !points.length) return;

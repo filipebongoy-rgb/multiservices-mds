@@ -141,3 +141,11 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 - [x] L’adresse e-mail est obligatoire à la création du compte et doit respecter un format valide.
 - [x] Le mot de passe est obligatoire avec un minimum de 10 caractères.
 - [x] Le champ « Confirmer le mot de passe » est obligatoire ; l’interface bloque l’envoi si les deux valeurs diffèrent et le serveur vérifie aussi leur égalité.
+
+
+## Alertes urgentes artisan — 7 novembre 2026
+- [x] L’espace artisan vérifie les nouvelles demandes toutes les 10 secondes lorsque l’atelier est ouvert.
+- [x] Une nouvelle demande active marquée urgente affiche une alerte persistante « Nouvelle demande urgente », avec prestation, client et bouton « Ouvrir ».
+- [x] La première récupération ne déclenche pas d’alerte répétée pour les demandes déjà existantes ; une demande devient alertable lorsqu’elle apparaît ou passe à l’état urgent.
+- [x] L’alerte peut être fermée, et le compteur/prochaine action restent disponibles dans l’onglet Demandes.
+- [x] Le fonctionnement est documenté honnêtement comme une actualisation courte côté navigateur, et non comme une connexion WebSocket permanente.

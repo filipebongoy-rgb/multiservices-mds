@@ -257,3 +257,8 @@ L’analyse de la vidéo a confirmé un défaut de navigation : un compte client
 ## Inscription avec e-mail et confirmation — 7 novembre 2026
 
 L’inscription MDS exige maintenant une adresse e-mail valide, un mot de passe d’au moins 10 caractères et un second champ de confirmation. L’interface bloque immédiatement les valeurs différentes et le serveur applique une validation indépendante avant la création du compte. Validation : 71 tests ciblés, contrôle TypeScript et build de production réussis.
+
+
+## Alertes urgentes dans l’espace artisan — 7 novembre 2026
+
+L’espace artisan interroge maintenant les demandes toutes les dix secondes lorsqu’il est ouvert. Une demande active portant le niveau urgent et apparue depuis la dernière lecture déclenche un bandeau accessible « Nouvelle demande urgente », avec le nom du client, la prestation, un bouton d’ouverture directe et une fermeture explicite. La première récupération initialise la liste connue afin de ne pas notifier à nouveau les demandes déjà présentes. Cette solution est une actualisation courte côté navigateur ; aucun canal WebSocket permanent ni notification e-mail/SMS n’est prétendu actif.

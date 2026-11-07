@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import {
@@ -13,6 +13,7 @@ import "@/components/mds/private.css";
 
 export default function Profile() {
   const auth = useAuth();
+  const [, setLocation] = useLocation();
   const profile = trpc.mds.profile.me.useQuery(undefined, {
     enabled: Boolean(auth.user),
     retry: false,
@@ -21,10 +22,55 @@ export default function Profile() {
     enabled: Boolean(auth.user),
     retry: false,
   });
+  const utils = trpc.useUtils();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [accountType, setAccountType] = useState<"particular" | "professional">(
+    auth.user?.accountType ?? "particular"
+  );
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [postcode, setPostcode] = useState("");
+  const [city, setCity] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!profile.data) return;
+    setName(profile.data.name ?? "");
+    setEmail(profile.data.email ?? "");
+    setAccountType(profile.data.accountType ?? "particular");
+    setPhone(profile.data.phone ?? "");
+    setAddress(profile.data.address ?? "");
+    setPostcode(profile.data.postcode ?? "");
+    setCity(profile.data.city ?? "");
+  }, [profile.data]);
+
   const update = trpc.mds.profile.update.useMutation({
-    onSuccess: () => void profile.refetch(),
+    onSuccess: async () => {
+      setNotice("Vos informations ont été enregistrées.");
+      await profile.refetch();
+      await utils.auth.me.invalidate();
+    },
   });
-  const [name, setName] = useState<string | null>(null);
+  const changePassword = trpc.mds.profile.changePassword.useMutation({
+    onSuccess: () => {
+      setCurrentPassword("");
+      setNewPassword("");
+      setNotice("Votre mot de passe a été modifié.");
+    },
+  });
+  const logout = trpc.auth.logout.useMutation({
+    onSuccess: () => {
+      void auth.refresh();
+      setLocation("/connexion");
+    },
+  });
+  const deleteAccount = trpc.mds.profile.deleteAccount.useMutation({
+    onSuccess: () => logout.mutate(),
+  });
 
   if (auth.loading)
     return (
@@ -41,78 +87,79 @@ export default function Profile() {
   if (!auth.user) {
     return (
       <main className="page-shell private-workspace">
-        <section className="panel stack" style={{ maxWidth: 640 }}>
-          <span className="eyebrow">Mon profil</span>
-          <h1>Retrouvez vos informations MDS</h1>
+        <section className="panel stack profile-account-card">
+          <span className="eyebrow">Mon compte</span>
+          <h1>Gérez votre compte MDS</h1>
           <p>
-            Connectez-vous pour gérer votre identité et retrouver vos accès
-            particuliers ou professionnels.
+            Connectez-vous pour modifier vos informations, retrouver vos
+            demandes et gérer vos accès.
           </p>
           <LoginButton />
-          <div className="profile-first-actions">
-            <Link className="btn secondary" href="/demande">
-              Faire une demande sans compte
-            </Link>
-            <Link className="text-link" href="/suivi">
-              J’ai déjà une demande à suivre
-            </Link>
-          </div>
-          <div className="profile-artisan-hint">
-            <strong>Vous êtes l’artisan MDS ?</strong>
-            <p className="muted">
-              Le même bouton de connexion sert à retrouver vos dossiers. Une
-              fois connecté, vous accédez directement à votre atelier.
-            </p>
-            <Link className="text-link" href="/artisan">
-              Aller directement à l’espace artisan →
-            </Link>
-          </div>
+          <Link className="btn secondary" href="/demande">
+            Faire une demande sans compte
+          </Link>
         </section>
       </main>
     );
   }
 
-  const currentName = name ?? profile.data?.name ?? auth.user.name ?? "";
+  const isAdmin = auth.user.role === "admin";
   return (
-    <main className="page-shell private-workspace">
-      <header className="simple-pro-header">
+    <main className="page-shell private-workspace profile-page">
+      <header className="simple-pro-header profile-header">
         <span className="eyebrow">
-          {auth.user.role === "admin" ? "Espace artisan" : "Mon profil"}
+          {isAdmin ? "Compte administrateur" : "Mon compte"}
         </span>
-        <h1>Vos informations, au même endroit</h1>
+        <h1>Vos informations</h1>
         <p className="muted">
-          Ces informations servent à vous reconnaître dans vos demandes et vos
-          organisations.
+          Modifiez vos coordonnées, votre espace et vos accès depuis cette page.
         </p>
+        <div className="profile-header-actions">
+          {isAdmin && (
+            <Link href="/artisan" className="btn primary">
+              Ouvrir l’espace artisan
+            </Link>
+          )}
+          <button
+            type="button"
+            className="btn secondary"
+            onClick={() => logout.mutate()}
+            disabled={logout.isPending}
+          >
+            {logout.isPending ? "Déconnexion…" : "Se déconnecter"}
+          </button>
+        </div>
       </header>
-      <div className="stack" style={{ maxWidth: 760 }}>
-        {auth.user.role === "admin" && (
-          <section className="panel stack profile-artisan-panel">
-            <span className="eyebrow">Accès administrateur</span>
-            <h2 className="simple-panel-title">Espace artisan MDS</h2>
-            <p>
-              Votre atelier : demandes reçues, planning, devis, interventions,
-              règlements et activité.
-            </p>
-            <div className="row" style={{ flexWrap: "wrap", gap: 12 }}>
-              <Link href="/artisan" className="button primary">
-                Retour à l’atelier
-              </Link>
-            </div>
-          </section>
-        )}
+
+      <div className="profile-grid">
         <section className="panel stack">
-          <h2 className="simple-panel-title">Informations personnelles</h2>
+          <div>
+            <span className="eyebrow">Profil public</span>
+            <h2 className="simple-panel-title">Identité et coordonnées</h2>
+            <p className="muted small-text">
+              Ces informations peuvent être reprises dans vos demandes et vos
+              contrats.
+            </p>
+          </div>
           <form
             className="stack"
             onSubmit={event => {
               event.preventDefault();
-              update.mutate({ name: currentName.trim() });
+              setNotice(null);
+              update.mutate({
+                name: name.trim(),
+                email: email.trim(),
+                accountType,
+                phone: phone.trim(),
+                address: address.trim(),
+                postcode: postcode.trim(),
+                city: city.trim(),
+              });
             }}
           >
             <Field label="Nom affiché">
               <input
-                value={currentName}
+                value={name}
                 minLength={2}
                 maxLength={120}
                 required
@@ -122,21 +169,88 @@ export default function Profile() {
             </Field>
             <Field label="Adresse e-mail">
               <input
-                value={
-                  profile.data?.email ?? auth.user.email ?? "Non communiquée"
-                }
-                readOnly
-                aria-describedby="email-help"
+                type="email"
+                value={email}
+                maxLength={320}
+                autoComplete="email"
+                onChange={event => setEmail(event.target.value)}
               />
-              <small id="email-help" className="muted">
-                L’adresse de connexion est gérée par votre compte sécurisé.
-              </small>
             </Field>
+            <fieldset className="profile-account-type">
+              <legend>Type d’espace</legend>
+              <label
+                className={accountType === "particular" ? "is-selected" : ""}
+              >
+                <input
+                  type="radio"
+                  checked={accountType === "particular"}
+                  onChange={() => setAccountType("particular")}
+                />
+                <span>
+                  <strong>Particulier</strong>
+                  <small>Demandes et suivi personnels</small>
+                </span>
+              </label>
+              <label
+                className={accountType === "professional" ? "is-selected" : ""}
+              >
+                <input
+                  type="radio"
+                  checked={accountType === "professional"}
+                  onChange={() => setAccountType("professional")}
+                />
+                <span>
+                  <strong>Professionnel</strong>
+                  <small>Entreprise, site ou contrat</small>
+                </span>
+              </label>
+            </fieldset>
+            <div className="profile-form-grid">
+              <Field label="Téléphone">
+                <input
+                  value={phone}
+                  maxLength={30}
+                  autoComplete="tel"
+                  onChange={event => setPhone(event.target.value)}
+                />
+              </Field>
+              <Field label="Ville">
+                <input
+                  value={city}
+                  maxLength={120}
+                  autoComplete="address-level2"
+                  onChange={event => setCity(event.target.value)}
+                />
+              </Field>
+            </div>
+            <div className="profile-form-grid">
+              <Field label="Code postal">
+                <input
+                  value={postcode}
+                  maxLength={12}
+                  autoComplete="postal-code"
+                  onChange={event => setPostcode(event.target.value)}
+                />
+              </Field>
+              <Field label="Adresse">
+                <input
+                  value={address}
+                  maxLength={500}
+                  autoComplete="street-address"
+                  onChange={event => setAddress(event.target.value)}
+                />
+              </Field>
+            </div>
             <ErrorNotice error={update.error} />
+            {notice && (
+              <p className="success-message" role="status">
+                {notice}
+              </p>
+            )}
             <ActionButton
               className="primary"
               type="submit"
-              disabled={update.isPending || currentName.trim().length < 2}
+              disabled={update.isPending || name.trim().length < 2}
             >
               {update.isPending
                 ? "Enregistrement…"
@@ -144,66 +258,128 @@ export default function Profile() {
             </ActionButton>
           </form>
         </section>
-        {auth.user.role !== "admin" && (
-          <>
-            <section className="panel stack">
-              <h2 className="simple-panel-title">Mes espaces</h2>
-              {organizations.isLoading ? (
-                <QueryState loading />
-              ) : organizations.error ? (
-                <QueryState
-                  error={organizations.error}
-                  retry={organizations.refetch}
+
+        <div className="stack">
+          <section className="panel stack">
+            <span className="eyebrow">Sécurité</span>
+            <h2 className="simple-panel-title">Modifier le mot de passe</h2>
+            <p className="muted small-text">
+              Disponible pour les comptes créés avec MDS. Les comptes
+              Manus/OAuth conservent leur connexion externe.
+            </p>
+            <form
+              className="stack"
+              onSubmit={event => {
+                event.preventDefault();
+                changePassword.mutate({ currentPassword, newPassword });
+              }}
+            >
+              <Field label="Mot de passe actuel">
+                <input
+                  type="password"
+                  value={currentPassword}
+                  autoComplete="current-password"
+                  required
+                  onChange={event => setCurrentPassword(event.target.value)}
                 />
-              ) : organizations.data?.length ? (
-                <>
-                  <p>Vous avez accès à ces organisations professionnelles :</p>
-                  <ul className="stack" style={{ paddingLeft: 20 }}>
-                    {organizations.data.map(org => (
-                      <li key={org.id}>
-                        <strong>{org.name}</strong> ·{" "}
-                        {org.role === "owner"
-                          ? "propriétaire"
-                          : org.role === "manager"
-                            ? "gestionnaire"
-                            : "collaborateur"}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link href="/professionnels" className="button secondary">
-                    Gérer mes organisations
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <p>
-                    Vous utilisez actuellement l’espace particulier. Vous pouvez
-                    envoyer une demande sans créer de dossier administratif.
-                  </p>
-                  <Link href="/demande" className="button primary">
-                    Faire une demande
-                  </Link>
-                </>
-              )}
-            </section>
-            <section className="panel stack">
-              <h2 className="simple-panel-title">Paiements et suivi</h2>
-              <p>
-                Retrouvez le prix accepté, le statut du paiement et les preuves
-                de fin directement dans le suivi de chaque dossier.
+              </Field>
+              <Field label="Nouveau mot de passe" hint="10 caractères minimum.">
+                <input
+                  type="password"
+                  value={newPassword}
+                  minLength={10}
+                  autoComplete="new-password"
+                  required
+                  onChange={event => setNewPassword(event.target.value)}
+                />
+              </Field>
+              <ErrorNotice error={changePassword.error} />
+              <ActionButton
+                className="secondary"
+                type="submit"
+                disabled={changePassword.isPending}
+              >
+                {changePassword.isPending
+                  ? "Modification…"
+                  : "Modifier le mot de passe"}
+              </ActionButton>
+            </form>
+          </section>
+
+          <section className="panel stack">
+            <span className="eyebrow">Compte</span>
+            <h2 className="simple-panel-title">Supprimer mon compte</h2>
+            <p className="muted small-text">
+              La suppression anonymise vos données personnelles et conserve
+              uniquement les éléments nécessaires à l’historique légal des
+              demandes et paiements.
+            </p>
+            {isAdmin && (
+              <p className="warning-message">
+                Le compte administrateur propriétaire ne peut pas être supprimé
+                ici. Un autre administrateur doit d’abord reprendre
+                officiellement cet accès.
               </p>
-              <div className="row" style={{ flexWrap: "wrap" }}>
-                <Link href="/suivi" className="button primary">
-                  Voir mon suivi
-                </Link>
-                <Link href="/paiements" className="button secondary">
-                  Voir les paiements
-                </Link>
-              </div>
-            </section>
-          </>
-        )}
+            )}
+            <details>
+              <summary>Afficher la zone de suppression</summary>
+              <form
+                className="stack profile-danger-zone"
+                onSubmit={event => {
+                  event.preventDefault();
+                  deleteAccount.mutate({ confirmation: "SUPPRIMER" });
+                }}
+              >
+                <Field label="Écrivez « SUPPRIMER » pour confirmer">
+                  <input
+                    value={confirmation}
+                    autoComplete="off"
+                    required
+                    onChange={event => setConfirmation(event.target.value)}
+                  />
+                </Field>
+                <ErrorNotice error={deleteAccount.error} />
+                <button
+                  type="submit"
+                  className="btn danger"
+                  disabled={
+                    isAdmin ||
+                    confirmation !== "SUPPRIMER" ||
+                    deleteAccount.isPending
+                  }
+                >
+                  {deleteAccount.isPending
+                    ? "Suppression…"
+                    : "Supprimer mon compte"}
+                </button>
+              </form>
+            </details>
+          </section>
+        </div>
       </div>
+
+      {!isAdmin && (
+        <section className="panel stack profile-links-panel">
+          <span className="eyebrow">Accès rapides</span>
+          <div className="row" style={{ flexWrap: "wrap", gap: 12 }}>
+            <Link href="/demande" className="btn primary">
+              Faire une demande
+            </Link>
+            <Link href="/suivi" className="btn secondary">
+              Voir mon suivi
+            </Link>
+            <Link href="/professionnels" className="btn secondary">
+              Espace professionnel
+            </Link>
+          </div>
+          {organizations.data?.length ? (
+            <p className="muted small-text">
+              Organisations accessibles :{" "}
+              {organizations.data.map(org => org.name).join(", ")}.
+            </p>
+          ) : null}
+        </section>
+      )}
     </main>
   );
 }

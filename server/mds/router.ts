@@ -104,6 +104,11 @@ export const mdsRouter = router({
           id: s.users.id,
           name: s.users.name,
           email: s.users.email,
+          phone: s.users.phone,
+          address: s.users.address,
+          postcode: s.users.postcode,
+          city: s.users.city,
+          accountType: s.users.accountType,
           role: s.users.role,
           createdAt: s.users.createdAt,
         })
@@ -113,13 +118,31 @@ export const mdsRouter = router({
       return user;
     }),
     update: authenticated
-      .input(z.object({ name: z.string().trim().min(2).max(120) }))
+      .input(
+        z.object({
+          name: z.string().trim().min(2).max(120),
+          email: z.union([z.literal(""), z.email().max(320)]),
+          accountType: z.enum(["particular", "professional"]),
+          phone: z.string().trim().max(30),
+          address: z.string().trim().max(500),
+          postcode: z.string().trim().max(12),
+          city: z.string().trim().max(120),
+        })
+      )
       .mutation(async ({ input, ctx }) => {
         const db = await dbRequired();
         return db.transaction(async tx => {
           const [changed] = await tx
             .update(s.users)
-            .set({ name: input.name })
+            .set({
+              name: input.name,
+              email: input.email || null,
+              accountType: input.accountType,
+              phone: input.phone || null,
+              address: input.address || null,
+              postcode: input.postcode || null,
+              city: input.city || null,
+            })
             .where(eq(s.users.id, ctx.user.id));
           if (changed.affectedRows !== 1)
             fail("Votre profil est introuvable.", "NOT_FOUND");
@@ -131,6 +154,73 @@ export const mdsRouter = router({
             ctx.user.id
           );
           return { success: true as const, name: input.name };
+        });
+      }),
+    changePassword: authenticated
+      .input(
+        z.object({
+          currentPassword: z.string().min(1).max(200),
+          newPassword: z.string().min(10).max(200),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const { changeLocalPassword } = await import("../_core/local-auth");
+        await changeLocalPassword({
+          userId: ctx.user.id,
+          currentPassword: input.currentPassword,
+          newPassword: input.newPassword,
+        });
+        return { success: true as const };
+      }),
+    deleteAccount: authenticated
+      .input(z.object({ confirmation: z.literal("SUPPRIMER") }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await dbRequired();
+        return db.transaction(async tx => {
+          const [user] = await tx
+            .select({ id: s.users.id, role: s.users.role })
+            .from(s.users)
+            .where(eq(s.users.id, ctx.user.id));
+          if (!user) fail("Votre profil est introuvable.", "NOT_FOUND");
+          const p = await principal(tx, true);
+          if (user.role === "admin" && p.artisanUserId === user.id)
+            fail(
+              "Le compte administrateur propriétaire ne peut pas être supprimé depuis son profil.",
+              "FORBIDDEN"
+            );
+          if (user.role === "admin") {
+            const admins = await tx
+              .select({ id: s.users.id })
+              .from(s.users)
+              .where(eq(s.users.role, "admin"));
+            if (admins.length <= 1)
+              fail(
+                "Un autre administrateur doit être disponible avant la suppression.",
+                "CONFLICT"
+              );
+          }
+          await tx
+            .update(s.users)
+            .set({
+              name: "Compte supprimé",
+              email: null,
+              phone: null,
+              address: null,
+              postcode: null,
+              city: null,
+              localLoginKey: null,
+              accountType: "particular",
+              role: "user",
+            })
+            .where(eq(s.users.id, user.id));
+          await tx
+            .delete(s.localCredentials)
+            .where(eq(s.localCredentials.userId, user.id));
+          await tx
+            .delete(s.localSessions)
+            .where(eq(s.localSessions.userId, user.id));
+          await recordAudit(tx, user.id, "profile.delete", "user", user.id);
+          return { success: true as const, anonymized: true as const };
         });
       }),
   }),

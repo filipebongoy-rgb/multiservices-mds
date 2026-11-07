@@ -42,6 +42,42 @@ function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
+export async function changeLocalPassword(input: {
+  userId: number;
+  currentPassword: string;
+  newPassword: string;
+}) {
+  const database = await db.getDb();
+  if (!database)
+    throw new Error("La base de données est momentanément indisponible.");
+  const [record] = await database
+    .select({ credentials: localCredentials })
+    .from(localCredentials)
+    .where(eq(localCredentials.userId, input.userId))
+    .limit(1);
+  if (!record)
+    throw new Error(
+      "Ce compte utilise une connexion externe ; aucun mot de passe local n’est disponible."
+    );
+  const expected = Buffer.from(record.credentials.passwordHash, "hex");
+  const actual = Buffer.from(
+    hashPassword(input.currentPassword, record.credentials.passwordSalt),
+    "hex"
+  );
+  if (expected.length !== actual.length || !timingSafeEqual(expected, actual))
+    throw new Error("Le mot de passe actuel est incorrect.");
+  const salt = randomBytes(32).toString("hex");
+  await database
+    .update(localCredentials)
+    .set({
+      passwordHash: hashPassword(input.newPassword, salt),
+      passwordSalt: salt,
+      failedAttempts: 0,
+      lockedUntil: null,
+    })
+    .where(eq(localCredentials.userId, input.userId));
+}
+
 function cookieOptions(req: Request) {
   return { ...getSessionCookieOptions(req), maxAge: SESSION_TTL_MS };
 }

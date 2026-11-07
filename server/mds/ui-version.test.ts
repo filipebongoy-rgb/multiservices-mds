@@ -95,6 +95,11 @@ describe("espace artisan mobile : l'ouverture d'un dossier masque la liste pour 
   it("le dossier propose un bouton explicite de retour à la liste", () => {
     expect(requests).toMatch(/Retour à la liste des\s*demandes/s);
   });
+  it("remplace l’acceptation bloquée par une action devis utilisable", () => {
+    expect(requests).toContain('onClick={() => setAction("quote")}');
+    expect(requests).toContain("Préparer le devis");
+    expect(requests).toContain("Un devis distinct doit être accepté");
+  });
   it("l'onglet Interventions adopte le même comportement master-detail avec sélection visible", () => {
     expect(artisan).toContain("select(request.id)");
     expect(artisan).toContain("4px solid #bc4c23");

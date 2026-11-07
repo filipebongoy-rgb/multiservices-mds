@@ -850,33 +850,39 @@ export function RequestDetail({
         </section>
       )}
       <section className="stack" aria-label="Répondre à la demande">
-        {editable && needsAcceptedQuote && (
-          <p className="notice">
-            Un devis doit être accepté avant confirmation.
-          </p>
-        )}
         <div className="row" style={{ flexWrap: "wrap", gap: 8 }}>
           {editable && (
             <>
-              <ActionButton
-                className="primary"
-                disabled={mutation.isPending || needsAcceptedQuote}
-                onClick={() => {
-                  if (quickAccept)
-                    void perform({
-                      id: request.id,
-                      version: request.version,
-                      action: "accept",
-                      proposedStart: new Date(quickStart!).toISOString(),
-                      priceCents: quickPrice!,
-                      durationMinutes: request.durationMinutes,
-                    });
-                  else setAction("accept");
-                }}
-              >
-                <Check size={17} aria-hidden="true" />
-                Accepter
-              </ActionButton>
+              {needsAcceptedQuote ? (
+                <ActionButton
+                  className="primary"
+                  disabled={mutation.isPending}
+                  onClick={() => setAction("quote")}
+                >
+                  <FileText size={17} aria-hidden="true" />
+                  Préparer le devis
+                </ActionButton>
+              ) : (
+                <ActionButton
+                  className="primary"
+                  disabled={mutation.isPending}
+                  onClick={() => {
+                    if (quickAccept)
+                      void perform({
+                        id: request.id,
+                        version: request.version,
+                        action: "accept",
+                        proposedStart: new Date(quickStart!).toISOString(),
+                        priceCents: quickPrice!,
+                        durationMinutes: request.durationMinutes,
+                      });
+                    else setAction("accept");
+                  }}
+                >
+                  <Check size={17} aria-hidden="true" />
+                  Accepter
+                </ActionButton>
+              )}
               <ActionButton
                 disabled={mutation.isPending}
                 onClick={() => setAction("refuse")}
@@ -891,6 +897,11 @@ export function RequestDetail({
                 <CalendarDays size={17} aria-hidden="true" />
                 Autre créneau
               </ActionButton>
+              {needsAcceptedQuote && (
+                <small className="muted" style={{ flexBasis: "100%" }}>
+                  Un devis distinct doit être accepté avant de proposer un créneau.
+                </small>
+              )}
             </>
           )}
           {["confirmed", "planned"].includes(request.status) && (

@@ -1,5 +1,5 @@
 
 
-## Ouverture directe des dossiers — 8 novembre 2026
+## Diagnostic vidéo artisan — 8 novembre 2026
 
-Le bouton « Ouvrir le dossier » de l’espace artisan sélectionne désormais la demande puis fait défiler automatiquement vers le panneau détail avec `scrollIntoView({ block: "start" })`. Le précédent `scrollTo(0)` pouvait laisser le détail sous la zone d’action ; il a été supprimé. Le panneau reçoit le focus pour faciliter l’usage au clavier et sur mobile.
+La vidéo montrait un dossier dont `quoteRequired(request)` était vrai. Le bouton « Accepter » était visuellement présent mais désactivé par `needsAcceptedQuote`, car le serveur exige un devis distinct avant toute proposition. La modale Refuser fonctionnait, ce qui confirmait que l’interface n’était pas globalement figée. L’interface affiche maintenant « Préparer le devis », ouvre directement l’action `quote` et explique la règle sous les boutons. La validation serveur reste obligatoire. Le bandeau « Publication en cours » visible dans la vidéo correspondait à l’état de déploiement de la version observée, pas à une action métier de l’artisan.

@@ -262,3 +262,8 @@ L’inscription MDS exige maintenant une adresse e-mail valide, un mot de passe 
 ## Alertes urgentes dans l’espace artisan — 7 novembre 2026
 
 L’espace artisan interroge maintenant les demandes toutes les dix secondes lorsqu’il est ouvert. Une demande active portant le niveau urgent et apparue depuis la dernière lecture déclenche un bandeau accessible « Nouvelle demande urgente », avec le nom du client, la prestation, un bouton d’ouverture directe et une fermeture explicite. La première récupération initialise la liste connue afin de ne pas notifier à nouveau les demandes déjà présentes. Cette solution est une actualisation courte côté navigateur ; aucun canal WebSocket permanent ni notification e-mail/SMS n’est prétendu actif.
+
+
+## Géolocalisation des interventions urgentes — 7 novembre 2026
+
+La carte Planning de l’espace artisan permet maintenant d’afficher uniquement les demandes urgentes, d’utiliser des marqueurs rouges et d’ouvrir directement le dossier depuis un lieu. Le bouton « Ma position » utilise l’autorisation GPS du navigateur pour ajouter un repère local et recentrer la carte ; cette position n’est ni stockée ni transmise par cette fonctionnalité. Les adresses sont géocodées à partir des dossiers réels, sans coordonnées inventées. Le partage GPS d’un trajet reste soumis au bouton de départ et aux contrôles existants.

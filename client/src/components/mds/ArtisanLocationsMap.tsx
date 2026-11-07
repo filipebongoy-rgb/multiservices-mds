@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
-import { MapPin, RefreshCw, Search, ExternalLink } from "lucide-react";
+import {
+  ExternalLink,
+  LocateFixed,
+  MapPin,
+  RefreshCw,
+  Search,
+} from "lucide-react";
 import type { RequestRecord } from "./private-types";
 import { MAPBOX_PUBLIC_TOKEN } from "@/config/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -16,21 +22,28 @@ export function ArtisanLocationsMap({
 }) {
   const node = useRef<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const userMarker = useRef<mapboxgl.Marker | null>(null);
   const [points, setPoints] = useState<
     { request: RequestRecord; coordinates: Coordinates }[]
   >([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [search, setSearch] = useState("");
+  const [urgentOnly, setUrgentOnly] = useState(false);
+  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
 
   const allActiveRequests = requests
     .filter(request => request.address && request.postcode && request.city)
     .slice(0, 50);
-  const activeRequests = allActiveRequests.filter(request =>
-    `${request.name} ${request.address} ${request.postcode} ${request.city} ${request.serviceName || ""}`
-      .toLocaleLowerCase("fr")
-      .includes(search.toLocaleLowerCase("fr"))
-  );
+  const activeRequests = allActiveRequests.filter(request => {
+    const matchesSearch =
+      `${request.name} ${request.address} ${request.postcode} ${request.city} ${request.serviceName || ""}`
+        .toLocaleLowerCase("fr")
+        .includes(search.toLocaleLowerCase("fr"));
+    const matchesUrgency =
+      !urgentOnly || request.answers?.__urgency === "urgent";
+    return matchesSearch && matchesUrgency;
+  });
 
   async function locate() {
     if (!MAPBOX_PUBLIC_TOKEN || !activeRequests.length) return;
@@ -58,6 +71,25 @@ export function ArtisanLocationsMap({
     setLoading(false);
   }
 
+  function locateMe() {
+    if (!navigator.geolocation) {
+      setMessage("La géolocalisation n’est pas disponible sur cet appareil.");
+      return;
+    }
+    setMessage("");
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        setUserLocation([position.coords.longitude, position.coords.latitude]);
+      },
+      () => {
+        setMessage(
+          "Autorisez la position dans votre navigateur pour vous repérer sur la carte."
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 30_000 }
+    );
+  }
+
   useEffect(() => {
     void locate();
   }, [search, requests.map(request => request.id).join(",")]);
@@ -78,23 +110,43 @@ export function ArtisanLocationsMap({
       const bounds = new mapboxgl.LngLatBounds();
       points.forEach(({ request, coordinates }) => {
         bounds.extend(coordinates);
-        new mapboxgl.Marker({ color: "#bc4c23" })
+        const isUrgent = request.answers?.__urgency === "urgent";
+        new mapboxgl.Marker({ color: isUrgent ? "#d9482b" : "#bc4c23" })
           .setLngLat(coordinates)
           .setPopup(
             new mapboxgl.Popup({ offset: 20 }).setHTML(
-              `<strong>${escapeHtml(request.name)}</strong><br>${escapeHtml(request.city)}<br><small>${escapeHtml(request.serviceName || "Demande libre")}</small>`
+              `${isUrgent ? '<strong style="color:#d9482b">URGENT</strong><br>' : ""}<strong>${escapeHtml(request.name)}</strong><br>${escapeHtml(request.city)}<br><small>${escapeHtml(request.serviceName || "Demande libre")}</small>`
             )
           )
           .addTo(instance);
       });
       if (points.length > 1)
         instance.fitBounds(bounds, { padding: 48, maxZoom: 13 });
+      if (userLocation) {
+        userMarker.current = new mapboxgl.Marker({ color: "#0b1a2a" })
+          .setLngLat(userLocation)
+          .setPopup(
+            new mapboxgl.Popup({ offset: 18 }).setText("Votre position")
+          )
+          .addTo(instance);
+        instance.flyTo({ center: userLocation, zoom: 12, essential: true });
+      }
     });
     return () => {
       instance.remove();
       map.current = null;
     };
   }, [points]);
+
+  useEffect(() => {
+    if (!map.current || !userLocation) return;
+    userMarker.current?.remove();
+    userMarker.current = new mapboxgl.Marker({ color: "#0b1a2a" })
+      .setLngLat(userLocation)
+      .setPopup(new mapboxgl.Popup({ offset: 18 }).setText("Votre position"))
+      .addTo(map.current);
+    map.current.flyTo({ center: userLocation, zoom: 12, essential: true });
+  }, [userLocation]);
 
   if (!MAPBOX_PUBLIC_TOKEN)
     return (
@@ -123,6 +175,9 @@ export function ArtisanLocationsMap({
           </p>
         </div>
         <div className="artisan-locations-actions">
+          <button type="button" className="btn secondary" onClick={locateMe}>
+            <LocateFixed size={16} aria-hidden="true" /> Ma position
+          </button>
           <button
             type="button"
             className="btn secondary"
@@ -143,6 +198,21 @@ export function ArtisanLocationsMap({
           onChange={event => setSearch(event.target.value)}
           placeholder="Rechercher une ville, une adresse ou un client"
         />
+      </label>
+      <label className="artisan-locations-urgent-filter">
+        <input
+          type="checkbox"
+          checked={urgentOnly}
+          onChange={event => setUrgentOnly(event.target.checked)}
+        />
+        <span>Urgentes uniquement</span>
+        <strong>
+          {
+            allActiveRequests.filter(
+              request => request.answers?.__urgency === "urgent"
+            ).length
+          }
+        </strong>
       </label>
       {message && <p className="notice">{message}</p>}
       {activeRequests.length ? (
@@ -165,6 +235,9 @@ export function ArtisanLocationsMap({
                 <small>
                   {request.address}, {request.postcode} {request.city}
                 </small>
+                {request.answers?.__urgency === "urgent" && (
+                  <em className="artisan-location-urgent">Urgent</em>
+                )}
               </span>
               {onOpen && <ExternalLink size={16} aria-hidden="true" />}
             </button>

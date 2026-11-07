@@ -2747,6 +2747,51 @@ input[type="checkbox"] {
 .artisan-live-alert-close:focus-visible {
   background: #ffe0d6;
 }
+.artisan-locations-urgent-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin: 10px 0 12px;
+  padding: 8px 11px;
+  border: 1px solid #edbba7;
+  border-radius: 9px;
+  background: #fff7f3;
+  color: #7d2e1d;
+  font-size: 14px;
+  font-weight: 650;
+}
+.artisan-locations-urgent-filter input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--mds-orange, #bc4c23);
+}
+.artisan-locations-urgent-filter strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #d9482b;
+  color: #fff;
+  font-size: 12px;
+}
+.artisan-location-result span {
+  display: grid;
+  gap: 3px;
+}
+.artisan-location-urgent {
+  width: fit-content;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #ffe0d6;
+  color: #a32e19;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+}
 .artisan-chip-group {
   display: inline-flex;
   gap: 6px;

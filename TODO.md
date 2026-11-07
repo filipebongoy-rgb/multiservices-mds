@@ -149,3 +149,10 @@ Preuves de cette poursuite : `pnpm check`, 124 tests en six fichiers, build de p
 - [x] La première récupération ne déclenche pas d’alerte répétée pour les demandes déjà existantes ; une demande devient alertable lorsqu’elle apparaît ou passe à l’état urgent.
 - [x] L’alerte peut être fermée, et le compteur/prochaine action restent disponibles dans l’onglet Demandes.
 - [x] Le fonctionnement est documenté honnêtement comme une actualisation courte côté navigateur, et non comme une connexion WebSocket permanente.
+
+
+## Géolocalisation des interventions urgentes — 7 novembre 2026
+- [x] La carte Planning propose le filtre « Urgentes uniquement » avec le nombre de demandes urgentes localisables.
+- [x] Les demandes urgentes utilisent un marqueur rouge et affichent un badge « Urgent » dans la liste ; cliquer sur un lieu ouvre directement le dossier.
+- [x] Le bouton « Ma position » demande l’autorisation GPS du navigateur, ajoute un repère local et recentre la carte. La position n’est ni enregistrée ni envoyée au serveur par cette fonctionnalité.
+- [x] Une adresse impossible à géocoder ne bloque pas les autres interventions. Le trajet GPS réel reste séparé et ne démarre qu’après l’action artisan correspondante.

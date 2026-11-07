@@ -424,4 +424,18 @@ describe("lisibilité mobile de la demande", () => {
     expect(artisan).toContain('role="alert"');
     expect(artisan).toContain("Ouvrir");
   });
+  it("géolocalise les lieux urgents sans simuler la position", () => {
+    const map = readFileSync(
+      new URL(
+        "../../client/src/components/mds/ArtisanLocationsMap.tsx",
+        import.meta.url
+      ),
+      "utf8"
+    );
+    expect(map).toContain("Urgentes uniquement");
+    expect(map).toContain("navigator.geolocation.getCurrentPosition");
+    expect(map).toContain("Ma position");
+    expect(map).toContain('request.answers?.__urgency === "urgent"');
+    expect(map).toContain("Votre position");
+  });
 });

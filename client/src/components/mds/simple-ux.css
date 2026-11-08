@@ -2858,7 +2858,10 @@ input[type="checkbox"] {
 .artisan-mobile-bar {
   display: none;
 }
-@media (max-width: 680px) {
+@media (max-width: 900px), (pointer: coarse) {
+  .private-workspace {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+  }
   .artisan-next-action {
     grid-template-columns: auto minmax(0, 1fr);
     align-items: start;

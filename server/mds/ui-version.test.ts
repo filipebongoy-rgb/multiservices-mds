@@ -104,6 +104,11 @@ describe("espace artisan mobile : l'ouverture d'un dossier masque la liste pour 
     expect(artisan).toContain("select(request.id)");
     expect(artisan).toContain("4px solid #bc4c23");
   });
+  it("garde la barre artisan visible dès l’ouverture sur mobile", () => {
+    expect(css).toContain("@media (max-width: 900px), (pointer: coarse)");
+    expect(css).toContain(".artisan-mobile-bar {\n    position: fixed;");
+    expect(css).toContain(".private-workspace {\n    padding-bottom:");
+  });
 });
 
 describe("espace professionnel et contrats d’entretien", () => {

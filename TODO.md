@@ -1,8 +1,7 @@
 
 
-## Workflow avec devis ou sans devis
+## Notification artisan après réservation
 
-- [x] Une prestation à tarif direct conserve l’action artisan « Accepter » lorsque le créneau et le prix peuvent être proposés.
-- [x] Une prestation nécessitant un devis remplace l’action silencieusement bloquée par « Préparer le devis », avec ouverture directe du formulaire et explication de la règle.
-- [x] Les demandes client incomplètes sont bloquées avant envoi avec la liste lisible des informations manquantes : nom, e-mail, téléphone, vérification tarifaire, consentement ou organisation.
-- [x] Une action artisan en cours affiche « Enregistrement de l’action en cours… » et explique la pause temporaire des autres clics pour éviter les doubles envois.
+- [x] Lorsqu’un client confirme un créneau réellement disponible, le rendez-vous est créé puis la file e-mail/SMS artisan est traitée immédiatement.
+- [x] Les notifications utilisent les canaux configurés dans MDS, Resend pour l’e-mail et Twilio pour le SMS, avec le numéro au format international pour le SMS.
+- [x] Une panne de fournisseur ne supprime ni n’annule le rendez-vous : la file durable conserve l’état et le traitement planifié peut reprendre l’envoi sans doublon.

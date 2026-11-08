@@ -608,3 +608,15 @@ describe("disponibilités artisan synchronisées", () => {
     expect(calendar).toContain("servent directement au calcul des créneaux");
   });
 });
+
+describe("notification de réservation", () => {
+  it("traite la file après le commit de confirmation client", () => {
+    const requests = readFileSync(
+      new URL("./requests.ts", import.meta.url),
+      "utf8"
+    );
+    expect(requests).toContain('if (input.action === "confirm") await flushBookingNotifications(db)');
+    expect(requests).toContain("La transaction de réservation est déjà validée");
+    expect(requests).toContain('import { processOutbox } from "./outbox"');
+  });
+});

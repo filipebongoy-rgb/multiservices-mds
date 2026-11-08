@@ -32,6 +32,7 @@ import {
   type Identity,
   type Tx,
 } from "./common";
+import { processOutbox } from "./outbox";
 import {
   checkVersion,
   fail,
@@ -151,6 +152,17 @@ async function load(tx: Tx, key: { id: number } | { reference: string }) {
     .for("update");
   if (!r) fail("Cette demande est introuvable.", "NOT_FOUND");
   return r;
+}
+async function flushBookingNotifications(
+  db: Awaited<ReturnType<typeof dbRequired>>
+) {
+  try {
+    // La transaction de réservation est déjà validée. Une panne fournisseur ne
+    // doit jamais annuler le rendez-vous : la file durable reprendra l’envoi.
+    await processOutbox(db, await principal(db), 2);
+  } catch {
+    // Le traitement planifié reste le chemin de reprise garanti.
+  }
 }
 async function readDetail(
   key: { id: number } | { reference: string },
@@ -1360,6 +1372,7 @@ export const requestsRouter = router({
           "La proposition a expiré et cet événement a été enregistré. Demandez un nouvel accord MDS.",
           "CONFLICT"
         );
+      if (input.action === "confirm") await flushBookingNotifications(db);
       return { success: true as const };
     }),
 });

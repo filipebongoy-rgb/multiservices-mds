@@ -326,6 +326,15 @@ describe("authentification MDS locale", () => {
     expect(localAuth).toContain("localSessions");
     expect(localAuth).toContain("getSessionCookieOptions");
   });
+  it("propose visibilité du mot de passe, reset à usage unique et accès artisan", () => {
+    expect(auth).toContain("showPassword");
+    expect(auth).toContain("Mot de passe oublié ?");
+    expect(auth).toContain("requestReset.mutate({ email })");
+    expect(auth).toContain("resetPassword.mutate");
+    expect(localAuth).toContain("localPasswordResets");
+    expect(localAuth).toContain("PASSWORD_RESET_TTL_MS");
+    expect(localAuth).toContain("usedAt");
+  });
   it("affiche une action rapide connexion ou déconnexion dans l’en-tête", () => {
     const layout = readFileSync(
       new URL("../../client/src/components/mds/Layout.tsx", import.meta.url),
@@ -333,6 +342,7 @@ describe("authentification MDS locale", () => {
     );
     expect(layout).toContain("simple-auth-quick-action");
     expect(layout).toContain('user ? "Se déconnecter" : "Se connecter"');
+    expect(layout).toContain("Accès artisan");
   });
 });
 

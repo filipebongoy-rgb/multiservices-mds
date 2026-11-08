@@ -10,15 +10,20 @@ import * as db from "../db";
 import {
   localCredentials,
   localSessions,
+  localPasswordResets,
   adminInvites,
   users,
+  settings,
+  messageOutbox,
   type User,
 } from "../../drizzle/schema";
 import { getSessionCookieOptions } from "./cookies";
+import { processOutbox, providerReadiness, safeOrigin } from "../mds/outbox";
 
 export const LOCAL_SESSION_COOKIE = "mds_local_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const SCRYPT_OPTIONS = { N: 16384, r: 8, p: 1, maxmem: 32 * 1024 * 1024 };
+const PASSWORD_RESET_TTL_MS = 1000 * 60 * 30;
 
 export function normalizeLocalLoginKey(firstName: string, lastName: string) {
   return `${firstName} ${lastName}`
@@ -40,6 +45,77 @@ function hashPassword(password: string, saltHex: string) {
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
+}
+
+function normalizeEmail(email: string) {
+  return email.trim().toLocaleLowerCase("fr-FR");
+}
+
+export async function requestLocalPasswordReset(emailInput: string) {
+  const database = await db.getDb();
+  if (!database)
+    throw new Error("La base de données est momentanément indisponible.");
+  const email = normalizeEmail(emailInput);
+  const [record] = await database
+    .select({ user: users })
+    .from(users)
+    .innerJoin(localCredentials, eq(localCredentials.userId, users.id))
+    .where(eq(users.email, email))
+    .limit(1);
+  if (!record) return;
+  const [p] = await database.select().from(settings).where(eq(settings.id, 1));
+  const origin = p && safeOrigin(p.publicOrigin);
+  if (!p || !origin || !p.emailEnabled || !p.emailFrom || !providerReadiness().email)
+    return;
+  const token = randomBytes(32).toString("base64url");
+  const tokenHash = hashToken(token);
+  await database.delete(localPasswordResets).where(eq(localPasswordResets.userId, record.user.id));
+  await database.insert(localPasswordResets).values({
+    tokenHash,
+    userId: record.user.id,
+    expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+  });
+  await database.insert(messageOutbox).values({
+    dedupeKey: `password-reset:${record.user.id}:${tokenHash}`,
+    userId: record.user.id,
+    channel: "email",
+    recipient: email,
+    subject: "MDS · Créer un nouveau mot de passe",
+    body: `Pour créer un nouveau mot de passe MDS, ouvrez ce lien dans les 30 minutes : ${origin}/connexion?reset=${encodeURIComponent(token)}. Si vous n’êtes pas à l’origine de cette demande, ignorez cet e-mail.`,
+    status: "queued",
+  });
+  try {
+    await processOutbox(database, p, 1);
+  } catch {
+    // La file durable sera reprise par la maintenance MDS.
+  }
+}
+
+export async function resetLocalPassword(input: { token: string; newPassword: string }) {
+  const database = await db.getDb();
+  if (!database)
+    throw new Error("La base de données est momentanément indisponible.");
+  const tokenHash = hashToken(input.token);
+  return database.transaction(async tx => {
+    const [reset] = await tx
+      .select()
+      .from(localPasswordResets)
+      .where(eq(localPasswordResets.tokenHash, tokenHash))
+      .limit(1);
+    if (!reset || reset.usedAt || reset.expiresAt <= new Date())
+      throw new Error("Ce lien est expiré ou a déjà été utilisé.");
+    const salt = randomBytes(32).toString("hex");
+    await tx.update(localCredentials).set({
+      passwordHash: hashPassword(input.newPassword, salt),
+      passwordSalt: salt,
+      failedAttempts: 0,
+      lockedUntil: null,
+    }).where(eq(localCredentials.userId, reset.userId));
+    await tx.delete(localSessions).where(eq(localSessions.userId, reset.userId));
+    await tx.update(localPasswordResets).set({ usedAt: new Date() })
+      .where(eq(localPasswordResets.tokenHash, tokenHash));
+    return { success: true as const };
+  });
 }
 
 export async function changeLocalPassword(input: {

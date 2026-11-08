@@ -4,6 +4,8 @@ import {
   ArrowLeft,
   LockKeyhole,
   LogIn,
+  Eye,
+  EyeOff,
   ShieldCheck,
   UserPlus,
 } from "lucide-react";
@@ -20,18 +22,24 @@ function safeReturnTo(value: string | null) {
 
 export default function Auth() {
   const [, setLocation] = useLocation();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot" | "reset">(
+    new URLSearchParams(window.location.search).get("reset") ? "reset" : "login"
+  );
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [notice, setNotice] = useState("");
   const [accountType, setAccountType] = useState<"particular" | "professional">(
     "particular"
   );
   const [error, setError] = useState<unknown>(null);
   const params = new URLSearchParams(window.location.search);
   const returnTo = safeReturnTo(params.get("returnTo"));
+  const resetToken = params.get("reset") || "";
   const utils = trpc.useUtils();
   const register = trpc.auth.registerLocal.useMutation({
     onSuccess: async user => {
@@ -51,11 +59,33 @@ export default function Auth() {
     },
     onError: cause => setError(cause),
   });
-  const pending = register.isPending || login.isPending;
+  const requestReset = trpc.auth.requestPasswordReset.useMutation({
+    onSuccess: () => setNotice("Si cette adresse correspond à un compte local, un lien de réinitialisation vient d’être envoyé."),
+    onError: cause => setError(cause),
+  });
+  const resetPassword = trpc.auth.resetPassword.useMutation({
+    onSuccess: () => {
+      setNotice("Votre mot de passe a été modifié. Vous pouvez maintenant vous connecter.");
+      setMode("login");
+      setPassword("");
+      setPasswordConfirmation("");
+    },
+    onError: cause => setError(cause),
+  });
+  const pending = register.isPending || login.isPending || requestReset.isPending || resetPassword.isPending;
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setNotice("");
+    if (mode === "forgot") {
+      requestReset.mutate({ email });
+      return;
+    }
+    if (mode === "reset") {
+      resetPassword.mutate({ token: resetToken, newPassword: password, passwordConfirmation });
+      return;
+    }
     if (mode === "register") {
       register.mutate({
         firstName,
@@ -78,14 +108,24 @@ export default function Auth() {
         </Link>
         <div className="auth-heading">
           <span className="eyebrow">Compte MDS</span>
-          <h1>{mode === "login" ? "Se connecter" : "Créer mon compte"}</h1>
+          <h1>
+            {mode === "login"
+              ? returnTo === "/artisan" ? "Accès artisan" : "Se connecter"
+              : mode === "register" ? "Créer mon compte"
+              : mode === "forgot" ? "Mot de passe oublié"
+              : "Créer un nouveau mot de passe"}
+          </h1>
           <p className="muted">
             {mode === "login"
               ? "Retrouvez vos demandes, paiements et informations au même endroit."
-              : "Quelques informations suffisent. Votre mot de passe est protégé côté serveur."}
+              : mode === "register"
+                ? "Quelques informations suffisent. Votre mot de passe est protégé côté serveur."
+                : mode === "forgot"
+                  ? "Saisissez votre adresse e-mail. Nous vous enverrons un lien valable 30 minutes."
+                  : "Choisissez un nouveau mot de passe de 10 caractères minimum."}
           </p>
         </div>
-        <div className="auth-tabs" role="tablist" aria-label="Accès au compte">
+        {(mode === "login" || mode === "register") && <div className="auth-tabs" role="tablist" aria-label="Accès au compte">
           <button
             type="button"
             className={mode === "login" ? "is-active" : ""}
@@ -106,7 +146,7 @@ export default function Auth() {
           >
             <UserPlus size={17} /> Créer un compte
           </button>
-        </div>
+        </div>}
         <form className="stack" onSubmit={submit}>
           {mode === "register" && (
             <div className="auth-name-grid">
@@ -132,7 +172,7 @@ export default function Auth() {
               </Field>
             </div>
           )}
-          <Field
+          {mode !== "reset" && <Field
             label="Adresse e-mail"
             hint={
               mode === "register"
@@ -148,7 +188,7 @@ export default function Auth() {
               maxLength={320}
               required
             />
-          </Field>
+          </Field>}
           {mode === "register" && (
             <fieldset className="auth-account-type">
               <legend>Votre espace</legend>
@@ -182,33 +222,32 @@ export default function Auth() {
               </label>
             </fieldset>
           )}
-          <Field
+          {mode !== "forgot" && <Field
             label="Mot de passe"
-            hint={
-              mode === "register"
-                ? "10 caractères minimum. Ne le partagez jamais."
-                : undefined
-            }
+            hint={mode === "register" || mode === "reset" ? "10 caractères minimum. Vous pouvez afficher le texte avant validation." : undefined}
           >
-            <input
-              type="password"
-              value={password}
-              onChange={event => setPassword(event.target.value)}
-              autoComplete={
-                mode === "register" ? "new-password" : "current-password"
-              }
-              minLength={mode === "register" ? 10 : 1}
-              maxLength={200}
-              required
-            />
-          </Field>
-          {mode === "register" && (
+            <div className="auth-password-field">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={event => setPassword(event.target.value)}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                minLength={mode === "login" ? 1 : 10}
+                maxLength={200}
+                required
+              />
+              <button type="button" className="auth-password-toggle" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}>
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </Field>}
+          {(mode === "register" || mode === "reset") && (
             <Field
               label="Confirmer le mot de passe"
               hint="Saisissez exactement le même mot de passe."
             >
               <input
-                type="password"
+                type={showConfirmation ? "text" : "password"}
                 value={passwordConfirmation}
                 onChange={event => setPasswordConfirmation(event.target.value)}
                 autoComplete="new-password"
@@ -220,34 +259,49 @@ export default function Auth() {
                   password !== passwordConfirmation
                 }
               />
+              <button type="button" className="auth-password-toggle" onClick={() => setShowConfirmation(value => !value)} aria-label={showConfirmation ? "Masquer la confirmation" : "Afficher la confirmation"}>
+                {showConfirmation ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </Field>
           )}
-          {mode === "register" &&
+          {(mode === "register" || mode === "reset") &&
             passwordConfirmation.length > 0 &&
             password !== passwordConfirmation && (
               <p className="error-message" role="alert">
                 Les deux mots de passe doivent être identiques.
               </p>
             )}
+          {mode === "forgot" && (
+            <p className="muted small-text">Le message de confirmation sera identique que l’adresse existe ou non.</p>
+          )}
           <ErrorNotice error={error} />
+          {notice && <p className="success-message" role="status">{notice}</p>}
           <button
             type="submit"
             className="btn primary auth-submit"
             disabled={
               pending ||
-              (mode === "register" &&
-                (!email.trim() ||
+              ((mode === "register" || mode === "reset") &&
+                ((mode === "register" && !email.trim()) ||
+                  (mode === "reset" && !resetToken) ||
                   password.length < 10 ||
                   password !== passwordConfirmation))
             }
           >
             {pending
               ? "Traitement…"
-              : mode === "login"
-                ? "Ouvrir mon espace"
-                : "Créer mon compte"}
+              : mode === "login" ? "Ouvrir mon espace"
+              : mode === "register" ? "Créer mon compte"
+              : mode === "forgot" ? "Recevoir le lien"
+              : "Enregistrer le nouveau mot de passe"}
           </button>
         </form>
+        {mode === "login" && <button type="button" className="auth-text-link" onClick={() => { setMode("forgot"); setError(null); setNotice(""); }}>
+          Mot de passe oublié ?
+        </button>}
+        {(mode === "forgot" || mode === "reset") && <button type="button" className="auth-text-link" onClick={() => { setMode("login"); setError(null); setNotice(""); }}>
+          Retour à la connexion
+        </button>}
         <div className="auth-security-note">
           <ShieldCheck size={20} aria-hidden="true" />
           <span>

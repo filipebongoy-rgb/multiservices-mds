@@ -99,8 +99,11 @@ export function Header() {
               <Link href="/prestations">Catalogue prestations</Link>
             </DropdownMenuItem>
           </>
-        ) : (
+          ) : (
           <>
+            <DropdownMenuItem asChild>
+              <Link href="/connexion?returnTo=%2Fartisan">Accès artisan</Link>
+            </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/demande">Demander un devis (particulier)</Link>
             </DropdownMenuItem>
@@ -262,11 +265,12 @@ export function Footer() {
         <nav aria-label="Informations légales">
           <Link href="/confidentialite">Confidentialité</Link>
           <Link href="/mentions-legales">Mentions légales</Link>
-          {user?.role === "admin" && (
-            <Link href="/artisan" className="simple-footer-artisan">
-              Accès équipe MDS
-            </Link>
-          )}
+          <Link
+            href={user?.role === "admin" ? "/artisan" : "/connexion?returnTo=%2Fartisan"}
+            className="simple-footer-artisan"
+          >
+            {user?.role === "admin" ? "Accès équipe MDS" : "Accès artisan"}
+          </Link>
         </nav>
       </div>
     </footer>

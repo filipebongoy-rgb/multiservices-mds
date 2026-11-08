@@ -8,6 +8,8 @@ import {
   clearLocalSession,
   loginLocalUser,
   registerLocalUser,
+  requestLocalPasswordReset,
+  resetLocalPassword,
 } from "./_core/local-auth";
 
 export const appRouter = router({
@@ -45,6 +47,29 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) =>
         loginLocalUser({ ...input, req: ctx.req, res: ctx.res })
       ),
+    requestPasswordReset: publicProcedure
+      .input(z.object({ email: z.string().trim().email().max(320) }))
+      .mutation(async ({ input }) => {
+        await requestLocalPasswordReset(input.email);
+        return { success: true as const };
+      }),
+    resetPassword: publicProcedure
+      .input(
+        z
+          .object({
+            token: z.string().min(40).max(100),
+            newPassword: z.string().min(10).max(200),
+            passwordConfirmation: z.string().min(10).max(200),
+          })
+          .refine(input => input.newPassword === input.passwordConfirmation, {
+            message: "Les deux mots de passe doivent être identiques.",
+            path: ["passwordConfirmation"],
+          })
+      )
+      .mutation(async ({ input }) => {
+        await resetLocalPassword(input);
+        return { success: true as const };
+      }),
     logout: publicProcedure.mutation(async ({ ctx }) => {
       await clearLocalSession(ctx.req, ctx.res);
       const cookieOptions = getSessionCookieOptions(ctx.req);

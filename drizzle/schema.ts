@@ -70,6 +70,20 @@ export const localSessions = mysqlTable(
   },
   table => [index("local_sessions_user_idx").on(table.userId)]
 );
+
+export const localPasswordResets = mysqlTable(
+  "mds_local_password_resets",
+  {
+    tokenHash: varchar("tokenHash", { length: 64 }).primaryKey(),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id),
+    expiresAt: timestamp("expiresAt").notNull(),
+    usedAt: timestamp("usedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [index("local_password_resets_user_idx").on(table.userId)]
+);
 const dates = () => ({
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

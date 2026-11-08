@@ -3961,3 +3961,45 @@ input[type="checkbox"] {
   .service-area-map-search .btn { width: 100%; }
   .service-area-map-canvas { min-height: 250px; }
 }
+
+.auth-password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.auth-password-field input {
+  width: 100%;
+  padding-right: 3.25rem;
+}
+.auth-password-toggle {
+  position: absolute;
+  right: .55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.35rem;
+  min-height: 2.35rem;
+  border: 0;
+  border-radius: .55rem;
+  background: transparent;
+  color: #173044;
+  cursor: pointer;
+}
+.auth-password-toggle:hover,
+.auth-password-toggle:focus-visible {
+  background: #f1e8df;
+}
+.auth-text-link {
+  align-self: center;
+  margin-top: .8rem;
+  border: 0;
+  background: transparent;
+  color: #a94722;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.success-message {
+  color: #176b45;
+  font-weight: 700;
+}

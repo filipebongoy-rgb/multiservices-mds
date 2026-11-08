@@ -7,3 +7,7 @@ La confirmation client d’un créneau passe par `requests.clientAction(confirm)
 ## Mot de passe oublié et accès artisan — 8 novembre 2026
 
 Le parcours local comprend maintenant une demande de réinitialisation à réponse neutre. Le serveur ne stocke que le hash SHA-256 d’un jeton aléatoire, expirant après 30 minutes et marqué comme utilisé après validation. Le nouveau mot de passe est recalculé avec scrypt et toutes les sessions locales de l’utilisateur sont invalidées. L’e-mail de reset passe par la file MDS/Resend lorsque le canal est configuré ; sinon aucune information n’est révélée sur l’existence du compte. Le pied de page public propose « Accès artisan », qui ouvre `/connexion?returnTo=%2Fartisan` sans exposer directement l’atelier.
+
+## Accès administrateur supplémentaire — 8 novembre 2026
+
+Après confirmation explicite, `sakhale072022@gmail.com` a été ajoutée à `mds_admin_invites` avec le statut `active`. Aucun compte ni mot de passe n’a été créé à sa place. Lors de sa première inscription locale ou de sa connexion OAuth, la synchronisation des utilisateurs lui attribuera automatiquement le rôle `admin`, comme pour les invitations MDS existantes.

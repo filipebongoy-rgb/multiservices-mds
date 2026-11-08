@@ -13,3 +13,8 @@
 - [x] Le lien « Mot de passe oublié ? » répond de manière neutre puis envoie un lien e-mail à usage unique, valable 30 minutes, lorsque le canal e-mail MDS est configuré.
 - [x] La création d’un nouveau mot de passe invalide les sessions locales existantes et rend le lien inutilisable après usage.
 - [x] Un lien public « Accès artisan » mène directement à la connexion avec retour vers l’atelier ; l’adresse e-mail reste obligatoire.
+
+## Administrateur supplémentaire autorisé
+
+- [x] `sakhale072022@gmail.com` possède désormais une invitation administrateur active.
+- [x] Après création ou prochaine connexion du compte, l’adresse sera promue automatiquement administrateur/artisan et partagera l’espace MDS existant.

@@ -575,3 +575,23 @@ describe("accueil et actions de suivi", () => {
     );
   });
 });
+
+describe("explication des blocages de workflow", () => {
+  it("explique au client les informations manquantes avant l’envoi", () => {
+    const request = readFileSync(
+      new URL("../../client/src/pages/Request.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(request).toContain("submitBlockers");
+    expect(request).toContain("Pour envoyer la demande, complétez");
+    expect(request).toContain('"request-submit-help"');
+  });
+  it("explique à l’artisan la pause pendant une mutation", () => {
+    const requests = readFileSync(
+      new URL("../../client/src/components/mds/private-artisan-requests.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(requests).toContain("Enregistrement de l’action en cours");
+    expect(requests).toContain("Préparer le devis");
+  });
+});

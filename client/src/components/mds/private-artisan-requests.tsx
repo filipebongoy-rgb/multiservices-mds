@@ -850,6 +850,12 @@ export function RequestDetail({
         </section>
       )}
       <section className="stack" aria-label="Répondre à la demande">
+        {mutation.isPending && (
+          <p className="notice" role="status">
+            Enregistrement de l’action en cours… Les autres actions sont
+            momentanément mises en pause pour éviter un double clic.
+          </p>
+        )}
         <div className="row" style={{ flexWrap: "wrap", gap: 8 }}>
           {editable && (
             <>
@@ -890,13 +896,15 @@ export function RequestDetail({
                 <X size={17} aria-hidden="true" />
                 Refuser
               </ActionButton>
-              <ActionButton
-                disabled={mutation.isPending || needsAcceptedQuote}
-                onClick={() => setAction("propose")}
-              >
-                <CalendarDays size={17} aria-hidden="true" />
-                Autre créneau
-              </ActionButton>
+              {!needsAcceptedQuote && (
+                <ActionButton
+                  disabled={mutation.isPending}
+                  onClick={() => setAction("propose")}
+                >
+                  <CalendarDays size={17} aria-hidden="true" />
+                  Autre créneau
+                </ActionButton>
+              )}
               {needsAcceptedQuote && (
                 <small className="muted" style={{ flexBasis: "100%" }}>
                   Un devis distinct doit être accepté avant de proposer un créneau.

@@ -1,5 +1,5 @@
 
 
-## Diagnostic vidéo artisan — 8 novembre 2026
+## Workflow devis / tarif direct — 8 novembre 2026
 
-La vidéo montrait un dossier dont `quoteRequired(request)` était vrai. Le bouton « Accepter » était visuellement présent mais désactivé par `needsAcceptedQuote`, car le serveur exige un devis distinct avant toute proposition. La modale Refuser fonctionnait, ce qui confirmait que l’interface n’était pas globalement figée. L’interface affiche maintenant « Préparer le devis », ouvre directement l’action `quote` et explique la règle sous les boutons. La validation serveur reste obligatoire. Le bandeau « Publication en cours » visible dans la vidéo correspondait à l’état de déploiement de la version observée, pas à une action métier de l’artisan.
+Le parcours distingue maintenant clairement les prestations à tarif direct et celles qui exigent un devis. Dans le premier cas, l’artisan peut accepter lorsque le prix et le créneau sont exploitables. Dans le second, le bouton devient « Préparer le devis » et ouvre l’action correspondante ; le serveur continue d’imposer l’acceptation client du devis. Côté client, l’envoi est bloqué avant mutation si les informations nécessaires sont absentes et une alerte énumère les éléments à compléter. Pendant une mutation artisan, une alerte explique la pause temporaire des autres actions.

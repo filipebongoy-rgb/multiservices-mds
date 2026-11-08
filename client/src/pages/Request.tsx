@@ -455,6 +455,17 @@ export default function Request() {
   const tracking = receipt
     ? `/suivi?ref=${encodeURIComponent(receipt.reference)}#cle=${receipt.trackingToken}`
     : "";
+  const submitBlockers: string[] = [];
+  if (step === 4) {
+    if (draft.name.trim().length < 2) submitBlockers.push("votre nom");
+    if (!/^\S+@\S+\.\S+$/.test(draft.email.trim()))
+      submitBlockers.push("un e-mail valide");
+    if (draft.phone.trim().length < 8) submitBlockers.push("votre téléphone");
+    if (!pricing.data) submitBlockers.push("la vérification du tarif");
+    if (!consent) submitBlockers.push("l’acceptation des conditions");
+    if (organizationId && (!user || organization.isLoading || organization.error))
+      submitBlockers.push("la vérification de votre organisation");
+  }
   if (receipt)
     return (
       <main id="main-content" className="page-shell standard-page">
@@ -1254,6 +1265,11 @@ export default function Request() {
               {error}
             </p>
           )}
+          {step === 4 && submitBlockers.length > 0 && !create.isPending && (
+            <p id="request-submit-help" role="status" className="notice">
+              Pour envoyer la demande, complétez : {submitBlockers.join(", ")}.
+            </p>
+          )}
           <div
             className={`row ${step === 1 ? "request-actions-single" : ""}`}
             style={{ flexWrap: "wrap" }}
@@ -1288,10 +1304,10 @@ export default function Request() {
                 className="btn primary"
                 disabled={
                   create.isPending ||
-                  !consent ||
-                  !pricing.data ||
-                  (!!organizationId &&
-                    (!user || organization.isLoading || !!organization.error))
+                  submitBlockers.length > 0
+                }
+                aria-describedby={
+                  submitBlockers.length > 0 ? "request-submit-help" : undefined
                 }
                 onClick={() => submit()}
               >

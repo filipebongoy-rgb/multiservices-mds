@@ -595,3 +595,16 @@ describe("explication des blocages de workflow", () => {
     expect(requests).toContain("Préparer le devis");
   });
 });
+
+describe("disponibilités artisan synchronisées", () => {
+  it("permet l’enregistrement manuel et confirme la synchronisation client", () => {
+    const calendar = readFileSync(
+      new URL("../../client/src/components/mds/private-calendar.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(calendar).toContain("calendarSettingsSchema.safeParse(draft)");
+    expect(calendar).toContain("Enregistrer et synchroniser le planning");
+    expect(calendar).toContain("créneaux clients synchronisés");
+    expect(calendar).toContain("servent directement au calcul des créneaux");
+  });
+});

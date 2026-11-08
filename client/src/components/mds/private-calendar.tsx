@@ -367,15 +367,18 @@ function CalendarConfiguration({
 }) {
   const [draft, setDraft] = useState<CalendarSettings>(initial);
   const [saved, setSaved] = useState(false);
+  const [localError, setLocalError] = useState<Error | null>(null);
   const save = trpc.mds.calendar.saveSettings.useMutation({
     onSuccess: () => {
       setSaved(true);
+      setLocalError(null);
       onSaved();
     },
   });
   const change = (next: CalendarSettings) => {
     setDraft(next);
     setSaved(false);
+    setLocalError(null);
   };
   return (
     <details>
@@ -386,6 +389,16 @@ function CalendarConfiguration({
         className="stack"
         onSubmit={e => {
           e.preventDefault();
+          const parsed = calendarSettingsSchema.safeParse(draft);
+          if (!parsed.success) {
+            setLocalError(
+              new Error(
+                parsed.error.issues[0]?.message ||
+                  "Vérifiez les horaires et les zones avant d’enregistrer."
+              )
+            );
+            return;
+          }
           save.mutate(draft);
         }}
       >
@@ -397,6 +410,10 @@ function CalendarConfiguration({
             style={{ width: 44, height: 44 }}
           />
         </Field>
+        <p className="muted small-text">
+          Après l’enregistrement, ces horaires, zones et périodes ponctuelles
+          servent directement au calcul des créneaux proposés au client.
+        </p>
         <fieldset
           className="stack"
           style={{ border: 0, padding: 0, minWidth: 0 }}
@@ -585,8 +602,12 @@ function CalendarConfiguration({
         <p className="muted">
           Les rendez-vous déjà confirmés restent inchangés.
         </p>
-        <ErrorNotice error={save.error} />
-        {saved && <p role="status">Paramètres enregistrés.</p>}
+        <ErrorNotice error={localError || save.error} />
+        {saved && (
+          <p role="status">
+            Planning enregistré et créneaux clients synchronisés.
+          </p>
+        )}
         <ActionButton
           type="submit"
           className="primary"
@@ -594,7 +615,7 @@ function CalendarConfiguration({
         >
           {save.isPending
             ? "Enregistrement…"
-            : "Enregistrer les horaires et zones"}
+            : "Enregistrer et synchroniser le planning"}
         </ActionButton>
       </form>
     </details>

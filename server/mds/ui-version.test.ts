@@ -109,6 +109,13 @@ describe("espace artisan mobile : l'ouverture d'un dossier masque la liste pour 
     expect(css).toContain(".artisan-mobile-bar {\n    position: fixed;");
     expect(css).toContain(".private-workspace {\n    padding-bottom:");
   });
+  it("ouvre chaque espace artisan sur une route dédiée et regroupe les derniers accès dans Plus", () => {
+    const app = readFileSync(new URL("../../client/src/App.tsx", import.meta.url), "utf8");
+    expect(app).toContain('path="/artisan/:section"');
+    expect(artisan).toContain('setLocation(`/artisan/${item.id}`)');
+    expect(artisan).toContain('aria-label="Autres espaces artisan"');
+    expect(css).toContain("grid-template-columns: repeat(5, minmax(0, 1fr));");
+  });
 });
 
 describe("espace professionnel et contrats d’entretien", () => {

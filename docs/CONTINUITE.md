@@ -35,3 +35,9 @@ MDS possède maintenant les tables `mds_artisan_team` et `mds_artisan_assignment
 Un collaborateur actif ouvre un atelier limité aux demandes, au planning et aux interventions. Le filtrage serveur porte sur les affectations réelles : il ne peut pas consulter les autres dossiers, les paiements, les contrats, l’activité globale, l’assistante de pilotage ou les paramètres. Les actions sensibles restent réservées à l’administrateur MDS. La révocation est auditée et n’efface pas l’historique.
 
 L’affectation automatique par distance, disponibilité et compétence n’est pas encore activée : elle nécessitera les zones, spécialités et disponibilités propres à chaque collaborateur afin d’éviter une affectation incorrecte.
+
+## Navigation artisan par pages — 9 novembre 2026
+
+L’atelier artisan n’utilise plus une longue page unique pour tous les espaces. Les sections Assistant, Demandes, Planning, Interventions, Règlements, Activité et Équipe disposent de routes dédiées sous `/artisan/*`. Le changement de section passe par l’URL et remet la page en haut, ce qui rend le bouton Retour du navigateur cohérent.
+
+Sur téléphone, la barre fixe principale est limitée à cinq accès équilibrés. Les trois espaces secondaires sont accessibles dans un menu « Plus » qui s’ouvre au-dessus de la barre. La grille utilise cinq colonnes flexibles, des libellés courts et une largeur minimale nulle afin que le dernier bouton reste visible sans défilement horizontal.

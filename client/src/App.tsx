@@ -29,6 +29,13 @@ const titles: Record<string, string> = {
   "/paiements": "Mes paiements",
   "/professionnels": "Espace professionnel",
   "/artisan": "Espace artisan",
+  "/artisan/assistant": "Assistant artisan",
+  "/artisan/demandes": "Demandes artisan",
+  "/artisan/planning": "Planning artisan",
+  "/artisan/interventions": "Interventions artisan",
+  "/artisan/settlements": "Règlements artisan",
+  "/artisan/activity": "Activité artisan",
+  "/artisan/team": "Équipe artisan",
   "/profil": "Mon profil",
   "/connexion": "Connexion",
   "/confidentialite": "Confidentialité",
@@ -78,6 +85,7 @@ function Routes() {
           <Route path="/suivi" component={Tracking} />
           <Route path="/professionnels" component={Professional} />
           <Route path="/artisan" component={Artisan} />
+          <Route path="/artisan/:section" component={Artisan} />
           <Route path="/profil" component={Profile} />
           <Route path="/connexion" component={Auth} />
           <Route path="/confidentialite" component={Privacy} />

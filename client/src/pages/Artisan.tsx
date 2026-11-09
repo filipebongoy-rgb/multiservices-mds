@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   Activity,
   AlertTriangle,
@@ -14,6 +14,7 @@ import {
   ExternalLink,
   HelpCircle,
   LockKeyhole,
+  MoreHorizontal,
   Settings2,
   User,
   Users,
@@ -61,6 +62,12 @@ const navigation = [
   { id: "team", name: "Équipe", icon: Users },
 ] as const;
 type Tab = (typeof navigation)[number]["id"];
+
+function tabFromPath(path: string, isCollaborator: boolean): Tab {
+  const section = path.split("/")[2] as Tab | undefined;
+  const allowed = isCollaborator ? ["requests", "planning", "interventions"] : navigation.map(item => item.id);
+  return section && allowed.includes(section) ? section : isCollaborator ? "requests" : "assistant";
+}
 
 export default function Artisan() {
   const auth = useAuth();
@@ -148,11 +155,13 @@ function ArtisanAccessDenied({ name }: { name: string | null }) {
   );
 }
 function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean }) {
-  const [tab, setTab] = useState<Tab>(isCollaborator ? "requests" : "assistant");
+  const [location, setLocation] = useLocation();
+  const [tab, setTab] = useState<Tab>(tabFromPath(location, isCollaborator));
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [urgentNotice, setUrgentNotice] = useState<RequestRecord | null>(null);
   const [urgentMapOnly, setUrgentMapOnly] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const knownUrgentIds = useRef<Set<number> | null>(null);
   const requestsQuery = trpc.mds.requests.list.useQuery(undefined, {
     retry: false,
@@ -210,6 +219,10 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
   const todayAppointments = appointments.filter(
     a => a.status !== "cancelled" && dayKey(a.startAt) === dayKey(new Date())
   );
+  useEffect(() => {
+    setTab(tabFromPath(location, isCollaborator));
+    setSelectedId(null);
+  }, [location, isCollaborator]);
   const tabTitle: Record<Tab, string> = {
     assistant: "Assistant",
     requests: "Demandes",
@@ -221,7 +234,7 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
   };
   const openRequest = (id: number) => {
     setSelectedId(id);
-    setTab("requests");
+    setLocation("/artisan/demandes");
   };
   const refreshRequests = () => {
     void requestsQuery.refetch();
@@ -262,7 +275,7 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
             <button
               type="button"
               className="text-link"
-              onClick={() => setTab("planning")}
+              onClick={() => setLocation("/artisan/planning")}
             >
               {todayAppointments.length} rendez-vous aujourd’hui
             </button>
@@ -276,7 +289,7 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
             type="button"
             className={`artisan-tab ${tab === item.id ? "active" : ""}`}
             onClick={() => {
-              setTab(item.id);
+              setLocation(`/artisan/${item.id}`);
               setSelectedId(null);
             }}
             aria-current={tab === item.id ? "page" : undefined}
@@ -351,7 +364,7 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
             className="btn secondary"
             onClick={() => {
               setUrgentMapOnly(true);
-              setTab("planning");
+              setLocation("/artisan/planning");
               setUrgentNotice(null);
             }}
           >
@@ -508,20 +521,20 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
           <AdminActivity
             onSelectRequest={openRequest}
             onGoSettings={() => {
-              setTab("planning");
+              setLocation("/artisan/planning");
             }}
           />
         )}
         {tab === "team" && !isCollaborator && <ArtisanTeam />}
       </div>
       <nav className="artisan-mobile-bar" aria-label="Navigation artisan">
-        {navigation.filter(item => !isCollaborator || ["requests", "planning", "interventions"].includes(item.id)).map(item => (
+        {navigation.filter(item => (isCollaborator ? ["requests", "planning", "interventions"] : ["assistant", "requests", "planning", "interventions"]).includes(item.id)).map(item => (
           <button
             key={item.id}
             type="button"
             className={`artisan-mobile-btn ${tab === item.id ? "active" : ""}`}
             onClick={() => {
-              setTab(item.id);
+              setLocation(`/artisan/${item.id}`);
               setSelectedId(null);
             }}
             aria-current={tab === item.id ? "page" : undefined}
@@ -533,7 +546,22 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
             )}
           </button>
         ))}
+        {!isCollaborator && (
+          <button type="button" className={`artisan-mobile-btn ${showMore ? "active" : ""}`} onClick={() => setShowMore(value => !value)} aria-expanded={showMore}>
+            <MoreHorizontal size={20} aria-hidden="true" />
+            <span>Plus</span>
+          </button>
+        )}
       </nav>
+      {showMore && !isCollaborator && (
+        <div className="artisan-mobile-more" role="menu" aria-label="Autres espaces artisan">
+          {navigation.filter(item => ["settlements", "activity", "team"].includes(item.id)).map(item => (
+            <button key={item.id} type="button" role="menuitem" onClick={() => { setLocation(`/artisan/${item.id}`); setShowMore(false); }}>
+              <item.icon size={17} aria-hidden="true" /> {item.name}
+            </button>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

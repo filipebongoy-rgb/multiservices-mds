@@ -95,3 +95,9 @@
 - [x] L’écran assistant affiche quatre boutons directs : Demandes, Planning, Interventions et Actualiser.
 - [x] La liste des missions montre seulement les trois premières au départ ; un bouton « Voir les autres missions » affiche le reste uniquement à la demande.
 - [x] Les boutons sont suffisamment grands pour un téléphone et restent utilisables sans comprendre le fonctionnement interne de l’IA.
+
+## Ouverture fiable d’un dossier artisan
+
+- [x] Le bouton « Ouvrir la mission » ouvre la page Demandes avec l’identifiant exact du dossier dans l’URL.
+- [x] La page Demandes lit cet identifiant et affiche directement le détail correspondant au lieu de revenir silencieusement à Assistant.
+- [x] Les anciennes adresses `/artisan/demandes` sont reconnues comme alias de `/artisan/requests`.

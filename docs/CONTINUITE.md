@@ -75,3 +75,7 @@ Les commandes de navigation et de préparation sont exécutées directement. Les
 ## Contrôle en quatre boutons — 9 novembre 2026
 
 Pour réduire le défilement, l’assistant affiche quatre accès directs : Demandes, Planning, Interventions et Actualiser. Il ne montre que les trois premières missions au départ ; un bouton permet d’afficher les autres. Cette vue courte est complémentaire à la commande vocale et ne demande aucune compréhension technique.
+
+## Correction du dossier artisan — 9 novembre 2026
+
+Le clic fonctionnait mais la route `/artisan/demandes` n’était pas reconnue par le convertisseur d’onglets qui attendait `requests`. De plus, l’identifiant sélectionné était perdu dès le changement d’URL. La navigation utilise maintenant `/artisan/requests?request=ID`, conserve l’identifiant, affiche directement le dossier demandé et reconnaît l’ancien alias français.

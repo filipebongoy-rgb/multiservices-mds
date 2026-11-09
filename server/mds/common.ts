@@ -128,7 +128,7 @@ export async function orgIds(db: SqlDb, userId: number) {
 }
 export async function requestFilter(db: SqlDb, user: s.User) {
   const p = await principal(db);
-  if (user.role === "admin") return sql`true`;
+  if (user.role === "admin") return isNull(s.requests.deletedAt);
   const [member] = await db
     .select({ id: s.artisanTeam.id })
     .from(s.artisanTeam)
@@ -139,13 +139,13 @@ export async function requestFilter(db: SqlDb, user: s.User) {
       .select({ requestId: s.artisanAssignments.requestId })
       .from(s.artisanAssignments)
       .where(and(eq(s.artisanAssignments.teamMemberId, member.id), eq(s.artisanAssignments.status, "assigned")));
-    return assignments.length ? inArray(s.requests.id, assignments.map(row => row.requestId)) : sql`false`;
+    return assignments.length ? and(isNull(s.requests.deletedAt), inArray(s.requests.id, assignments.map(row => row.requestId))) : sql`false`;
   }
   const ids = await orgIds(db, user.id);
-  return or(
+  return and(isNull(s.requests.deletedAt), or(
     and(isNull(s.requests.organizationId), eq(s.requests.userId, user.id)),
     ids.length ? inArray(s.requests.organizationId, ids) : sql`false`
-  )!;
+  ))!;
 }
 export async function authorizeRequest(
   db: SqlDb,

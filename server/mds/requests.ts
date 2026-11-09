@@ -522,6 +522,23 @@ export const requestsRouter = router({
     .query(({ input, ctx }) => readDetail(input, ctx.user)),
   mine: authenticated.query(({ ctx }) => listClientScoped(ctx.user)),
   list: artisan.query(({ ctx }) => listScoped(ctx.user)),
+  archive: authenticated
+    .input(z.object({ id: z.number().int().positive(), confirmation: z.literal("SUPPRIMER") }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await dbRequired();
+      if (ctx.user.role !== "admin") fail("La suppression est réservée à l’administrateur MDS.", "FORBIDDEN");
+      return db.transaction(async tx => {
+        await principal(tx, true);
+        const request = await load(tx, { id: input.id });
+        if (!["cancelled", "refused", "expired", "closed", "completed", "paid", "invoiced"].includes(request.status))
+          fail("Cette demande est encore active. Annulez-la ou terminez-la avant de la retirer.", "CONFLICT");
+        await tx.update(s.requests).set({ deletedAt: new Date(), status: "cancelled", version: request.version + 1 }).where(and(eq(s.requests.id, request.id), eq(s.requests.version, request.version)));
+        await tx.update(s.artisanAssignments).set({ status: "cancelled" }).where(and(eq(s.artisanAssignments.requestId, request.id), eq(s.artisanAssignments.status, "assigned")));
+        await tx.update(s.appointments).set({ status: "cancelled" }).where(and(eq(s.appointments.requestId, request.id), eq(s.appointments.status, "confirmed")));
+        await recordAudit(tx, ctx.user.id, "request.archive", "request", request.id);
+        return { success: true as const, reference: request.reference };
+      });
+    }),
   waitlist: artisan.query(async ({ ctx }) => {
     const db = await dbRequired();
     if (ctx.user.role !== "admin")

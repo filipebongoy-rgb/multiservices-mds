@@ -17,6 +17,7 @@ import {
   Play,
   Search,
   SquareCheck,
+  Trash2,
   X,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -169,6 +170,7 @@ export function ArtisanRequests({
 }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const archiveMutation = trpc.mds.requests.archive.useMutation();
   const detailRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (selectedId === null) return;
@@ -180,6 +182,16 @@ export function ArtisanRequests({
   }, [selectedId]);
   const select = (id: number | null) => {
     onSelect(id);
+  };
+  const archive = async (request: RequestRecord) => {
+    if (!window.confirm(`Retirer définitivement l’affichage du dossier ${request.reference} ?`)) return;
+    try {
+      await archiveMutation.mutateAsync({ id: request.id, confirmation: "SUPPRIMER" });
+      if (selectedId === request.id) onSelect(null);
+      onChanged();
+    } catch {
+      /* ErrorNotice is shown by the parent query on the next refresh. */
+    }
   };
   const filtered = requests
     .filter(
@@ -225,6 +237,7 @@ export function ArtisanRequests({
         </select>
       </div>
       <QueryState loading={loading} error={error} retry={retry} />
+      <ErrorNotice error={archiveMutation.error} />
       {!loading && !error && (
         <div
           className="split-view artisan-split"
@@ -252,7 +265,7 @@ export function ArtisanRequests({
                 style={{ listStyle: "none", padding: 0 }}
               >
                 {filtered.map(request => (
-                  <li key={request.id}>
+                  <li key={request.id} style={{ display: "flex", alignItems: "stretch", borderBottom: "1px solid #e7e5e2" }}>
                     <button
                       className="data-row"
                       type="button"
@@ -266,7 +279,7 @@ export function ArtisanRequests({
                         background:
                           selectedId === request.id ? "#fff3ed" : "transparent",
                         border: "none",
-                        borderBottom: "1px solid #e7e5e2",
+                        borderBottom: "none",
                         borderRadius: 6,
                         cursor: "pointer",
                         borderLeft:
@@ -337,6 +350,11 @@ export function ArtisanRequests({
                         </div>
                       </div>
                     </button>
+                    {["cancelled", "refused", "expired", "closed", "completed", "paid", "invoiced"].includes(request.status) && (
+                      <button type="button" className="icon-button" aria-label={`Retirer ${request.reference}`} title="Retirer ce dossier" onClick={() => void archive(request)} disabled={archiveMutation.isPending} style={{ alignSelf: "center", margin: "0 8px", color: "#a33d2a" }}>
+                        <Trash2 size={17} aria-hidden="true" />
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>

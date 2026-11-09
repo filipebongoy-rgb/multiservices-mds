@@ -47,3 +47,9 @@ Sur téléphone, la barre fixe principale est limitée à cinq accès équilibr�
 Les collaborateurs actifs sont maintenant éligibles par défaut à toutes les prestations du catalogue MDS et à la zone Rennes + 30 km, même si leurs spécialités ou zones personnelles ne sont pas encore renseignées. Après la confirmation autonome d’un rendez-vous, MDS choisit le collaborateur actif ayant le moins d’affectations ouvertes, crée l’affectation dans la même transaction et ajoute une notification à son planning. Si aucun collaborateur n’est actif, le dossier reste affecté au planning de l’artisan MDS principal.
 
 Cette règle est un défaut opérationnel et non une certification individuelle : l’administrateur pourra préciser les spécialités et zones ultérieurement. La contrainte unique sur le dossier empêche les doubles affectations.
+
+## Contrôle rapide et nettoyage des demandes — 9 novembre 2026
+
+L’analyse vidéo a confirmé que l’assistante était trop longue : cartes volumineuses, bouton « Ouvrir » répété, trois actions de relance par ligne, avertissements permanents et historique toujours ouvert. Le poste affiche maintenant un contrôle rapide compact. Un clic sur une ligne ouvre le dossier, une seule action prépare la relance, le panneau de brouillon n’apparaît qu’après sélection et l’historique est replié.
+
+Les demandes de test peuvent être retirées par l’administrateur avec le mot de confirmation `SUPPRIMER`. Le serveur n’autorise ce retrait que pour les dossiers terminés ou inactifs, renseigne `deletedAt`, annule les rendez-vous confirmés et affectations encore ouvertes, écrit un audit et exclut la demande des listes. Les demandes actives restent protégées.

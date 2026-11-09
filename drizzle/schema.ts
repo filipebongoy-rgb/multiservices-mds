@@ -366,6 +366,7 @@ export const requests = mysqlTable(
       .notNull(),
     lastAction: varchar("lastAction", { length: 40 }),
     lastActionVersion: int("lastActionVersion"),
+    deletedAt: timestamp("deletedAt"),
     ...dates(),
   },
   t => [

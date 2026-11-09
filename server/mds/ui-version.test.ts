@@ -75,9 +75,10 @@ describe("espace artisan mobile : l'ouverture d'un dossier masque la liste pour 
     new URL("../../client/src/components/mds/simple-ux.css", import.meta.url),
     "utf8"
   );
-  it("chaque ligne de demande propose une action d'ouverture explicite avec chevron", () => {
-    expect(requests).toContain("Ouvrir");
-    expect(requests).toContain("ChevronRight");
+  it("chaque ligne de demande ouvre directement le dossier au toucher", () => {
+    const assistant = readFileSync(new URL("../../client/src/components/mds/private-assistant.tsx", import.meta.url), "utf8");
+    expect(assistant).toContain('role={task.requestId ? "button" : undefined}');
+    expect(assistant).toContain("onOpenRequest(task.requestId)");
   });
   it("la liste des demandes artisan se masque sur mobile dès qu'un dossier est sélectionné", () => {
     expect(requests).toContain("artisan-list-panel");
@@ -115,6 +116,16 @@ describe("espace artisan mobile : l'ouverture d'un dossier masque la liste pour 
     expect(artisan).toContain('setLocation(`/artisan/${item.id}`)');
     expect(artisan).toContain('aria-label="Autres espaces artisan"');
     expect(css).toContain("grid-template-columns: repeat(5, minmax(0, 1fr));");
+  });
+  it("garde l’assistante compacte et propose un retrait réversible des dossiers terminés", () => {
+    const assistant = readFileSync(new URL("../../client/src/components/mds/private-assistant.tsx", import.meta.url), "utf8");
+    const requestsServer = readFileSync(new URL("./requests.ts", import.meta.url), "utf8");
+    expect(assistant).toContain("assistant-quick-panel");
+    expect(assistant).toContain("Préparer la relance");
+    expect(assistant).toContain("assistant-history-details");
+    expect(requests).toContain("requests.archive");
+    expect(requestsServer).toContain('confirmation: z.literal("SUPPRIMER")');
+    expect(requestsServer).toContain("deletedAt: new Date()");
   });
 });
 

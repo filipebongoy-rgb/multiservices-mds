@@ -4,8 +4,6 @@ import {
   Bot,
   CalendarClock,
   Check,
-  CheckCircle2,
-  ChevronRight,
   CircleDollarSign,
   ClipboardList,
   Copy,
@@ -114,12 +112,11 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
 
   return (
     <section className="assistant-dashboard stack" aria-labelledby="assistant-title">
-      <header className="assistant-hero">
+      <header className="assistant-hero assistant-hero-compact">
         <div className="assistant-hero-icon" aria-hidden="true"><Bot size={25} /></div>
         <div>
-          <span className="eyebrow">Poste de pilotage</span>
-          <h2 id="assistant-title">Votre assistante MDS</h2>
-          <p>Elle prépare les appels, les messages et les tâches. L’artisan intervient surtout sur le chantier.</p>
+          <span className="eyebrow">Contrôle rapide</span>
+          <h2 id="assistant-title">À faire maintenant</h2>
         </div>
         <ActionButton aria-label="Actualiser l’assistante" onClick={() => void query.refetch()} disabled={query.isFetching}>
           <RefreshCw size={17} aria-hidden="true" />
@@ -134,16 +131,11 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
         <div className="assistant-metric"><strong>{data.counts.unpaidInvoices}</strong><span>Factures à vérifier</span></div>
       </div>
 
-      <p className="assistant-note"><CheckCircle2 size={17} aria-hidden="true" /> {data.note}</p>
-      <div className={`assistant-note ${data.voice.configured ? "success" : "warning"}`} role="status">
-        <Phone size={17} aria-hidden="true" />
-        {data.voice.configured ? "Agent téléphonique MDS prêt." : "Agent téléphonique préparé, mais non activé : ajoutez les paramètres fournisseur plus tard."}
-      </div>
       <ErrorNotice error={draftMutation.error || approveMutation.error || cancelMutation.error || autoConfirmMutation.error} />
       {notice && <p className="notice" role="status">{notice}</p>}
 
       <div className="assistant-layout">
-        <div className="panel stack">
+          <div className="panel stack assistant-quick-panel">
           <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
             <div>
               <span className="eyebrow">À faire maintenant</span>
@@ -156,24 +148,19 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
           ) : (
             <div className="assistant-task-list">
               {data.tasks.map(task => (
-                <article className={`assistant-task assistant-task-${task.priority}`} key={task.id}>
+                    <article className={`assistant-task assistant-task-${task.priority}`} key={task.id} onClick={() => task.requestId && onOpenRequest(task.requestId)} role={task.requestId ? "button" : undefined} tabIndex={task.requestId ? 0 : undefined} onKeyDown={event => { if (task.requestId && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onOpenRequest(task.requestId); } }}>
                   <div className="assistant-task-icon">{taskIcon(task)}</div>
                   <div className="assistant-task-copy">
                     <strong>{task.title}</strong>
                     <span>{task.detail}</span>
                     {task.dueAt && <small>{task.priority === "today" ? `Aujourd’hui · ${dateTime(task.dueAt)}` : dateTime(task.dueAt)}</small>}
                   </div>
-                  <div className="assistant-task-actions">
-                    {task.requestId && <ActionButton className="secondary" onClick={() => onOpenRequest(task.requestId!)}><ChevronRight size={16} aria-hidden="true" /> Ouvrir</ActionButton>}
+                  <div className="assistant-task-actions" onClick={event => event.stopPropagation()}>
                     {task.requestId && task.autoConfirmable && (
                       <ActionButton className="primary" disabled={autoConfirmMutation.isPending} onClick={async () => { if (!window.confirm("Confirmer ce rendez-vous et l’ajouter au planning ?")) return; try { const result = await autoConfirmMutation.mutateAsync({ requestId: task.requestId! }); setNotice(result.note); await utils.mds.assistant.overview.invalidate(); } catch { /* ErrorNotice displays the mutation error. */ } }}><CalendarClock size={15} aria-hidden="true" /> {autoConfirmMutation.isPending ? "Confirmation…" : "Confirmer le rendez-vous"}</ActionButton>
                     )}
                     {task.requestId && !task.autoConfirmable && (task.priority === "follow_up" || task.kind === "payment" || task.kind === "message") && (
-                      <div className="assistant-message-actions">
-                        <ActionButton className="secondary" onClick={() => void prepareDraft(task, "email")} disabled={draftMutation.isPending}><Mail size={15} aria-hidden="true" /> E-mail</ActionButton>
-                        <ActionButton className="secondary" onClick={() => void prepareDraft(task, "sms")} disabled={draftMutation.isPending}><MessageSquare size={15} aria-hidden="true" /> SMS</ActionButton>
-                        <ActionButton className="secondary" onClick={() => void prepareDraft(task, "call")} disabled={draftMutation.isPending}><Phone size={15} aria-hidden="true" /> Appel</ActionButton>
-                      </div>
+                      <ActionButton className="secondary" onClick={() => void prepareDraft(task, "email")} disabled={draftMutation.isPending}><Mail size={15} aria-hidden="true" /> {draftMutation.isPending ? "Préparation…" : "Préparer la relance"}</ActionButton>
                     )}
                   </div>
                 </article>
@@ -182,7 +169,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
           )}
         </div>
 
-        <div className="panel assistant-draft-panel">
+        {draft && <div className="panel assistant-draft-panel">
           <div className="row" style={{ justifyContent: "space-between", alignItems: "start" }}>
             <div><span className="eyebrow">Brouillon contrôlé</span><h3 style={{ margin: "4px 0 0" }}>L’assistante prépare, vous validez</h3></div>
             <Send size={20} aria-hidden="true" />
@@ -207,14 +194,14 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
               {draft.status !== "proposed" && <p className="assistant-status"><Check size={16} aria-hidden="true" /> Statut : {draft.status}</p>}
             </div>
           )}
-        </div>
+        </div>}
       </div>
 
-      <div className="panel">
+      {data.recentActions.length > 0 && <details className="panel assistant-history-details">
+        <summary>Voir l’historique des brouillons ({data.recentActions.length})</summary>
         <div className="row" style={{ justifyContent: "space-between" }}><div><span className="eyebrow">Historique assistant</span><h3 style={{ margin: "4px 0 0" }}>Dernières propositions</h3></div><span className="muted small-text">Modèle : {data.assistantModel}</span></div>
-        {data.recentActions.length === 0 ? <p className="muted">Aucun brouillon créé.</p> : <div className="assistant-history">{data.recentActions.map(action => <div className="assistant-history-row" key={action.id}><div><strong>{action.subject}</strong><span>{action.channel.toUpperCase()} · {action.status}</span></div><small>{dateTime(action.createdAt)}</small></div>)}</div>}
-      </div>
-      <p className="muted small-text assistant-privacy"><Bot size={14} aria-hidden="true" /> L’assistante ne décide pas du prix, ne confirme pas un rendez-vous et ne contacte pas un client sans validation explicite de l’artisan.</p>
+        <div className="assistant-history">{data.recentActions.map(action => <div className="assistant-history-row" key={action.id}><div><strong>{action.subject}</strong><span>{action.channel.toUpperCase()} · {action.status}</span></div><small>{dateTime(action.createdAt)}</small></div>)}</div>
+      </details>}
     </section>
   );
 }

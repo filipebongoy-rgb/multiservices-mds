@@ -56,3 +56,11 @@
 - [x] Après confirmation automatique d’un rendez-vous, l’assistante affecte le dossier au collaborateur actif le moins chargé et ajoute l’intervention à son planning.
 - [x] La disponibilité opérationnelle est estimée par la charge des affectations actives ; l’affectation reste protégée contre les doublons par la contrainte unique du dossier.
 - [x] Le collaborateur reçoit une notification et l’assistant indique clairement le nom de l’artisan affecté. En l’absence de collaborateur, le dossier reste au planning de l’artisan MDS principal.
+
+## Contrôle rapide et nettoyage des demandes — 9 novembre 2026
+
+- [x] L’assistante affiche désormais un en-tête court, des compteurs compacts et une liste d’actions dense ; les explications permanentes et le panneau brouillon vide ne prennent plus de place.
+- [x] Une ligne de tâche ouvre directement le dossier au toucher. Les relances utilisent une action unique « Préparer la relance » au lieu de trois boutons répétés.
+- [x] L’historique des brouillons est replié par défaut et ne pousse plus les actions urgentes vers le bas de l’écran.
+- [x] L’administrateur peut retirer une demande terminée, refusée, annulée, expirée, clôturée, payée ou facturée avec confirmation explicite. Le retrait est réversible côté données via `deletedAt`, audité et exclu des listes actives.
+- [x] Une demande encore active ne peut pas être retirée silencieusement ; elle doit d’abord être annulée ou terminée selon le workflow métier.

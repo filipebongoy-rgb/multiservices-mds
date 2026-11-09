@@ -2,7 +2,7 @@ import { calendarRouter } from "./calendar";
 import { operationsRouter } from "./operations";
 import { quoteBuilderRouter } from "./quote-builder";
 import { automationRouter } from "./automation";
-import { and, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { router } from "../_core/trpc";
 import * as s from "../../drizzle/schema";
@@ -565,7 +565,7 @@ export const mdsRouter = router({
             tx,
             request,
             request.status,
-            "Une évaluation privée liée à l’intervention terminée a été déposée. Elle n’est pas publiée.",
+            "Un avis client lié à l’intervention terminée est en attente de contrôle avant publication.",
             authorType,
             ctx.user.id
           );
@@ -659,6 +659,32 @@ export const mdsRouter = router({
     }),
   }),
   admin: adminRouter,
+  portfolio: router({
+    list: procedure.query(async () => {
+      const db = await dbRequired();
+      return db
+        .select({
+          id: s.reviews.id,
+          rating: s.reviews.rating,
+          comment: s.reviews.comment,
+          serviceName: s.requests.serviceName,
+          city: s.requests.city,
+          createdAt: s.reviews.createdAt,
+        })
+        .from(s.reviews)
+        .innerJoin(s.requests, eq(s.requests.id, s.reviews.requestId))
+        .innerJoin(s.interventions, eq(s.interventions.requestId, s.requests.id))
+        .where(
+          and(
+            eq(s.reviews.authorType, "client"),
+            eq(s.reviews.moderation, "approved"),
+            eq(s.requests.status, "closed"),
+          ),
+        )
+        .orderBy(desc(s.reviews.createdAt))
+        .limit(12);
+    }),
+  }),
   assistant: assistantRouter,
   team: teamRouter,
 });

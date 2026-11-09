@@ -17,6 +17,8 @@ const Payments = lazy(() => import("./pages/Payments"));
 const Tracking = lazy(() => import("./pages/Tracking"));
 const Artisan = lazy(() => import("./pages/Artisan"));
 const Professional = lazy(() => import("./pages/Professional"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const Network = lazy(() => import("./pages/Network"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Auth = lazy(() => import("./pages/Auth"));
 import { Privacy, LegalNotice } from "./pages/Legal";
@@ -28,6 +30,8 @@ const titles: Record<string, string> = {
   "/suivi": "Suivre ma demande",
   "/paiements": "Mes paiements",
   "/professionnels": "Espace professionnel",
+  "/portfolio": "Réalisations MDS",
+  "/reseau": "Réseau MDS",
   "/artisan": "Espace artisan",
   "/artisan/assistant": "Assistant artisan",
   "/artisan/demandes": "Demandes artisan",
@@ -92,6 +96,8 @@ function Routes() {
           <Route path="/paiements" component={Payments} />
           <Route path="/suivi" component={Tracking} />
           <Route path="/professionnels" component={Professional} />
+          <Route path="/portfolio" component={Portfolio} />
+          <Route path="/reseau" component={Network} />
           <Route path="/artisan/:section/:id" component={Artisan} />
           <Route path="/artisan/:section" component={Artisan} />
           <Route path="/artisan" component={Artisan} />

@@ -780,8 +780,8 @@ export default function Tracking() {
                     Évaluer mon intervention
                   </summary>
                   <p className="small-text muted">
-                    Les évaluations sont liées à une intervention terminée et
-                    restent privées, sans publication automatique.
+                    Les évaluations sont liées à une intervention terminée.
+                    Après contrôle MDS, un avis peut être publié sur le portfolio.
                   </p>
                   {user &&
                     lookup?.token &&
@@ -830,7 +830,7 @@ export default function Tracking() {
                             comment: comment || undefined,
                           });
                           setSuccess(
-                            "Votre évaluation privée est enregistrée."
+                              "Votre évaluation est enregistrée et sera contrôlée par MDS avant publication."
                           );
                           details.refetch();
                         } catch (e: any) {
@@ -896,7 +896,7 @@ export default function Tracking() {
                       </strong>
                       {rv.comment && <p>{rv.comment}</p>}
                       <small>
-                        Évaluation privée · {dateTime(rv.createdAt)}
+                        Évaluation contrôlée · {dateTime(rv.createdAt)}
                       </small>
                     </div>
                   ))}

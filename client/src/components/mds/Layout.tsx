@@ -98,6 +98,12 @@ export function Header() {
             <DropdownMenuItem asChild>
               <Link href="/prestations">Catalogue prestations</Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/portfolio">Réalisations MDS</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/reseau">Réseau MDS</Link>
+            </DropdownMenuItem>
           </>
           ) : (
           <>
@@ -112,6 +118,12 @@ export function Header() {
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/prestations">Catalogue des prestations</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/portfolio">Réalisations MDS</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/reseau">Réseau MDS</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/suivi">Suivi de mes demandes</Link>

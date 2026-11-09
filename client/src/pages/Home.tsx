@@ -192,6 +192,11 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="home-public-links" aria-label="Découvrir MDS">
+        <Link href="/portfolio"><strong>Voir les réalisations</strong><span>Photos avant / après et avis contrôlés</span><ArrowRight size={17} aria-hidden="true" /></Link>
+        <Link href="/reseau"><strong>Partager MDS</strong><span>Recommander l’artisan à un proche</span><ArrowRight size={17} aria-hidden="true" /></Link>
+      </section>
+
       {/* Catégories populaires façon Uber Eats */}
       <section
         className="simple-services"

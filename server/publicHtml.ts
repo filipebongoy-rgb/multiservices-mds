@@ -7,6 +7,8 @@ const titles: Record<string, string> = {
   "/suivi": "Suivre ma demande",
   "/paiements": "Mes paiements",
   "/professionnels": "Espace professionnel",
+  "/portfolio": "Réalisations MDS",
+  "/reseau": "Réseau MDS",
   "/artisan": "Espace artisan",
   "/profil": "Mon profil",
   "/connexion": "Connexion",
@@ -25,6 +27,10 @@ const descriptions: Record<string, string> = {
   "/": "Trouvez un artisan local à Rennes pour plomberie, électricité, chauffage, peinture et petits travaux. Décrivez votre besoin et recevez une réponse MDS.",
   "/prestations":
     "Recherchez une prestation validée par MDS ou envoyez une demande libre pour vos réparations, travaux et besoins de maintenance.",
+  "/portfolio":
+    "Découvrez les réalisations MDS, les photos avant et après disponibles avec accord client et les avis vérifiés à Rennes.",
+  "/reseau":
+    "Partagez MULTISERVICES MDS à Rennes, envoyez une demande et recommandez un artisan local sans exposer les dossiers privés.",
   "/confidentialite":
     "Découvrez quelles informations sont conservées par MULTISERVICES MDS et comment sont protégés vos dossiers et vos pièces jointes.",
 };
@@ -67,6 +73,8 @@ export function publicPageHtml(
   const indexable =
     pathname === "/" ||
     pathname === "/prestations" ||
+    pathname === "/portfolio" ||
+    pathname === "/reseau" ||
     pathname === "/confidentialite" ||
     pathname === "/mentions-legales";
   let body = "";

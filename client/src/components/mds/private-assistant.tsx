@@ -45,6 +45,8 @@ type Task = {
   dueAt: string | Date | null;
   actionLabel: string;
   autoConfirmable?: boolean;
+  autoQuoteable?: boolean;
+  autoValidateable?: boolean;
   assignedTo?: string | null;
 };
 type ActionType =
@@ -79,6 +81,8 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
   const draftMutation = trpc.mds.assistant.draft.useMutation();
   const approveMutation = trpc.mds.assistant.approve.useMutation();
   const autoConfirmMutation = trpc.mds.assistant.autoConfirm.useMutation();
+  const prepareQuoteMutation = trpc.mds.assistant.prepareQuote.useMutation();
+  const autoValidateMutation = trpc.mds.assistant.autoValidate.useMutation();
   const cancelMutation = trpc.mds.assistant.cancel.useMutation();
   const utils = trpc.useUtils();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -232,7 +236,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
         <div className="assistant-metric"><strong>{data.counts.unpaidInvoices}</strong><span>Factures à vérifier</span></div>
       </div>
 
-      <ErrorNotice error={draftMutation.error || approveMutation.error || cancelMutation.error || autoConfirmMutation.error} />
+      <ErrorNotice error={draftMutation.error || approveMutation.error || cancelMutation.error || autoConfirmMutation.error || prepareQuoteMutation.error || autoValidateMutation.error} />
       {notice && <p className="notice" role="status">{notice}</p>}
 
       <section className="panel assistant-voice-panel" aria-labelledby="assistant-voice-title">
@@ -289,6 +293,28 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
                     )}
                     {task.requestId && task.autoConfirmable && (
                       <ActionButton className="primary" disabled={autoConfirmMutation.isPending} onClick={async () => { if (!window.confirm("Confirmer ce rendez-vous et l’ajouter au planning ?")) return; try { const result = await autoConfirmMutation.mutateAsync({ requestId: task.requestId! }); setNotice(result.note); await utils.mds.assistant.overview.invalidate(); } catch { /* ErrorNotice displays the mutation error. */ } }}><CalendarClock size={15} aria-hidden="true" /> {autoConfirmMutation.isPending ? "Confirmation…" : "Confirmer le rendez-vous"}</ActionButton>
+                    )}
+                    {task.requestId && task.autoValidateable && (
+                      <ActionButton className="primary" disabled={autoValidateMutation.isPending} onClick={async () => {
+                        try {
+                          const result = await autoValidateMutation.mutateAsync({ requestId: task.requestId! });
+                          setNotice(result.note);
+                          await utils.mds.assistant.overview.invalidate();
+                        } catch { /* ErrorNotice displays the mutation error. */ }
+                      }}>
+                        <Check size={15} aria-hidden="true" /> {autoValidateMutation.isPending ? "Validation…" : "Valider le dossier"}
+                      </ActionButton>
+                    )}
+                    {task.requestId && task.autoQuoteable && !task.autoConfirmable && (
+                      <ActionButton className="secondary" disabled={prepareQuoteMutation.isPending} onClick={async () => {
+                        try {
+                          const result = await prepareQuoteMutation.mutateAsync({ requestId: task.requestId! });
+                          setNotice(result.note);
+                          await utils.mds.assistant.overview.invalidate();
+                        } catch { /* ErrorNotice displays the mutation error. */ }
+                      }}>
+                        <FileText size={15} aria-hidden="true" /> {prepareQuoteMutation.isPending ? "Remplissage…" : "Remplir le devis"}
+                      </ActionButton>
                     )}
                     {task.requestId && !task.autoConfirmable && (task.priority === "follow_up" || task.kind === "payment" || task.kind === "message") && (
                       <ActionButton className="secondary" onClick={() => void prepareDraft(task, "email")} disabled={draftMutation.isPending}><Mail size={15} aria-hidden="true" /> {draftMutation.isPending ? "Préparation…" : "Préparer la relance"}</ActionButton>

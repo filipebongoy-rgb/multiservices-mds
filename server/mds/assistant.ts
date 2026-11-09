@@ -3,11 +3,12 @@ import { z } from "zod";
 import { invokeLLM } from "../_core/llm";
 import { router } from "../_core/trpc";
 import * as s from "../../drizzle/schema";
-import { artisan, dbRequired, principal, recordAudit, requireAdmin } from "./common";
+import { artisan, dbRequired, event, principal, recordAudit, requireAdmin } from "./common";
 import { fail } from "./workflow";
 import { processOutbox, providerReadiness } from "./outbox";
 import { createOutboundVoiceCall, voiceProviderReadiness } from "./voice-agent";
 import { autoConfirmRequest } from "./requests";
+import { quoteContentSchema, quoteTotals } from "../../shared/operations";
 
 const assistantModel = "gpt-5-mini";
 const draftSchema = z.object({
@@ -38,6 +39,8 @@ type AssistantTask = {
   dueAt: Date | null;
   actionLabel: string;
   autoConfirmable?: boolean;
+  autoQuoteable?: boolean;
+  autoValidateable?: boolean;
   assignedTo?: string | null;
 };
 
@@ -174,9 +177,11 @@ export const assistantRouter = router({
             quoteStatus: s.requests.quoteStatus,
             createdAt: s.requests.createdAt,
             assignedTo: s.artisanTeam.displayName,
+            clientConfirmedAt: s.interventions.clientConfirmedAt,
           })
           .from(s.requests)
           .leftJoin(s.artisanAssignments, and(eq(s.artisanAssignments.requestId, s.requests.id), eq(s.artisanAssignments.status, "assigned")))
+          .leftJoin(s.interventions, eq(s.interventions.requestId, s.requests.id))
           .leftJoin(s.artisanTeam, eq(s.artisanTeam.id, s.artisanAssignments.teamMemberId))
           .orderBy(desc(s.requests.id))
           .limit(100),
@@ -294,6 +299,7 @@ export const assistantRouter = router({
           clientName: request.name,
           dueAt: request.createdAt,
           actionLabel: "Ouvrir le dossier",
+          autoQuoteable: request.quoteStatus !== "accepted",
         });
       } else if (["needs_information", "proposed_slot", "awaiting_client"].includes(request.status)) {
         const autoConfirmable =
@@ -326,6 +332,23 @@ export const assistantRouter = router({
           clientName: request.name,
           dueAt: request.proposedStart || request.desiredStart,
           actionLabel: "Ouvrir l’intervention",
+        });
+      }
+    }
+    for (const request of requests) {
+      if (request.status === "paid" && request.clientConfirmedAt) {
+        tasks.push({
+          id: `validate-${request.id}`,
+          kind: "request",
+          priority: "today",
+          title: "Valider le dossier terminé",
+          detail: `${request.serviceName || request.problemType} · ${request.name} · photos et confirmation client enregistrées`,
+          requestId: request.id,
+          reference: request.reference,
+          clientName: request.name,
+          dueAt: request.clientConfirmedAt,
+          actionLabel: "Valider le dossier",
+          autoValidateable: true,
         });
       }
     }
@@ -442,6 +465,82 @@ export const assistantRouter = router({
       note: `Rendez-vous ${result.reference} confirmé et ajouté au planning${result.assignedTo ? ` de ${result.assignedTo}` : " de l’artisan MDS"}.`,
     };
   }),
+  autoValidate: artisan.input(z.object({ requestId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+    const db = await dbRequired();
+    await requireAdmin(db, ctx.user);
+    return db.transaction(async tx => {
+      const [request] = await tx.select().from(s.requests).where(eq(s.requests.id, input.requestId)).limit(1).for("update");
+      if (!request) fail("Le dossier demandé est introuvable.", "NOT_FOUND");
+      if (request.status === "closed") return { success: true as const, note: "Le dossier est déjà validé et clôturé." };
+      if (request.status !== "paid") fail("Le dossier ne peut être validé qu’après paiement vérifié.", "CONFLICT");
+      const [intervention] = await tx.select().from(s.interventions).where(eq(s.interventions.requestId, request.id)).limit(1);
+      if (!intervention?.completedAt || !intervention.clientConfirmedAt) fail("La validation client et la fin d’intervention sont encore nécessaires.", "CONFLICT");
+      const [afterPhoto] = await tx.select({ id: s.documents.id }).from(s.documents).where(and(eq(s.documents.requestId, request.id), eq(s.documents.kind, "photo"), eq(s.documents.photoStage, "after"))).limit(1);
+      if (!afterPhoto) fail("La photo après travaux est obligatoire avant validation.", "CONFLICT");
+      await tx.update(s.requests).set({ status: "closed", version: request.version + 1, lastAction: "assistant:autoValidate", lastActionVersion: request.version + 1 }).where(and(eq(s.requests.id, request.id), eq(s.requests.version, request.version)));
+      await event(tx, request, "closed", "Dossier validé automatiquement après intervention terminée, preuve photo, confirmation client et paiement vérifié.", "system", ctx.user.id);
+      await recordAudit(tx, ctx.user.id, "assistant.request.autoValidate", "request", request.id);
+      return { success: true as const, note: `Le dossier ${request.reference} est validé et clôturé.` };
+    });
+  }),
+  prepareQuote: artisan
+    .input(z.object({ requestId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await dbRequired();
+      const [request] = await db
+        .select()
+        .from(s.requests)
+        .where(eq(s.requests.id, input.requestId))
+        .limit(1);
+      if (!request) fail("Le dossier demandé est introuvable.", "NOT_FOUND");
+      const existing = await db
+        .select()
+        .from(s.quoteDrafts)
+        .where(eq(s.quoteDrafts.requestId, request.id))
+        .orderBy(desc(s.quoteDrafts.id))
+        .limit(1);
+      if (existing[0]) {
+        return { created: false as const, draftId: existing[0].id, totalCents: existing[0].totalCents, note: "Le brouillon de devis existant a été retrouvé dans le dossier." };
+      }
+      const snapshot = request.pricingSnapshot as { totalCents?: number | null; included?: string; excluded?: string; conditions?: string } | null;
+      const totalCents = request.proposedPriceCents ?? snapshot?.totalCents ?? null;
+      if (!Number.isSafeInteger(totalCents) || totalCents === null || totalCents < 0) {
+        fail("Le dossier ne contient pas encore de prix validé. L’assistante ne crée aucun montant inventé.", "CONFLICT");
+      }
+      const now = new Date();
+      const validUntil = new Date(now);
+      validUntil.setDate(validUntil.getDate() + 30);
+      const content = quoteContentSchema.parse({
+        issuerName: "MULTISERVICES MDS",
+        issuerAddress: "Adresse à compléter dans Paramètres MDS",
+        issuerRegistration: "Informations légales à compléter dans Paramètres MDS",
+        issuerEmail: request.email,
+        issuerPhone: request.phone,
+        clientName: request.name,
+        clientAddress: `${request.address}, ${request.postcode} ${request.city}`,
+        title: `Devis — ${request.serviceName || request.problemType || "prestation MDS"}`,
+        validUntil: validUntil.toISOString().slice(0, 10),
+        lines: [{ label: request.serviceName || request.problemType || "Prestation MDS", quantity: 1, unitCents: totalCents, vatBasisPoints: 2000 }],
+        included: snapshot?.included || "Périmètre décrit dans la demande client.",
+        excluded: snapshot?.excluded || "Travaux supplémentaires non décrits dans la demande.",
+        conditions: snapshot?.conditions || "Le devis reste soumis à vérification du périmètre sur place.",
+        paymentTerms: "Paiement selon les conditions validées par le client et MDS.",
+        depositCents: 0,
+        taxNote: "TVA incluse selon le taux applicable.",
+        insuranceNote: "Informations d’assurance à compléter dans Paramètres MDS.",
+      });
+      const totals = quoteTotals(content.lines);
+      const [created] = await db.insert(s.quoteDrafts).values({
+        requestId: request.id,
+        content,
+        totalCents: totals.totalCents,
+        version: 0,
+        status: "draft",
+        reference: `MDS-D-${now.toISOString().slice(0, 10)}-${Date.now()}`,
+      }).$returningId();
+      await recordAudit(db, ctx.user.id, "assistant.quoteDraft.prepare", "quoteDraft", created.id);
+      return { created: true as const, draftId: created.id, totalCents: totals.totalCents, note: "Le brouillon de devis a été rempli avec les données du dossier. Il reste à vérifier avant génération et envoi." };
+    }),
   draft: artisan.input(draftInput).mutation(async ({ input, ctx }) => {
     const db = await dbRequired();
     const [request] = await db.select().from(s.requests).where(eq(s.requests.id, input.requestId)).limit(1);

@@ -354,13 +354,13 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
               · {nextRequest.city || "Adresse à vérifier"}
             </p>
           </div>
-          <button
-            type="button"
+          <Link
+            href={`/artisan/requests/${nextRequest.id}`}
             className="btn primary artisan-next-action-button"
-            onClick={() => openRequest(nextRequest.id)}
+            aria-label={`Ouvrir la page du dossier ${nextRequest.reference}`}
           >
             Ouvrir le dossier <ChevronRight size={18} aria-hidden="true" />
-          </button>
+          </Link>
         </section>
       )}
       {urgentNotice && (
@@ -673,6 +673,14 @@ const completedStates: RequestRecord["status"][] = [
   "paid",
   "closed",
 ];
+// Les demandes refusées, annulées ou expirées ne sont jamais des interventions
+// à réaliser. Elles restent consultables dans les demandes, mais ne doivent pas
+// apparaître dans la liste opérationnelle de l'artisan.
+const excludedInterventionStates: RequestRecord["status"][] = [
+  "refused",
+  "cancelled",
+  "expired",
+];
 function Interventions({
   requests,
   services,
@@ -705,6 +713,7 @@ function Interventions({
   };
   const visible = requests
     .filter(r =>
+      !excludedInterventionStates.includes(r.status) &&
       (showCompleted ? completedStates : runningStates).includes(r.status)
     )
     .sort(

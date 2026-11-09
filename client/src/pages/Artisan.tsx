@@ -1013,6 +1013,9 @@ function AdminActivity({
     refetchInterval: 30_000,
   });
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const moderateReview = trpc.mds.admin.moderateReview.useMutation({
+    onSuccess: () => void query.refetch(),
+  });
   const d = query.data;
   const stats = d?.stats;
   const payments = (d?.payments ?? []).filter(p =>
@@ -1035,6 +1038,39 @@ function AdminActivity({
       {query.error && <QueryState error={query.error} retry={query.refetch} />}
       {d && (
         <>
+          {d.reviews.length > 0 && (
+            <article className="panel stack" style={{ background: "#fffaf3", borderColor: "#e7a15c" }}>
+              <div>
+                <strong>Avis à contrôler avant publication</strong>
+                <p className="muted small-text" style={{ margin: "4px 0 0" }}>
+                  Un avis approuvé peut apparaître sur la page Réalisations MDS. Les avis masqués restent privés.
+                </p>
+              </div>
+              {d.reviews.map(review => (
+                <div className="data-row stack" key={review.id}>
+                  <div className="row" style={{ justifyContent: "space-between", gap: 10 }}>
+                    <strong>{review.rating}/5 · {review.serviceName || "Prestation MDS"}</strong>
+                    <small className="muted">{review.city} · {review.clientName}</small>
+                  </div>
+                  {review.comment && <p style={{ margin: 0 }}>{review.comment}</p>}
+                  <div className="row" style={{ gap: 8 }}>
+                    <ActionButton
+                      disabled={moderateReview.isPending}
+                      onClick={() => moderateReview.mutate({ id: review.id, moderation: "approved" })}
+                    >
+                      Publier sur le portfolio
+                    </ActionButton>
+                    <ActionButton
+                      disabled={moderateReview.isPending}
+                      onClick={() => moderateReview.mutate({ id: review.id, moderation: "hidden" })}
+                    >
+                      Garder privé
+                    </ActionButton>
+                  </div>
+                </div>
+              ))}
+            </article>
+          )}
           <div
             style={{
               display: "grid",

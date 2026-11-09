@@ -1,7 +1,8 @@
-import { sql, desc, inArray } from "drizzle-orm";
+import { sql, desc, eq, inArray } from "drizzle-orm";
 import { router } from "../_core/trpc";
 import * as s from "../../drizzle/schema";
-import { artisan, dbRequired } from "./common";
+import { artisan, dbRequired, recordAudit } from "./common";
+import { z } from "zod";
 
 export const adminRouter = router({
   overview: artisan.query(async () => {
@@ -241,6 +242,23 @@ export const adminRouter = router({
       requests,
       payments: paymentsWithClient,
       failures,
+      reviews: await db
+        .select({
+          id: s.reviews.id,
+          requestId: s.reviews.requestId,
+          rating: s.reviews.rating,
+          comment: s.reviews.comment,
+          moderation: s.reviews.moderation,
+          serviceName: s.requests.serviceName,
+          city: s.requests.city,
+          clientName: s.requests.name,
+          createdAt: s.reviews.createdAt,
+        })
+        .from(s.reviews)
+        .innerJoin(s.requests, eq(s.requests.id, s.reviews.requestId))
+        .where(eq(s.reviews.moderation, "pending"))
+        .orderBy(desc(s.reviews.createdAt))
+        .limit(20),
       zone: settingsRow?.zone || "",
       contactPhone: settingsRow?.contactPhone || "",
       contactEmail: settingsRow?.contactEmail || "",
@@ -272,4 +290,31 @@ export const adminRouter = router({
       },
     };
   }),
+  moderateReview: artisan
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        moderation: z.enum(["approved", "hidden"]),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const db = await dbRequired();
+      const [review] = await db
+        .select({ id: s.reviews.id })
+        .from(s.reviews)
+        .where(eq(s.reviews.id, input.id));
+      if (!review) throw new Error("Cet avis est introuvable.");
+      await db
+        .update(s.reviews)
+        .set({ moderation: input.moderation })
+        .where(eq(s.reviews.id, input.id));
+      await recordAudit(
+        db,
+        ctx.user.id,
+        `review.${input.moderation}`,
+        "review",
+        input.id,
+      );
+      return { success: true as const };
+    }),
 });

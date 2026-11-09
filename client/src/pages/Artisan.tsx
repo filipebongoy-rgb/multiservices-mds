@@ -309,6 +309,20 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
           </Link>
         ))}
       </nav>
+      <section className="artisan-overview-strip" aria-label="Résumé de l’atelier">
+        <Link href="/artisan/requests" className="artisan-overview-card">
+          <span>À traiter</span><strong>{pending.length}</strong><small>nouvelles demandes</small>
+        </Link>
+        <Link href="/artisan/planning" className="artisan-overview-card">
+          <span>Aujourd’hui</span><strong>{todayAppointments.length}</strong><small>rendez-vous</small>
+        </Link>
+        <Link href="/artisan/interventions" className="artisan-overview-card">
+          <span>En cours</span><strong>{requests.filter(request => runningStates.includes(request.status)).length}</strong><small>interventions actives</small>
+        </Link>
+        <Link href="/artisan/interventions?filter=completed" className="artisan-overview-card">
+          <span>Terminées</span><strong>{requests.filter(request => completedStates.includes(request.status)).length}</strong><small>historique séparé</small>
+        </Link>
+      </section>
         </>
       )}
       {isFiche ? (
@@ -702,7 +716,15 @@ function Interventions({
   onChanged: () => void;
   listOnly?: boolean;
 }) {
-  const [showCompleted, setShowCompleted] = useState(false);
+  const [location] = useLocation();
+  const [showCompleted, setShowCompleted] = useState(
+    new URLSearchParams(location.split("?")[1] || "").get("filter") === "completed"
+  );
+  useEffect(() => {
+    setShowCompleted(
+      new URLSearchParams(location.split("?")[1] || "").get("filter") === "completed"
+    );
+  }, [location]);
   const select = (id: number | null) => {
     onSelect(id);
     if (id !== null) {

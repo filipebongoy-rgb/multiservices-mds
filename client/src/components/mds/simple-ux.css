@@ -2703,6 +2703,12 @@ input[type="checkbox"] {
   gap: 6px;
   white-space: nowrap;
 }
+.artisan-overview-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0 20px; }
+.artisan-overview-card { display: grid; gap: 3px; min-height: 86px; padding: 13px 14px; border: 1px solid #e1e4e2; background: #fff; color: inherit; text-decoration: none; }
+.artisan-overview-card:hover { border-color: #bc4c23; transform: translateY(-1px); }
+.artisan-overview-card span { color: #596267; font-size: 13px; font-weight: 700; }
+.artisan-overview-card strong { color: #172a38; font-size: 26px; line-height: 1; }
+.artisan-overview-card small { color: #747c7c; font-size: 12px; }
 .artisan-live-alert {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
@@ -2871,6 +2877,8 @@ input[type="checkbox"] {
     width: 100%;
     justify-content: center;
   }
+  .artisan-overview-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+  .artisan-overview-card { min-height: 76px; padding: 11px 12px; }
   .artisan-live-alert {
     grid-template-columns: auto minmax(0, 1fr) auto;
   }

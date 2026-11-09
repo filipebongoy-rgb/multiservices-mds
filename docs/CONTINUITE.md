@@ -18,7 +18,7 @@ La première version ajoute un onglet « Assistant » dans l’atelier privé. L
 
 Les brouillons de relance e-mail, SMS et scripts d’appel sont générés à partir des faits du dossier, avec `gpt-5-mini` en effort faible et un modèle de secours déterministe si l’IA est indisponible. Chaque proposition est enregistrée dans `mds_assistant_actions` avec son destinataire, son statut et son historique. Aucun envoi n’est déclenché par l’affichage ou par la génération : l’artisan doit relire puis valider explicitement. La validation e-mail/SMS réutilise la file outbox MDS et indique clairement si le fournisseur est absent, désactivé, accepté ou en échec.
 
-Les appels téléphoniques réels ne sont pas automatisés dans cette version : l’assistant prépare une fiche et un script, puis l’artisan ouvre le dossier et appelle manuellement. L’assistante ne fixe pas de prix, ne confirme pas de rendez-vous, ne débloque pas de paiement et ne remplace pas les contrôles de preuve photo, signature client et validation de fin de travaux.
+Les appels téléphoniques réels ne sont pas automatisés dans cette version : l’assistant prépare une fiche et un script, puis l’artisan appelle manuellement. L’assistante ne fixe pas de prix, ne confirme pas de rendez-vous, ne débloque pas de paiement et ne remplace pas les contrôles de preuve photo, signature client et validation de fin de travaux.
 
 ## Agent vocal propriétaire MDS — préparation sans fournisseur
 
@@ -41,3 +41,9 @@ L’affectation automatique par distance, disponibilité et compétence n’est 
 L’atelier artisan n’utilise plus une longue page unique pour tous les espaces. Les sections Assistant, Demandes, Planning, Interventions, Règlements, Activité et Équipe disposent de routes dédiées sous `/artisan/*`. Le changement de section passe par l’URL et remet la page en haut, ce qui rend le bouton Retour du navigateur cohérent.
 
 Sur téléphone, la barre fixe principale est limitée à cinq accès équilibrés. Les trois espaces secondaires sont accessibles dans un menu « Plus » qui s’ouvre au-dessus de la barre. La grille utilise cinq colonnes flexibles, des libellés courts et une largeur minimale nulle afin que le dernier bouton reste visible sans défilement horizontal.
+
+## Affectation automatique par défaut — 9 novembre 2026
+
+Les collaborateurs actifs sont maintenant éligibles par défaut à toutes les prestations du catalogue MDS et à la zone Rennes + 30 km, même si leurs spécialités ou zones personnelles ne sont pas encore renseignées. Après la confirmation autonome d’un rendez-vous, MDS choisit le collaborateur actif ayant le moins d’affectations ouvertes, crée l’affectation dans la même transaction et ajoute une notification à son planning. Si aucun collaborateur n’est actif, le dossier reste affecté au planning de l’artisan MDS principal.
+
+Cette règle est un défaut opérationnel et non une certification individuelle : l’administrateur pourra préciser les spécialités et zones ultérieurement. La contrainte unique sur le dossier empêche les doubles affectations.

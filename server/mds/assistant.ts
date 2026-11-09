@@ -422,7 +422,7 @@ export const assistantRouter = router({
     return {
       success: true as const,
       ...result,
-      note: `Rendez-vous ${result.reference} confirmé et ajouté au planning.`,
+      note: `Rendez-vous ${result.reference} confirmé et ajouté au planning${result.assignedTo ? ` de ${result.assignedTo}` : " de l’artisan MDS"}.`,
     };
   }),
   draft: artisan.input(draftInput).mutation(async ({ input, ctx }) => {

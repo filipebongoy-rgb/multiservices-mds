@@ -170,7 +170,7 @@ async function flushBookingNotifications(
 export async function autoConfirmRequest(requestId: number, actor: number) {
   const db = await dbRequired();
   const result = await db.transaction(async tx => {
-    await principal(tx, true);
+    const principalSettings = await principal(tx, true);
     const r = await load(tx, { id: requestId });
     mayConfirm(r);
     requireContractPrice(r, r.proposedPriceCents);
@@ -190,11 +190,39 @@ export async function autoConfirmRequest(requestId: number, actor: number) {
       status: "confirmed",
     }).$returningId();
     await tx.insert(s.interventions).values({ requestId: r.id, appointmentId: appointment.id });
+    // Par défaut, un collaborateur actif est réputé compétent pour tout le
+    // catalogue MDS et couvert par la zone Rennes + 30 km. On choisit le moins
+    // chargé ; ses compétences et sa zone pourront être précisées plus tard.
+    const collaborators = await tx
+      .select({ id: s.artisanTeam.id, userId: s.artisanTeam.userId, displayName: s.artisanTeam.displayName })
+      .from(s.artisanTeam)
+      .where(and(eq(s.artisanTeam.ownerUserId, principalSettings.artisanUserId ?? actor), eq(s.artisanTeam.status, "active")));
+    let assignedTo: string | null = null;
+    if (collaborators.length > 0) {
+      const currentAssignments = await tx
+        .select({ teamMemberId: s.artisanAssignments.teamMemberId })
+        .from(s.artisanAssignments)
+        .where(eq(s.artisanAssignments.status, "assigned"));
+      const load = new Map<number, number>();
+      for (const assignment of currentAssignments) load.set(assignment.teamMemberId, (load.get(assignment.teamMemberId) ?? 0) + 1);
+      const selected = [...collaborators].sort((a, b) => (load.get(a.id) ?? 0) - (load.get(b.id) ?? 0) || a.id - b.id)[0];
+      await tx.insert(s.artisanAssignments).values({ requestId: r.id, teamMemberId: selected.id, assignedBy: actor, status: "assigned" });
+      assignedTo = selected.displayName;
+      if (selected.userId) {
+        await tx.insert(s.notifications).values({
+          userId: selected.userId,
+          requestId: r.id,
+          audience: "artisan",
+          title: "Intervention préparée par l’assistante MDS",
+          message: `Le dossier ${r.reference} est confirmé et affecté à votre planning.`,
+        });
+      }
+    }
     await update(tx, r, { status: "planned", expiresAt: null, proposedStart: times.startAt }, "assistant:autoConfirm");
     await event(tx, r, "confirmed", "Le créneau proposé a été confirmé automatiquement par l’assistante MDS.", "system", actor);
     await event(tx, r, "planned", "Le rendez-vous unique a été créé et l’intervention est planifiée.", "system", null);
     await recordAudit(tx, actor, "assistant.appointment.autoConfirm", "request", r.id);
-    return { appointmentId: appointment.id, reference: r.reference, startAt: times.startAt };
+    return { appointmentId: appointment.id, reference: r.reference, startAt: times.startAt, assignedTo };
   });
   await flushBookingNotifications(db);
   return result;

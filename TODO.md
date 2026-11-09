@@ -41,7 +41,7 @@
 - [x] L’administrateur peut affecter une intervention à un collaborateur actif et celui-ci reçoit une notification de planning.
 - [x] Un collaborateur possède un compte séparé et ne voit que les demandes qui lui sont affectées ; il ne voit ni paiements, ni contrats globaux, ni activité client globale, ni paramètres MDS.
 - [x] L’administrateur peut révoquer l’accès d’un collaborateur ; les affectations restent historisées.
-- [ ] L’affectation automatique selon distance, disponibilité et compétence devra être activée après définition des zones et spécialités de chaque collaborateur ; aucune affectation hasardeuse n’est inventée.
+- [x] L’affectation automatique utilise la zone MDS par défaut et la charge des affectations ouvertes ; les compétences et zones personnelles peuvent être précisées ultérieurement.
 
 ## Navigation artisan sans défilement inutile
 
@@ -49,3 +49,10 @@
 - [x] Un clic sur un onglet ouvre la page correspondante et réinitialise la vue, au lieu de laisser l’utilisateur chercher l’information plus bas dans un écran unique.
 - [x] Sur mobile, la barre fixe affiche cinq accès équilibrés : Assistant, Demandes, Planning, Interventions et Plus. Les règlements, l’activité et l’équipe sont regroupés dans un menu Plus accessible et visible.
 - [x] Le dernier élément n’est plus coupé par la largeur de l’écran ; les libellés et icônes sont répartis dans une grille mobile stable.
+
+## Affectation automatique par défaut
+
+- [x] Tout collaborateur actif est désormais considéré compétent pour l’ensemble du catalogue MDS et couvert par la zone par défaut Rennes + 30 km, même si ses spécialités et sa zone personnelle ne sont pas encore renseignées.
+- [x] Après confirmation automatique d’un rendez-vous, l’assistante affecte le dossier au collaborateur actif le moins chargé et ajoute l’intervention à son planning.
+- [x] La disponibilité opérationnelle est estimée par la charge des affectations actives ; l’affectation reste protégée contre les doublons par la contrainte unique du dossier.
+- [x] Le collaborateur reçoit une notification et l’assistant indique clairement le nom de l’artisan affecté. En l’absence de collaborateur, le dossier reste au planning de l’artisan MDS principal.

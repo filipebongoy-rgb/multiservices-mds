@@ -164,6 +164,40 @@ async function flushBookingNotifications(
     // Le traitement planifié reste le chemin de reprise garanti.
   }
 }
+
+/** Confirme un créneau proposé uniquement après tous les contrôles métier existants. */
+export async function autoConfirmRequest(requestId: number, actor: number) {
+  const db = await dbRequired();
+  const result = await db.transaction(async tx => {
+    await principal(tx, true);
+    const r = await load(tx, { id: requestId });
+    mayConfirm(r);
+    requireContractPrice(r, r.proposedPriceCents);
+    if (!r.proposedStart)
+      fail("Aucun créneau proposé n’est disponible pour cette demande.", "CONFLICT");
+    const times = slot(r.proposedStart, r.proposedPriceCents, r.durationMinutes);
+    const margins = await checkCalendar(tx, times, r);
+    const [existing] = await tx
+      .select({ id: s.appointments.id })
+      .from(s.appointments)
+      .where(eq(s.appointments.requestId, r.id));
+    if (existing) fail("Un rendez-vous est déjà lié à ce dossier.", "CONFLICT");
+    const [appointment] = await tx.insert(s.appointments).values({
+      requestId: r.id,
+      ...times,
+      ...margins,
+      status: "confirmed",
+    }).$returningId();
+    await tx.insert(s.interventions).values({ requestId: r.id, appointmentId: appointment.id });
+    await update(tx, r, { status: "planned", expiresAt: null, proposedStart: times.startAt }, "assistant:autoConfirm");
+    await event(tx, r, "confirmed", "Le créneau proposé a été confirmé automatiquement par l’assistante MDS.", "system", actor);
+    await event(tx, r, "planned", "Le rendez-vous unique a été créé et l’intervention est planifiée.", "system", null);
+    await recordAudit(tx, actor, "assistant.appointment.autoConfirm", "request", r.id);
+    return { appointmentId: appointment.id, reference: r.reference, startAt: times.startAt };
+  });
+  await flushBookingNotifications(db);
+  return result;
+}
 async function readDetail(
   key: { id: number } | { reference: string },
   user: Identity,

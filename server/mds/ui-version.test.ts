@@ -692,3 +692,16 @@ describe("agent vocal propriétaire MDS", () => {
     expect(schema).toContain("mds_voice_call_logs");
   });
 });
+
+describe("confirmation autonome des rendez-vous", () => {
+  it("expose une action bornée par le calendrier et le prix contractuel", () => {
+    const assistant = readFileSync(new URL("./assistant.ts", import.meta.url), "utf8");
+    const requests = readFileSync(new URL("./requests.ts", import.meta.url), "utf8");
+    expect(assistant).toContain("autoConfirmRequest");
+    expect(assistant).toContain("Confirmer le rendez-vous prêt");
+    expect(requests).toContain("export async function autoConfirmRequest");
+    expect(requests).toContain("requireContractPrice(r, r.proposedPriceCents)");
+    expect(requests).toContain("checkCalendar(tx, times, r)");
+    expect(requests).toContain('"assistant:autoConfirm"');
+  });
+});

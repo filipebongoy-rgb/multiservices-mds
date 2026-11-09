@@ -64,6 +64,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
   });
   const draftMutation = trpc.mds.assistant.draft.useMutation();
   const approveMutation = trpc.mds.assistant.approve.useMutation();
+  const autoConfirmMutation = trpc.mds.assistant.autoConfirm.useMutation();
   const cancelMutation = trpc.mds.assistant.cancel.useMutation();
   const utils = trpc.useUtils();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -138,7 +139,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
         <Phone size={17} aria-hidden="true" />
         {data.voice.configured ? "Agent téléphonique MDS prêt." : "Agent téléphonique préparé, mais non activé : ajoutez les paramètres fournisseur plus tard."}
       </div>
-      <ErrorNotice error={draftMutation.error || approveMutation.error || cancelMutation.error} />
+      <ErrorNotice error={draftMutation.error || approveMutation.error || cancelMutation.error || autoConfirmMutation.error} />
       {notice && <p className="notice" role="status">{notice}</p>}
 
       <div className="assistant-layout">
@@ -164,7 +165,10 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
                   </div>
                   <div className="assistant-task-actions">
                     {task.requestId && <ActionButton className="secondary" onClick={() => onOpenRequest(task.requestId!)}><ChevronRight size={16} aria-hidden="true" /> Ouvrir</ActionButton>}
-                    {task.requestId && (task.priority === "follow_up" || task.kind === "payment" || task.kind === "message") && (
+                    {task.requestId && task.autoConfirmable && (
+                      <ActionButton className="primary" disabled={autoConfirmMutation.isPending} onClick={async () => { if (!window.confirm("Confirmer ce rendez-vous et l’ajouter au planning ?")) return; try { const result = await autoConfirmMutation.mutateAsync({ requestId: task.requestId! }); setNotice(result.note); await utils.mds.assistant.overview.invalidate(); } catch { /* ErrorNotice displays the mutation error. */ } }}><CalendarClock size={15} aria-hidden="true" /> {autoConfirmMutation.isPending ? "Confirmation…" : "Confirmer le rendez-vous"}</ActionButton>
+                    )}
+                    {task.requestId && !task.autoConfirmable && (task.priority === "follow_up" || task.kind === "payment" || task.kind === "message") && (
                       <div className="assistant-message-actions">
                         <ActionButton className="secondary" onClick={() => void prepareDraft(task, "email")} disabled={draftMutation.isPending}><Mail size={15} aria-hidden="true" /> E-mail</ActionButton>
                         <ActionButton className="secondary" onClick={() => void prepareDraft(task, "sms")} disabled={draftMutation.isPending}><MessageSquare size={15} aria-hidden="true" /> SMS</ActionButton>

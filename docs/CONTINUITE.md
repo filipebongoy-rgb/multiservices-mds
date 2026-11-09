@@ -23,3 +23,7 @@ Les appels téléphoniques réels ne sont pas automatisés dans cette version : 
 ## Agent vocal propriétaire MDS — préparation sans fournisseur
 
 Le 9 novembre 2026, MDS a préparé un agent vocal natif sans Retell. Twilio Voice sert uniquement de transport téléphonique lorsque ses paramètres seront fournis ; les réponses et règles métier restent côté MDS avec l’IA intégrée. Les routes entrantes, sortantes, de réponse, de statut et de vérification de signature sont présentes. En l’absence d’origine publique, de numéro Voice ou de secrets Twilio, elles refusent l’appel et ne lancent aucune dépense. Le journal `mds_voice_call_logs` conserve les états nécessaires au suivi. La configuration sécurisée des identifiants a été annulée et devra être relancée séparément avant tout appel réel.
+
+## Confirmation autonome des rendez-vous — 9 novembre 2026
+
+L’assistante peut maintenant confirmer un rendez-vous prêt lorsque la demande possède un créneau proposé, un prix contractuel valide et aucun devis en attente. La confirmation passe par une transaction unique, réutilise le verrou principal, vérifie la zone, la durée, les temps de déplacement, les indisponibilités et les conflits, puis crée le rendez-vous et l’intervention. Toute anomalie reste bloquée avec le motif métier ; l’action est auditée et les notifications sont traitées après commit.

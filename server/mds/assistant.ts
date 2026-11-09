@@ -7,6 +7,7 @@ import { artisan, dbRequired, principal, recordAudit } from "./common";
 import { fail } from "./workflow";
 import { processOutbox, providerReadiness } from "./outbox";
 import { createOutboundVoiceCall, voiceProviderReadiness } from "./voice-agent";
+import { autoConfirmRequest } from "./requests";
 
 const assistantModel = "gpt-5-mini";
 const draftSchema = z.object({
@@ -36,6 +37,7 @@ type AssistantTask = {
   clientName: string | null;
   dueAt: Date | null;
   actionLabel: string;
+  autoConfirmable?: boolean;
 };
 
 function parisDay(value: Date) {
@@ -276,17 +278,23 @@ export const assistantRouter = router({
           actionLabel: "Ouvrir le dossier",
         });
       } else if (["needs_information", "proposed_slot", "awaiting_client"].includes(request.status)) {
+        const autoConfirmable =
+          ["proposed_slot", "awaiting_client"].includes(request.status) &&
+          !!request.proposedStart &&
+          request.quoteStatus !== "pending" &&
+          request.quoteStatus !== "refused";
         tasks.push({
           id: `follow-up-${request.id}`,
           kind: "request",
-          priority: "follow_up",
-          title: "Suivre une réponse en attente",
+          priority: autoConfirmable ? "today" : "follow_up",
+          title: autoConfirmable ? "Confirmer le rendez-vous prêt" : "Suivre une réponse en attente",
           detail: `${request.serviceName || request.problemType} · ${request.name}`,
           requestId: request.id,
           reference: request.reference,
           clientName: request.name,
           dueAt: request.proposedStart || request.desiredStart || request.createdAt,
-          actionLabel: "Préparer une relance",
+          actionLabel: autoConfirmable ? "Confirmer le rendez-vous" : "Préparer une relance",
+          autoConfirmable,
         });
       } else if (["in_progress", "en_route"].includes(request.status)) {
         tasks.push({
@@ -405,6 +413,14 @@ export const assistantRouter = router({
       voice: voiceProviderReadiness(),
       assistantModel,
       note: "Les actions terrain restent simples. Les appels réels restent désactivés tant que le fournisseur Voice n’est pas configuré.",
+    };
+  }),
+  autoConfirm: artisan.input(z.object({ requestId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+    const result = await autoConfirmRequest(input.requestId, ctx.user.id);
+    return {
+      success: true as const,
+      ...result,
+      note: `Rendez-vous ${result.reference} confirmé et ajouté au planning.`,
     };
   }),
   draft: artisan.input(draftInput).mutation(async ({ input, ctx }) => {

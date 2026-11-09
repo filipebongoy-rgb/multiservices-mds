@@ -27,3 +27,10 @@
 - [x] L’assistante affiche l’état de préparation et peut lancer un appel sortant depuis un brouillon lorsque le fournisseur sera configuré.
 - [x] Les appels réels restent désactivés tant que les identifiants fournisseur ne sont pas fournis ; aucune dépense ni appel n’a été lancé dans cette passe.
 - [x] Le journal relationnel des appels est préparé pour conserver le statut, la direction et le dossier associé.
+
+## Confirmation autonome des rendez-vous
+
+- [x] Les demandes avec créneau proposé, prix contractuel valide, informations suffisantes et aucun devis en attente apparaissent comme « Confirmer le rendez-vous prêt ».
+- [x] La confirmation réutilise la vérification de calendrier, zone, déplacement, durée, conflits et prix ; elle crée un seul rendez-vous et une intervention dans une transaction.
+- [x] Une demande sans créneau, avec devis requis/non accepté, conflit de planning ou information incohérente reste bloquée avec le motif métier explicite.
+- [x] La confirmation est auditée et déclenche les notifications de réservation après le commit ; elle ne lance aucune intervention et ne remplace pas les photos, la signature ou la fin de chantier.

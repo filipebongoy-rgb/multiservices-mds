@@ -20,7 +20,7 @@ L’assistante MDS prépare et suit les tâches administratives, mais ne doit ja
 
 ## Règles de sécurité et de responsabilité
 
-- Une action qui envoie un contrat, un devis, une facture, un SMS, un e-mail ou un appel nécessite une validation explicite de l’artisan, sauf notification transactionnelle déjà autorisée par le workflow existant.
+- Une action qui envoie un contrat, un devis, une facture, un SMS, un e-mail ou un appel nécessite une validation explicite de l’artisan, sauf notification transactionnelle déjà autorisée par le workflow existant. La confirmation automatique d’un rendez-vous est permise uniquement pour un créneau proposé, un prix contractuel valide, un dossier complet et un calendrier libre ; tout cas atypique est bloqué.
 - L’assistante peut suggérer et préparer ; elle ne peut pas inventer un prix, confirmer une disponibilité non enregistrée, débloquer un paiement, supprimer une preuve ou clôturer une intervention sans les contrôles existants.
 - Les réponses utilisent uniquement les données MDS du dossier concerné et respectent la séparation client/professionnel/artisan.
 - Les actions sont idempotentes et affichent immédiatement leur état pour éviter les doubles envois.

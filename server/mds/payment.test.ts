@@ -826,6 +826,17 @@ describe("webhook signé, exact et dédupliqué", () => {
     expect(db.rows(s.notifications)).toHaveLength(0);
   });
   it("live exact acquitte facture/dossier, journal et deux notifications dans une seule transaction", async () => {
+    vi.stubEnv("MDS_RESEND_API_KEY", "unit-test-resend-key");
+    db.put(s.settings, [
+      {
+        id: 1,
+        artisanUserId: 1,
+        emailEnabled: true,
+        emailFrom: "facturation@mds.example",
+        publicOrigin: origin,
+        trackingSecret: "a".repeat(64),
+      },
+    ]);
     db.put(s.payments, [payment({ mode: "live" })]);
     expect(
       await processPaymentEvent(
@@ -840,6 +851,14 @@ describe("webhook signé, exact et dédupliqué", () => {
     expect(db.rows(s.invoices)[0].paidAt).toBeInstanceOf(Date);
     expect(db.rows(s.events)).toHaveLength(1);
     expect(db.rows(s.notifications)).toHaveLength(2);
+    expect(db.rows(s.messageOutbox)).toHaveLength(1);
+    expect(db.rows(s.messageOutbox)[0]).toMatchObject({
+      channel: "email",
+      recipient: "guest@example.test",
+      subject: "MDS · Facture réglée",
+      status: "queued",
+    });
+    expect(db.rows(s.messageOutbox)[0].body).toContain("120,00 €");
     expect(db.rows(s.paymentEvents)).toHaveLength(1);
     expect(db.rows(s.audit)[0].action).toBe("payment.live.fulfilled");
   });

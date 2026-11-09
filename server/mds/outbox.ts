@@ -76,11 +76,12 @@ export async function enqueueEventMessages(
   eventId: number,
   status: RequestStatus,
   message: string,
-  actor: "client" | "artisan" | "system"
+  actor: "client" | "artisan" | "system",
+  notificationTitle?: string
 ) {
   const ready = providerReadiness();
   const link = trackingMessageLink(request, p);
-  const title = `MDS · ${statusLabels[status]}`;
+  const title = `MDS · ${notificationTitle || statusLabels[status]}`;
   // A self-authored event should not send the same notification back to its author.
   const audiences: {
     name: string;

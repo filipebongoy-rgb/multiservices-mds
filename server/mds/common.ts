@@ -259,7 +259,8 @@ export async function event(
     createdEvent.id,
     status,
     message,
-    actorType
+    actorType,
+    notificationTitle
   );
 }
 export async function detailData(

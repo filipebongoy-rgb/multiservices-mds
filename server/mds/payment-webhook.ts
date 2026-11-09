@@ -398,13 +398,18 @@ async function applyEvidence(
       verificationNote: `Paiement Stripe live signé — ${payment.reference || payment.id}.`,
     })
     .where(eq(s.invoices.id, invoice.id));
+  const amount = new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+  }).format(payment.amountCents / 100);
   await businessEvent(
     tx,
     request,
     "paid",
-    "Stripe a confirmé un encaissement réel en euros conforme au montant de la facture. Le dossier est réglé.",
+    `Votre facture MDS de ${amount} est réglée. Stripe a confirmé le paiement réel en euros. La facture et le suivi restent disponibles depuis votre lien privé.`,
     "system",
-    null
+    null,
+    "Facture réglée"
   );
   await recordAudit(tx, null, "payment.live.fulfilled", "payment", payment.id);
   return "live_fulfilled";

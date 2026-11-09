@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { registerAutomationRoutes } from "../mds/automation";
+import { registerVoiceRoutes } from "../mds/voice-agent";
 import { registerPaymentWebhook } from "../mds/payment-webhook";
 import { registerStorageProxy } from "./storageProxy";
 import { createHash } from "node:crypto";
@@ -25,6 +26,7 @@ async function startServer() {
   app.use(express.json({ limit: "8mb" }));
   app.use(express.urlencoded({ limit: "8mb", extended: true }));
   registerAutomationRoutes(app);
+  registerVoiceRoutes(app);
   app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
   app.post("/api/site-visit", async (req, res) => {
     try {

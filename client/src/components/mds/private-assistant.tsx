@@ -118,7 +118,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
         <div>
           <span className="eyebrow">Poste de pilotage</span>
           <h2 id="assistant-title">Votre assistante MDS</h2>
-          <p>Elle rassemble les urgences, prépare les messages et vous laisse la décision finale.</p>
+          <p>Elle prépare les appels, les messages et les tâches. L’artisan intervient surtout sur le chantier.</p>
         </div>
         <ActionButton aria-label="Actualiser l’assistante" onClick={() => void query.refetch()} disabled={query.isFetching}>
           <RefreshCw size={17} aria-hidden="true" />
@@ -134,6 +134,10 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
       </div>
 
       <p className="assistant-note"><CheckCircle2 size={17} aria-hidden="true" /> {data.note}</p>
+      <div className={`assistant-note ${data.voice.configured ? "success" : "warning"}`} role="status">
+        <Phone size={17} aria-hidden="true" />
+        {data.voice.configured ? "Agent téléphonique MDS prêt." : "Agent téléphonique préparé, mais non activé : ajoutez les paramètres fournisseur plus tard."}
+      </div>
       <ErrorNotice error={draftMutation.error || approveMutation.error || cancelMutation.error} />
       {notice && <p className="notice" role="status">{notice}</p>}
 
@@ -183,14 +187,14 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
             <div className="assistant-draft-empty"><MessageSquare size={24} aria-hidden="true" /><p>Choisissez E-mail, SMS ou Appel sur une tâche de relance. Aucun message ne partira sans validation.</p></div>
           ) : (
             <div className="stack">
-              <div className="assistant-recipient"><span>Destinataire</span><strong>{draft.recipient}</strong><small>{draft.channel === "call" ? "Script à lire manuellement" : "Message non envoyé"}</small></div>
+              <div className="assistant-recipient"><span>Destinataire</span><strong>{draft.recipient}</strong><small>{draft.channel === "call" ? (data.voice.configured ? "Appel automatique prêt à lancer" : "Appel automatique en attente de configuration") : "Message non envoyé"}</small></div>
               <label className="field"><span>Objet</span><input value={draft.subject} onChange={event => setDraft({ ...draft, subject: event.target.value })} /></label>
               <label className="field"><span>Message</span><textarea rows={8} value={draft.body} onChange={event => setDraft({ ...draft, body: event.target.value })} /></label>
               <p className="muted small-text">{draft.note}</p>
               <div className="row" style={{ flexWrap: "wrap" }}>
                 <ActionButton onClick={() => void copyDraft()}><Copy size={16} aria-hidden="true" /> {copyDone ? "Copié" : "Copier"}</ActionButton>
                 {draft.channel === "call" ? (
-                  <ActionButton className="primary" onClick={() => { if (selectedTask?.requestId) onOpenRequest(selectedTask.requestId); setNotice("Lancez l’appel depuis le dossier client, puis utilisez ce script."); }}><Phone size={16} aria-hidden="true" /> Ouvrir le dossier</ActionButton>
+                  <ActionButton className="primary" disabled={approveMutation.isPending} onClick={async () => { if (!data.voice.configured) { setNotice("L’appel est préparé mais reste désactivé tant que le fournisseur Voice n’est pas configuré."); return; } if (!window.confirm(`Lancer l’appel vers ${draft.recipient} ?`)) return; try { const result = await approveMutation.mutateAsync({ actionId: draft.id }); setNotice(result.note); setDraft({ ...draft, status: result.status }); await utils.mds.assistant.overview.invalidate(); } catch { /* ErrorNotice displays the mutation error. */ } }}><Phone size={16} aria-hidden="true" /> {approveMutation.isPending ? "Appel…" : "Lancer l’appel"}</ActionButton>
                 ) : (
                   <ActionButton className="primary" disabled={approveMutation.isPending} onClick={async () => { if (!window.confirm(`Envoyer ce ${draft.channel === "email" ? "e-mail" : "SMS"} à ${draft.recipient} ?`)) return; try { const result = await approveMutation.mutateAsync({ actionId: draft.id }); setNotice(result.note); setDraft({ ...draft, status: result.status }); await utils.mds.assistant.overview.invalidate(); } catch { /* ErrorNotice displays the mutation error. */ } }}><Send size={16} aria-hidden="true" /> {approveMutation.isPending ? "Envoi…" : "Valider et envoyer"}</ActionButton>
                 )}

@@ -6,6 +6,7 @@ import * as s from "../../drizzle/schema";
 import { artisan, dbRequired, principal, recordAudit } from "./common";
 import { fail } from "./workflow";
 import { processOutbox, providerReadiness } from "./outbox";
+import { createOutboundVoiceCall, voiceProviderReadiness } from "./voice-agent";
 
 const assistantModel = "gpt-5-mini";
 const draftSchema = z.object({
@@ -401,8 +402,9 @@ export const assistantRouter = router({
       },
       recentActions: actions,
       channels: providerReadiness(),
+      voice: voiceProviderReadiness(),
       assistantModel,
-      note: "Les brouillons sont préparés par l’assistante puis doivent être validés par l’artisan. Aucun envoi n’est automatique depuis ce tableau.",
+      note: "Les actions terrain restent simples. Les appels réels restent désactivés tant que le fournisseur Voice n’est pas configuré.",
     };
   }),
   draft: artisan.input(draftInput).mutation(async ({ input, ctx }) => {
@@ -441,7 +443,26 @@ export const assistantRouter = router({
     if (!action) fail("Cette proposition n’existe plus.", "NOT_FOUND");
     if (action.status !== "proposed") fail("Cette proposition a déjà été traitée.", "CONFLICT");
     const channel = action.channel;
-    if (channel === "call") fail("Les appels réels ne sont pas encore configurés. Utilisez le script pour appeler manuellement.", "CONFLICT");
+    if (channel === "call") {
+      try {
+        const call = await createOutboundVoiceCall({
+          to: action.recipient,
+          requestId: action.requestId ?? undefined,
+        });
+        await db.update(s.assistantActions).set({
+          status: "sent",
+          approvedAt: new Date(),
+          completedAt: new Date(),
+          lastError: null,
+        }).where(eq(s.assistantActions.id, action.id));
+        await recordAudit(db, ctx.user.id, "assistant.voiceCall.started", "assistant_action", action.id);
+        return { status: "sent" as const, note: `Appel lancé${call.sid ? ` (${call.sid})` : ""}.` };
+      } catch (error) {
+        const note = error instanceof Error ? error.message : "L’appel n’a pas pu être lancé.";
+        await db.update(s.assistantActions).set({ status: "failed", approvedAt: new Date(), completedAt: new Date(), lastError: note }).where(eq(s.assistantActions.id, action.id));
+        return { status: "failed" as const, note };
+      }
+    }
     const p = await principal(db);
     const ready = providerReadiness();
     const enabled = channel === "email" ? p.emailEnabled && ready.email && !!p.emailFrom : p.smsEnabled && ready.sms && !!p.smsFrom;

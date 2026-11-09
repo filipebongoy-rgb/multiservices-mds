@@ -824,6 +824,28 @@ export const assistantActions = mysqlTable("mds_assistant_actions", {
   index("assistant_actions_request").on(table.requestId),
   index("assistant_actions_status").on(table.status),
 ]);
+export const voiceCallLogs = mysqlTable(
+  "mds_voice_call_logs",
+  {
+    id: id(),
+    callSid: varchar("callSid", { length: 120 }).notNull().unique(),
+    fromNumber: varchar("fromNumber", { length: 30 }),
+    toNumber: varchar("toNumber", { length: 30 }),
+    direction: mysqlEnum("direction", ["inbound", "outbound"]).notNull(),
+    status: mysqlEnum("status", ["received", "in_progress", "completed", "failed"]).default("received").notNull(),
+    requestId: int("requestId").references(() => requests.id),
+    transcript: text("transcript"),
+    summary: text("summary"),
+    lastError: varchar("lastError", { length: 500 }),
+    startedAt: timestamp("startedAt"),
+    endedAt: timestamp("endedAt"),
+    ...dates(),
+  },
+  table => [
+    index("voice_call_logs_status").on(table.status),
+    index("voice_call_logs_request").on(table.requestId),
+  ]
+);
 export const reminders = mysqlTable("mds_reminders", {
   id: id(),
   dedupeKey: varchar("dedupeKey", { length: 180 }).notNull().unique(),

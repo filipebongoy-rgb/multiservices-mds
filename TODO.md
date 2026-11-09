@@ -11,7 +11,6 @@
 - [ ] L’artisan conserve une action terrain simple et prioritaire : démarrer, arriver, commencer, photos avant/après, signature et terminer.
 - [ ] Les suggestions IA utilisent uniquement les données autorisées du dossier, sont bornées par des données structurées, et un repli manuel reste disponible en cas d’erreur ou d’incertitude.
 
-
 ### État de la première version livrée — 9 novembre 2026
 
 - [x] Le poste de pilotage privé agrège les demandes réelles, rendez-vous du jour, interventions en cours, devis préparés, factures impayées, paiements en échec, notifications non abouties et incidents ouverts.
@@ -19,3 +18,12 @@
 - [x] L’artisan doit relire et valider explicitement un brouillon avant son passage dans la file e-mail/SMS. Le canal non configuré est affiché comme un échec contrôlé, jamais comme un envoi réussi.
 - [x] L’assistante n’altère pas les prix, créneaux, paiements, preuves photo ou signatures et ne déclenche pas d’appel réel.
 - [ ] La planification avancée de relances, la génération de contrats/devis complets et l’intégration d’un fournisseur téléphonique restent une étape distincte ; elles ne sont pas simulées dans cette version.
+
+## Agent vocal propriétaire MDS sans Retell
+
+- [x] Le serveur contient un agent vocal natif fondé sur Twilio Voice + IA MDS, sans dépendance Retell.
+- [x] Les routes `/api/voice/incoming`, `/api/voice/respond`, `/api/voice/outbound` et `/api/voice/status` sont préparées avec réponses TwiML en français, collecte de parole, réponse IA courte et suivi des statuts.
+- [x] Les signatures `X-Twilio-Signature` sont vérifiées avant traitement ; les appels sont refusés si l’origine publique, les secrets ou le numéro Voice ne sont pas configurés.
+- [x] L’assistante affiche l’état de préparation et peut lancer un appel sortant depuis un brouillon lorsque le fournisseur sera configuré.
+- [x] Les appels réels restent désactivés tant que les identifiants fournisseur ne sont pas fournis ; aucune dépense ni appel n’a été lancé dans cette passe.
+- [x] Le journal relationnel des appels est préparé pour conserver le statut, la direction et le dossier associé.

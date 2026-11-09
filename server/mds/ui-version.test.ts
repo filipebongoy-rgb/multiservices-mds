@@ -678,3 +678,17 @@ describe("assistante opérationnelle artisan", () => {
     expect(assistant).toContain('assistant.approve');
   });
 });
+
+describe("agent vocal propriétaire MDS", () => {
+  it("prépare les routes Twilio sans activer d’appel sans secrets", () => {
+    const voice = readFileSync(new URL("./voice-agent.ts", import.meta.url), "utf8");
+    const server = readFileSync(new URL("../_core/index.ts", import.meta.url), "utf8");
+    const schema = readFileSync(new URL("../../drizzle/schema.ts", import.meta.url), "utf8");
+    expect(server).toContain("registerVoiceRoutes");
+    expect(voice).toContain("/api/voice/incoming");
+    expect(voice).toContain("/api/voice/respond");
+    expect(voice).toContain("X-Twilio-Signature");
+    expect(voice).toContain("MDS_TWILIO_AUTH_TOKEN");
+    expect(schema).toContain("mds_voice_call_logs");
+  });
+});

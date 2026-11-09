@@ -1,5 +1,4 @@
 
-
 # Extension — Assistante opérationnelle MDS
 
 ## Objectif
@@ -61,6 +60,12 @@ L’assistante MDS prépare et suit les tâches administratives, mais ne doit ja
 3. Factures préparées et contrôles de paiement dans le flux existant.
 4. Connexion téléphonique réelle uniquement après choix et configuration du fournisseur, du numéro d’appel et des règles de consentement.
 
+## Extension — Agent vocal propriétaire MDS sans Retell
+
+L’agent vocal natif repose sur Twilio Voice uniquement comme transport téléphonique, sans Retell : les routes Express MDS produisent le dialogue TwiML, valident les signatures Twilio, journalisent les appels et utilisent l’IA intégrée pour reformuler une réponse courte en français. Les actions métier restent bornées par les règles MDS ; aucun prix, créneau ou engagement n’est inventé. Les identifiants et le numéro Voice sont injectés plus tard par secrets protégés. En leur absence, toutes les routes retournent un état explicite « agent non configuré » et aucun appel sortant n’est lancé.
+
+Les fichiers concernés sont `server/mds/voice-agent.ts`, `server/_core/index.ts`, `drizzle/schema.ts` et `client/src/components/mds/private-assistant.tsx`. La migration `mds_voice_call_logs` est additive et conserve le statut, la direction et le dossier associé.
+
 ## Décision à valider
 
-Cette première version privilégie une assistante qui prépare et automatise sans envoyer seule de communication engageante. Les appels réels, l’envoi autonome de contrats et la facturation automatique restent désactivés jusqu’à configuration explicite et tests de sécurité.
+Cette première version privilégie une assistante qui prépare et automatise sans envoyer seule de communication engageante. L’agent vocal est préparé mais reste désactivé sans identifiants et numéro Twilio Voice. L’envoi autonome de contrats et la facturation automatique restent soumis aux règles de sécurité, aux contrôles métier et à la configuration explicite du propriétaire.

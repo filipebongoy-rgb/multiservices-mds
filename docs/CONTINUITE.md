@@ -12,7 +12,6 @@ Le parcours local comprend maintenant une demande de réinitialisation à répon
 
 Après confirmation explicite, `sakhale072022@gmail.com` a été ajoutée à `mds_admin_invites` avec le statut `active`. Aucun compte ni mot de passe n’a été créé à sa place. Lors de sa première inscription locale ou de sa connexion OAuth, la synchronisation des utilisateurs lui attribuera automatiquement le rôle `admin`, comme pour les invitations MDS existantes.
 
-
 ## Assistante opérationnelle artisan — 9 novembre 2026
 
 La première version ajoute un onglet « Assistant » dans l’atelier privé. Le tableau agrège les demandes à traiter, rendez-vous du jour, interventions en cours, devis préparés, factures impayées, paiements en échec, notifications non abouties et incidents ouverts à partir des tables métier existantes. L’ordre est priorisé urgent, aujourd’hui puis relance.
@@ -20,3 +19,7 @@ La première version ajoute un onglet « Assistant » dans l’atelier privé. L
 Les brouillons de relance e-mail, SMS et scripts d’appel sont générés à partir des faits du dossier, avec `gpt-5-mini` en effort faible et un modèle de secours déterministe si l’IA est indisponible. Chaque proposition est enregistrée dans `mds_assistant_actions` avec son destinataire, son statut et son historique. Aucun envoi n’est déclenché par l’affichage ou par la génération : l’artisan doit relire puis valider explicitement. La validation e-mail/SMS réutilise la file outbox MDS et indique clairement si le fournisseur est absent, désactivé, accepté ou en échec.
 
 Les appels téléphoniques réels ne sont pas automatisés dans cette version : l’assistant prépare une fiche et un script, puis l’artisan ouvre le dossier et appelle manuellement. L’assistante ne fixe pas de prix, ne confirme pas de rendez-vous, ne débloque pas de paiement et ne remplace pas les contrôles de preuve photo, signature client et validation de fin de travaux.
+
+## Agent vocal propriétaire MDS — préparation sans fournisseur
+
+Le 9 novembre 2026, MDS a préparé un agent vocal natif sans Retell. Twilio Voice sert uniquement de transport téléphonique lorsque ses paramètres seront fournis ; les réponses et règles métier restent côté MDS avec l’IA intégrée. Les routes entrantes, sortantes, de réponse, de statut et de vérification de signature sont présentes. En l’absence d’origine publique, de numéro Voice ou de secrets Twilio, elles refusent l’appel et ne lancent aucune dépense. Le journal `mds_voice_call_logs` conserve les états nécessaires au suivi. La configuration sécurisée des identifiants a été annulée et devra être relancée séparément avant tout appel réel.

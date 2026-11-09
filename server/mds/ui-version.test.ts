@@ -635,3 +635,46 @@ describe("notification de réservation", () => {
     expect(requests).toContain('import { processOutbox } from "./outbox"');
   });
 });
+
+
+describe("assistante opérationnelle artisan", () => {
+  it("affiche un poste de pilotage branché sur les données réelles", () => {
+    const artisan = readFileSync(
+      new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
+      "utf8"
+    );
+    const assistant = readFileSync(
+      new URL("../../client/src/components/mds/private-assistant.tsx", import.meta.url),
+      "utf8"
+    );
+    const server = readFileSync(
+      new URL("./assistant.ts", import.meta.url),
+      "utf8"
+    );
+    expect(artisan).toContain('id: "assistant"');
+    expect(artisan).toContain("<ArtisanAssistant");
+    expect(assistant).toContain("À faire maintenant");
+    expect(assistant).toContain("Valider et envoyer");
+    expect(assistant).toContain("Aucun message ne partira sans validation");
+    expect(assistant).toContain("window.confirm");
+    expect(server).toContain("assistantRouter");
+    expect(server).toContain("processOutbox");
+    expect(server).toContain('model: assistantModel');
+  });
+
+  it("conserve les brouillons et interdit un envoi implicite", () => {
+    const schema = readFileSync(
+      new URL("../../drizzle/schema.ts", import.meta.url),
+      "utf8"
+    );
+    const assistant = readFileSync(
+      new URL("./assistant.ts", import.meta.url),
+      "utf8"
+    );
+    expect(schema).toContain("mds_assistant_actions");
+    expect(schema).toContain('"proposed"');
+    expect(assistant).toContain('status: "proposed"');
+    expect(assistant).toContain('if (action.status !== "proposed")');
+    expect(assistant).toContain('assistant.approve');
+  });
+});

@@ -789,6 +789,41 @@ export const messageOutbox = mysqlTable("mds_message_outbox", {
   deliveredAt: timestamp("deliveredAt"),
   ...dates(),
 });
+export const assistantActions = mysqlTable("mds_assistant_actions", {
+  id: id(),
+  requestId: int("requestId").references(() => requests.id),
+  createdBy: int("createdBy")
+    .notNull()
+    .references(() => users.id),
+  actionType: mysqlEnum("actionType", [
+    "follow_up",
+    "quote_review",
+    "invoice_review",
+    "appointment_confirmation",
+    "call_script",
+  ]).notNull(),
+  channel: mysqlEnum("channel", ["email", "sms", "call"]).notNull(),
+  recipient: varchar("recipient", { length: 320 }).notNull(),
+  subject: varchar("subject", { length: 200 }).notNull(),
+  body: text("body").notNull(),
+  status: mysqlEnum("status", [
+    "proposed",
+    "approved",
+    "sent",
+    "failed",
+    "cancelled",
+  ])
+    .default("proposed")
+    .notNull(),
+  dedupeKey: varchar("dedupeKey", { length: 180 }).notNull().unique(),
+  lastError: varchar("lastError", { length: 500 }),
+  approvedAt: timestamp("approvedAt"),
+  completedAt: timestamp("completedAt"),
+  ...dates(),
+}, table => [
+  index("assistant_actions_request").on(table.requestId),
+  index("assistant_actions_status").on(table.status),
+]);
 export const reminders = mysqlTable("mds_reminders", {
   id: id(),
   dedupeKey: varchar("dedupeKey", { length: 180 }).notNull().unique(),

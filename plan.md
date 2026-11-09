@@ -1,72 +1,66 @@
-# MULTISERVICES MDS — Fondations, prompt 1/3
 
-## Produit et périmètre
-Une application unique pour un seul artisan, sans marketplace ni équipe. Le site public propose une recherche par métier et un parcours de demande progressif sans compte. Toute demande libre est conservée au statut « À analyser ». Le catalogue complet demandé est initialisé comme configuration inactive : aucune offre non validée n’est annoncée comme disponible. Les comptes particuliers, organisations et collaborateurs utilisent des identités authentifiées. L’artisan dispose d’une navigation courte : Aujourd’hui, Demandes, Planning, Devis, Clients, Factures, Paramètres.
 
-Les fondations incluent dépôt et suivi réels de demandes, traitement artisan, catalogue administrable, organisations/sites/collaborateurs, documents et contrats indexés, permissions et journal sensible. Les disponibilités, rendez-vous, interventions et notifications disposent de tables extensibles. Aucun créneau, tarif, facture ou contrat fictif n’est présenté comme réel. Le moteur de réservation/planning et les automatisations seront poursuivis dans le même projet au prompt 2/3 ; les écrans concernés exposent honnêtement cet état. Trois clics seulement lorsque les informations disponibles le permettent : ne pas sacrifier adresse, coordonnées et consentement.
+# Extension — Assistante opérationnelle MDS
 
-## Stack et infrastructure vérifiées
-Le sandbox ne contient aucun projet précédent. Le projet MDS unique a été initialisé avec le starter React 19, TypeScript, Vite, Express, tRPC et Drizzle/MySQL géré par Manus. Serveur et base sont disponibles. Le frontend et l’API sont servis ensemble sur le port 3000, puis via le Dockerfile existant. Authentification Manus OAuth réelle, rôle administrateur limité à l’identité du propriétaire configuré ; pas de connexion de démonstration ni de rôle choisi par le visiteur. Vérification serveur des appartenances aux organisations sur chaque lecture/écriture. Tous les états métier sont en base, pas dans des jeux de données simulés.
+## Objectif
 
-Les photos et documents sensibles seront chiffrés avant stockage objet, avec restitution exclusivement via une route autorisée. Les adresses de stockage public ne contiendront que des octets chiffrés. Clés documentaires conservées côté serveur dans la base, jamais dans le navigateur. Les brouillons de formulaire sont conservés seulement dans la session du navigateur et supprimés après succès. Dictée via API vocale du navigateur quand disponible, repli explicite sur saisie écrite. Pas d’envoi email/SMS prétendu : notifications internes uniquement.
+Créer dans l’espace artisan une assistante opérationnelle qui réduit l’administratif au minimum. L’artisan doit principalement traiter la prestation sur place : démarrer le trajet, intervenir, prendre les photos avant/après, recueillir la signature et terminer le dossier.
 
-## Structure du projet
-- `client/src/pages/` : accueil, catalogue, demande progressive, suivi, professionnel, espace artisan et informations de confidentialité.
-- `client/src/components/mds/` : identité, navigation, champs accessibles, états vides et composants métier.
-- `shared/` : catalogue initial, validations, types et statuts communs, source unique de vérité.
-- `server/mds/` : procédures métier, droits, index documents et téléchargement privé.
-- `drizzle/schema.ts` et `drizzle/` : modèle relationnel, migrations versionnées.
-- `server/_core/` : identité et HTTP du starter, conservés et durcis si nécessaire.
-- `docs/` : état du produit, configuration requise et continuité prompt 2/3.
+L’assistante MDS prépare et suit les tâches administratives, mais ne doit jamais engager seule l’entreprise sur une action irréversible.
 
-## Direction visuelle
-Esthétique d’atelier contemporain : anthracite profond, blanc cassé et orange brûlé, avec une hiérarchie typographique éditoriale sans décoration superflue. Principes : clarté immédiate, proximité artisanale, contrastes forts, densité confortable. L’orange sert l’action et le repérage ; l’anthracite donne une assise professionnelle. Accueil asymétrique : promesse et recherche à gauche, photographie métier à droite, puis rangée compacte des métiers et parcours en trois étapes. Éléments signature : monogramme MDS angulaire évoquant un bâti, petits libellés uppercase espacés, traits orange de repérage.
+## Périmètre de la première version
 
-Interaction : une action principale évidente, retour toujours possible, questions progressives, libellés usuels, erreurs près du champ et états explicites. Pas d’animations décoratives ; respecter `prefers-reduced-motion`. Typographies : Manrope pour titres et marque, Inter pour corps et données, repli système. Marque : « Un interlocuteur pour vos réparations et travaux » ; fiable, concret, accessible. Ton court : « Un problème chez vous ? On commence ici. » et « Décrivez simplement ce qui ne fonctionne pas. » Monogramme MDS en cadre architectural orange ; couleur signature orange brûlé #BC4C23, avec contrastes AA vérifiés sur texte et boutons.
+- **Accueil “À faire maintenant”** : prochaines demandes, rendez-vous du jour, urgences, relances en retard, devis à valider, factures à contrôler et appels à rappeler.
+- **Appels** : fiche d’appel avec client, motif, dernier statut, bouton “Rappeler”, script court proposé par l’assistante et journal de l’appel. La prise d’appel et l’émission d’appels réels restent désactivées tant qu’un fournisseur téléphonique et un numéro MDS ne sont pas configurés.
+- **Contrats et devis** : génération d’un brouillon à partir du dossier client, de la prestation et du tarif existant ; validation obligatoire par l’artisan avant envoi. Aucun prix inventé et aucune modification silencieuse d’un devis accepté.
+- **Relances** : rappels automatiques des devis sans réponse, créneaux à confirmer, documents manquants et factures impayées. Chaque relance est visible, annulable et historisée.
+- **Facturation** : préparation d’une facture après les conditions métier déjà validées ; contrôle humain avant émission, remboursement ou transfert. L’assistante ne contourne jamais la preuve photo obligatoire, la signature client ni les règles de paiement différé.
+- **Intervention sur place** : accès immédiat aux boutons Démarrer, Je suis arrivé, Commencer, Ajouter photo avant, Ajouter photo après, Signature client et Terminer. Cette zone reste simple et ne doit pas être noyée dans l’administration.
+- **Notifications** : e-mail/SMS utilisant les canaux MDS configurés, avec état envoyé, en attente ou échec et nouvelle tentative durable sans doublon.
+- **Traçabilité** : journal des propositions de l’assistante, validations humaines, messages envoyés, rappels annulés et erreurs.
 
-Cible WCAG 2.2 AA : zoom autorisé, labels visibles, focus clavier distinct, boutons au moins 44 px, contraste, erreurs annoncées et structure sémantique. Une certification complète nécessite un audit dédié et n’est pas présumée.
+## Règles de sécurité et de responsabilité
 
-## Limites de mise en service
-L’adresse, la zone, les tarifs, les prestations proposées et l’identité légale ne sont pas fournis. Ils restent à configurer, sans invention. Le catalogue est inactif à la livraison. Connexion nécessite un compte Manus ; email/mot de passe métier pourra être discuté si demandé ultérieurement. Les tests d’intégration métier utilisent des mocks de la couche DB pour ne pas injecter de faux clients dans la base partagée. Une validation indépendante en lecture seule complète les diagnostics et tests automatisés.
+- Une action qui envoie un contrat, un devis, une facture, un SMS, un e-mail ou un appel nécessite une validation explicite de l’artisan, sauf notification transactionnelle déjà autorisée par le workflow existant.
+- L’assistante peut suggérer et préparer ; elle ne peut pas inventer un prix, confirmer une disponibilité non enregistrée, débloquer un paiement, supprimer une preuve ou clôturer une intervention sans les contrôles existants.
+- Les réponses utilisent uniquement les données MDS du dossier concerné et respectent la séparation client/professionnel/artisan.
+- Les actions sont idempotentes et affichent immédiatement leur état pour éviter les doubles envois.
+- Les données et le journal restent dans la base MDS ; aucune donnée client n’est envoyée à un service externe non configuré.
 
-## Modification approuvée — double validation centrale
-L’utilisateur a validé l’approche puis imposé le 5 novembre 2026 un moteur de demande avec validation MDS et confirmation client. La présente version inclut donc : créneau souhaité, acceptation/refus artisan, autre proposition de créneau, demande de précisions, devis distinct, confirmation/refus client, rendez-vous créé uniquement après accord des deux parties, événements réels horodatés, version optimiste/idempotence, notifications internes synchronisées et évaluations bilatérales privées liées à une intervention terminée et à un utilisateur authentifié. Les états incluent Brouillon, Demande envoyée, En attente de MDS, À analyser, Demande acceptée par MDS, Proposition de nouveau créneau, Informations complémentaires demandées, En attente de confirmation client, Confirmée, Refusée, Annulée, Intervention planifiée, Intervention en cours, Intervention terminée, Facture émise, Paiement confirmé, Clôturée. Les changements sont encadrés par une machine d’états ; aucun progrès illustratif n’est affiché comme un événement réel.
+## Architecture proposée
 
-Acceptation en un clic disponible quand prix et créneau sont définis. Un devis complexe exige une acceptation de devis distincte avant confirmation. Expiration configurable des propositions, contrôle côté serveur à l’accès/aux actions ; aucune notification email/SMS ou exécution autonome de fond n’est prétendue sans canal configuré. Les fondations planning utilisent les rendez-vous effectivement confirmés. Aucune disponibilité générique fictive. Le calendrier avancé, canaux externes et exécution des expirations sans trafic restent explicitement à poursuivre au prompt 2/3.
+- `server/mds/assistant.ts` : résumé des tâches, recommandations, brouillons et actions validées.
+- `server/mds/assistant-automation.ts` : relances et échéances natives MDS, avec déduplication et arrêt manuel.
+- `client/src/components/mds/private-assistant.tsx` : poste de pilotage mobile-first intégré à l’espace artisan.
+- Extension des entités existantes pour les tâches d’assistant, appels, brouillons, relances et journaux ; migrations additives uniquement.
+- Utilisation de l’LLM intégré uniquement pour classer, résumer et rédiger des brouillons bornés par des données structurées. Le modèle exact sera sélectionné depuis le catalogue disponible au moment de l’implémentation, avec priorité à la latence et au coût pour les actions unitaires.
+- Les e-mails/SMS réutilisent la file MDS existante. Les appels réels seront une extension séparée, activée seulement après configuration et test d’un fournisseur téléphonique.
 
-## Poursuite du 5 novembre 2026 — brief révisé, tarification hybride définitive
-Le nouveau `docs/brief-hybride-prompt1.txt` complète le même projet, sans reconstruction. Deux modes explicites : `fixed` (prix affiché calculé depuis règles validées) et `quote` (devis personnalisé distinct). Pour prix affiché : inclusions, exclusions, déplacement inclus/fixe/par préfixe postal, durée et conditions. Le calcul est déterministe en centimes, sans prix inventé ; un préfixe postal non couvert par une règle de déplacement passe sur devis plutôt que d’annoncer un total incertain. Une révision de tarif ne modifie pas les anciens dossiers. Le dossier conserve le détail tarifaire et une empreinte de version de la configuration affichée. Si les règles changent entre récapitulatif et dépôt, le serveur exige de relire le montant avant envoi. Une demande sans catalogue reste analysable sur devis.
+## Design
 
-Les demandes à prix affiché ne peuvent pas subir un supplément silencieux : acceptation/proposition utilise le total annoncé ; une nouvelle portée ou prix exige un devis réel et une nouvelle acceptation client. Les dossiers sur devis exigent un devis réel accepté avant confirmation. La double validation et les permissions professionnelles restent inchangées.
+**Mouvement :** atelier opérationnel calme, inspiré d’un tableau de dispatch plutôt que d’un chatbot. Probabilités alternatives : interface conversationnelle 0,08 ; dashboard analytique dense 0,06 ; assistant vocal omniprésent 0,04.
 
-Ajouter une entité de paiements, montant de facture en centimes, références provider et déduplication des événements. Intégration Stripe fournie par Manus en test : Checkout créé serveur pour facture émise et dossier autorisé, prix final de facture calculé serveur, succès seulement après événement signé et montant/devise exacts. Pas de donnée bancaire stockée. Le retour Checkout est une navigation, pas preuve de paiement. Le suivi/historique et la vérification manuelle de paiement doivent être distingués du paiement en ligne. Les clés commerciales et l’ouverture restent une étape propriétaire ; aucun débit réel n’est lancé pendant le développement. L’expiration autonome, le calendrier avancé et les canaux externes demeurent au prompt 2/3 conformément au brief.
+**Principes :** une prochaine action clairement mise en avant ; états visibles sans jargon ; validation au dernier moment ; séparation stricte entre travail terrain et administration.
 
-## PROMPT 2/3 — Moteur opérationnel, 5 novembre 2026
+**Palette :** anthracite et blanc pour la fiabilité, orange MDS pour l’action à effectuer, vert uniquement pour les étapes confirmées et rouge uniquement pour une erreur ou un paiement bloqué.
 
-Continuer sans reconstruction : mêmes utilisateurs, MySQL, tRPC, composants et identité. L’accord MDS et l’accord client restent distincts ; toute confirmation recontrôle les règles de calendrier dans une transaction sous le verrou de l’artisan unique. Étendre le calendrier aux horaires hebdomadaires explicitement configurés, périodes disponibles et blocages/congés, zones postales, durées, temps de déplacement et marges de sécurité. Les paramètres ne créent aucune disponibilité fictive ; les propositions demeurent non réservées. Conserver les anciennes données et identifier l’état de configuration.
+**Mise en page :** un bandeau fixe mobile avec les cinq espaces actuels, puis une carte “À faire maintenant” et des files courtes. Les détails s’ouvrent dans le même dossier sans renvoyer vers des écrans parallèles.
 
-Étendre les réponses rapides avec photo, précision, diagnostic à organiser, alternatives de créneaux et préparation d’un devis structuré. Les devis comportent émetteur/client, date/référence, lignes et calcul serveur, taxes/conditions/validité/acompte configurés explicitement ; produire un PDF chiffré réel sans prétendre à une certification juridique. Les documents déposés restent utilisables. Compléter les transitions avec départ réellement déclaré, incidents horodatés, réclamation/résolution/reprise manuelle et travaux supplémentaires dont le montant et le périmètre doivent être acceptés avant démarrage. Ne pas donner de contournement automatique pour une exception juridique non démontrée.
+**Éléments signature :** compteur d’actions urgentes, ligne d’état “proposé / à valider / envoyé”, bouton principal unique par carte.
 
-Ajouter la qualification IA avec le service LLM natif côté serveur : proposer seulement une catégorie/prestation active, questions utiles une à une et transmission à MDS en cas d’incertitude ; aucun diagnostic ni prix généré. L’appel exige information/accord, ne transmet pas les coordonnées et conserve un repli sur demande libre en cas d’erreur. Aucun résultat IA ne confirme une prestation ou un rendez-vous.
+**Interaction :** l’assistant explique toujours pourquoi une action est proposée et ce qui manque. Les actions irréversibles affichent un aperçu puis une confirmation explicite.
 
-Étendre les paiements Stripe réels en mode test aux échéances intégral/acompte/solde, liens de règlement sécurisés et remboursements demandés par l’artisan avec confirmation explicite. Calculer le restant dû depuis un registre serveur confirmé, sans portefeuille interne. Les remboursements utilisent les confirmations du prestataire via réponse/relecture API, car l’abonnement webhook fourni ne couvre pas les événements de remboursement. Aucun test n’encaisse ni rembourse de l’argent commercial.
+**Animation :** transitions courtes uniquement pour l’apparition d’une nouvelle tâche et la confirmation d’une action ; respect de `prefers-reduced-motion`.
 
-Ajouter une file durable de notifications e-mail/SMS avec modèles brefs, déduplication, erreurs/reprise et preuve du statut fournisseur. Fournisseurs en attente du choix utilisateur ; canaux non configurés désactivés. Ne pas envoyer de message de test à de vrais destinataires. Préparer un callback natif Heartbeat authentifié et idempotent pour expiration, rappels et traitement de la file, avec table d’identité de tâche et exécutions horodatées. L’activation autonome cible l’application publiée : sans autorisation de publication, fournir la procédure d’activation et montrer « non activé » plutôt que lancer un processus local faux planificateur. Exécution manuelle artisan auditée disponible pour reprise.
+**Voix de marque :** directe, rassurante, professionnelle. Exemples : “Voici ce qui doit être fait maintenant.” / “Le devis est prêt à vérifier. Rien ne sera envoyé sans votre accord.”
 
-Structure additionnelle : `shared/operations.ts` pour schemas/types opérationnels ; modules serveur `calendar`, `operations`, `quote-builder`, `qualification`, `automation` et extensions paiements ; composants métier dédiés pour calendrier, devis, incidents/suppléments, échéances et notifications. Migrations additives inspectées avant application ; tests en mémoire uniquement, diagnostics, build et revue indépendante ciblée. Rapport précis et continuité PROMPT 3/3 (gestion professionnelle, contrats, administration, audit final).
+## Déploiement par étapes
 
-### Priorité UX ajoutée par l’utilisateur pendant le PROMPT 2/3
+1. Poste de pilotage et tâches calculées à partir des demandes, rendez-vous, devis, paiements et notifications déjà présents.
+2. Brouillons contrôlés de devis, contrats, e-mails et SMS ; relances annulables et journalisées.
+3. Factures préparées et contrôles de paiement dans le flux existant.
+4. Connexion téléphonique réelle uniquement après choix et configuration du fournisseur, du numéro d’appel et des règles de consentement.
 
-La nouvelle consigne du 5 novembre prime sur la navigation initiale à sept menus : une seule application, trois entrées maximum par espace. Accueil limité au logo MDS, « Un problème chez vous ? On s’en occupe. », description, cinq métiers et demande libre. Parcours courant en trois actions regroupées Besoin → Adresse et créneau → Envoi, sans recopie d’un site ou contact connu ; champs inconnus de contact recueillis à l’envoi avec microcopie minimale. Questions IA/catalogue une par une uniquement lorsque utiles, facultatives avec transmission artisan, pas d’étapes bloquantes non indispensables. Artisan : Demandes, Planning, Interventions ; réglages, devis, paiements et documents restent actions contextuelles/sections repliées utiles, pas de nouvelles pages ni menus. Professionnel : Déclarer, Suivre, Bâtiments ; administration avancée derrière actions contextuelles. Départ, supplément et incidents ne remplacent pas les trois actions principales de réponse. Textes opérationnels courts, infos juridiques/conditions accessibles au moment d’accord, pas de long tutoriel ou répétition.
+## Décision à valider
 
-## PROMPT 3/3 — gestion professionnelle, administration et audit final
-
-La partie 3/3 prolonge le même projet et ne crée aucune application indépendante. Elle complète les espaces déjà existants par des fiches clients dédoublonnées, des cycles professionnels de contrats et renouvellements, l’administration contextuelle de l’artisan, la conservation/suppression des données, la modération des évaluations, les paramètres de notifications et un audit final des permissions, paiements, calendrier et parcours.
-
-Les organisations restent cloisonnées par contrôle serveur ; une fiche client peut être rapprochée uniquement avec des coordonnées vérifiées et un historique cohérent, jamais par une correspondance approximative qui fusionnerait deux personnes. Les contrats, échéances et renouvellements seront des entités relationnelles versionnées, avec événements d’audit et statut explicite. Les documents PDF restent privés/chiffrés et leurs mentions légales proviennent uniquement des paramètres MDS configurés.
-
-L’administration demeure une section contextuelle dans l’espace artisan : prestations/prix/devis, zones, horaires, congés, frais de déplacement, identité légale, documents et notifications. Les canaux externes restent désactivés sans fournisseur et preuve de statut. Les suppressions suivent une politique de conservation : révocation d’accès et suppression physique de l’objet lorsque légalement possible, avec trace minimale d’audit et sans exposer de contenu supprimé.
-
-L’audit final utilisera les tests en mémoire, les diagnostics TypeScript, le build et une revue indépendante en niveau lite uniquement. Les parcours réels avec comptes MDS, activation artisan, prestataire Stripe live, fournisseurs d’e-mail/SMS et tâche native publiée restent des opérations de mise en service distinctes. Aucun test ne crée de faux dossier dans la base partagée.
-
-La direction d’atelier contemporain, l’orange brûlé #BC4C23, l’anthracite, les trois entrées maximum par espace, les actions contextuelles repliées et les textes courts restent inchangés.
+Cette première version privilégie une assistante qui prépare et automatise sans envoyer seule de communication engageante. Les appels réels, l’envoi autonome de contrats et la facturation automatique restent désactivés jusqu’à configuration explicite et tests de sécurité.

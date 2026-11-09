@@ -127,6 +127,13 @@
       "when": 1794164196269,
       "tag": "0017_productive_whistler",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1794185166941,
+      "tag": "0018_striped_changeling",
+      "breakpoints": true
     }
   ]
 }

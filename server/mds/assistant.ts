@@ -1,0 +1,487 @@
+import { desc, eq, inArray } from "drizzle-orm";
+import { z } from "zod";
+import { invokeLLM } from "../_core/llm";
+import { router } from "../_core/trpc";
+import * as s from "../../drizzle/schema";
+import { artisan, dbRequired, principal, recordAudit } from "./common";
+import { fail } from "./workflow";
+import { processOutbox, providerReadiness } from "./outbox";
+
+const assistantModel = "gpt-5-mini";
+const draftSchema = z.object({
+  subject: z.string().trim().min(1).max(200),
+  body: z.string().trim().min(1).max(2400),
+});
+const draftInput = z.object({
+  requestId: z.number().int().positive(),
+  actionType: z.enum([
+    "follow_up",
+    "quote_review",
+    "invoice_review",
+    "appointment_confirmation",
+    "call_script",
+  ]),
+  channel: z.enum(["email", "sms", "call"]),
+});
+
+type AssistantTask = {
+  id: string;
+  kind: "request" | "appointment" | "quote" | "invoice" | "payment" | "message" | "incident";
+  priority: "urgent" | "today" | "follow_up";
+  title: string;
+  detail: string;
+  requestId: number | null;
+  reference: string | null;
+  clientName: string | null;
+  dueAt: Date | null;
+  actionLabel: string;
+};
+
+function parisDay(value: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(value);
+}
+
+function actionLabel(actionType: z.infer<typeof draftInput>["actionType"]) {
+  return {
+    follow_up: "Relance client",
+    quote_review: "Devis à vérifier",
+    invoice_review: "Facture à contrôler",
+    appointment_confirmation: "Confirmation de rendez-vous",
+    call_script: "Script d’appel",
+  }[actionType];
+}
+
+function fallbackDraft(
+  request: typeof s.requests.$inferSelect,
+  actionType: z.infer<typeof draftInput>["actionType"],
+  channel: z.infer<typeof draftInput>["channel"]
+) {
+  const name = request.name.trim().split(/\s+/)[0] || "Bonjour";
+  const subject = `${actionLabel(actionType)} · ${request.reference}`;
+  const service = request.serviceName || request.problemType || "votre demande";
+  const body =
+    actionType === "call_script"
+      ? `Bonjour ${name}, je vous appelle au sujet de votre demande MDS ${request.reference} concernant ${service}. Je vais vérifier avec vous les prochaines étapes et le créneau souhaité.`
+      : `Bonjour ${name},\n\nNous revenons vers vous au sujet de votre demande MDS ${request.reference} concernant ${service}. Nous vous confirmons les prochaines étapes après vérification de votre dossier.\n\nCordialement,\nMULTISERVICES MDS`;
+  return {
+    subject: channel === "sms" ? subject.slice(0, 120) : subject,
+    body: body.slice(0, 2400),
+  };
+}
+
+async function createDraftWithAi(
+  request: typeof s.requests.$inferSelect,
+  actionType: z.infer<typeof draftInput>["actionType"],
+  channel: z.infer<typeof draftInput>["channel"]
+) {
+  const fallback = fallbackDraft(request, actionType, channel);
+  try {
+    const completion = await invokeLLM({
+      model: assistantModel,
+      reasoning: { effort: "low" },
+      max_completion_tokens: 900,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "mds_assistant_draft",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              subject: { type: "string" },
+              body: { type: "string" },
+            },
+            required: ["subject", "body"],
+            additionalProperties: false,
+          },
+        },
+      },
+      messages: [
+        {
+          role: "system",
+          content:
+            "Tu es l’assistante administrative de MULTISERVICES MDS. Rédige un brouillon court en français, jamais un diagnostic et jamais une promesse. Utilise uniquement les faits fournis. N’invente ni prix, ni disponibilité, ni délai, ni engagement juridique. N’ajoute aucun lien, aucune coordonnée et aucune instruction technique. Le brouillon sera relu et validé par l’artisan avant tout envoi. Retourne uniquement le JSON demandé.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            actionType,
+            channel,
+            reference: request.reference,
+            clientFirstName: request.name.trim().split(/\s+/)[0] || "client",
+            service: request.serviceName || request.problemType,
+            city: request.city,
+            status: request.status,
+            desiredStart: request.desiredStart,
+            proposedStart: request.proposedStart,
+            quoteStatus: request.quoteStatus,
+          }),
+        },
+      ],
+      signal: AbortSignal.timeout(12000),
+    });
+    const content = completion.choices?.[0]?.message?.content;
+    if (typeof content !== "string") return { ...fallback, generatedBy: "fallback" as const };
+    const parsed = draftSchema.safeParse(JSON.parse(content.trim()));
+    if (!parsed.success) return { ...fallback, generatedBy: "fallback" as const };
+    return { ...parsed.data, generatedBy: assistantModel };
+  } catch {
+    return { ...fallback, generatedBy: "fallback" as const };
+  }
+}
+
+export const assistantRouter = router({
+  overview: artisan.query(async () => {
+    const db = await dbRequired();
+    const [requests, appointments, quoteDrafts, invoices, payments, messages, incidents, actions] =
+      await Promise.all([
+        db
+          .select({
+            id: s.requests.id,
+            reference: s.requests.reference,
+            status: s.requests.status,
+            name: s.requests.name,
+            email: s.requests.email,
+            phone: s.requests.phone,
+            serviceName: s.requests.serviceName,
+            problemType: s.requests.problemType,
+            city: s.requests.city,
+            desiredStart: s.requests.desiredStart,
+            proposedStart: s.requests.proposedStart,
+            quoteStatus: s.requests.quoteStatus,
+            createdAt: s.requests.createdAt,
+          })
+          .from(s.requests)
+          .orderBy(desc(s.requests.id))
+          .limit(100),
+        db
+          .select({
+            id: s.appointments.id,
+            requestId: s.appointments.requestId,
+            startAt: s.appointments.startAt,
+            endAt: s.appointments.endAt,
+            status: s.appointments.status,
+            reference: s.requests.reference,
+            name: s.requests.name,
+            city: s.requests.city,
+          })
+          .from(s.appointments)
+          .innerJoin(s.requests, eq(s.requests.id, s.appointments.requestId))
+          .orderBy(s.appointments.startAt)
+          .limit(100),
+        db
+          .select({
+            id: s.quoteDrafts.id,
+            requestId: s.quoteDrafts.requestId,
+            reference: s.quoteDrafts.reference,
+            status: s.quoteDrafts.status,
+            totalCents: s.quoteDrafts.totalCents,
+            createdAt: s.quoteDrafts.createdAt,
+          })
+          .from(s.quoteDrafts)
+          .where(inArray(s.quoteDrafts.status, ["draft", "generated"]))
+          .orderBy(desc(s.quoteDrafts.id))
+          .limit(50),
+        db
+          .select({
+            id: s.invoices.id,
+            requestId: s.invoices.requestId,
+            amountCents: s.invoices.amountCents,
+            issuedAt: s.invoices.issuedAt,
+            paidAt: s.invoices.paidAt,
+            reference: s.requests.reference,
+            name: s.requests.name,
+          })
+          .from(s.invoices)
+          .innerJoin(s.requests, eq(s.requests.id, s.invoices.requestId))
+          .orderBy(desc(s.invoices.id))
+          .limit(50),
+        db
+          .select({
+            id: s.payments.id,
+            requestId: s.payments.requestId,
+            status: s.payments.status,
+            amountCents: s.payments.amountCents,
+            failureReason: s.payments.failureReason,
+            reference: s.requests.reference,
+            name: s.requests.name,
+          })
+          .from(s.payments)
+          .innerJoin(s.requests, eq(s.requests.id, s.payments.requestId))
+          .where(inArray(s.payments.status, ["failed", "cancelled", "expired"]))
+          .orderBy(desc(s.payments.id))
+          .limit(50),
+        db
+          .select({
+            id: s.messageOutbox.id,
+            requestId: s.messageOutbox.requestId,
+            channel: s.messageOutbox.channel,
+            status: s.messageOutbox.status,
+            lastError: s.messageOutbox.lastError,
+            createdAt: s.messageOutbox.createdAt,
+          })
+          .from(s.messageOutbox)
+          .where(inArray(s.messageOutbox.status, ["failed", "uncertain"]))
+          .orderBy(desc(s.messageOutbox.id))
+          .limit(30),
+        db
+          .select({
+            id: s.incidents.id,
+            requestId: s.incidents.requestId,
+            kind: s.incidents.kind,
+            message: s.incidents.message,
+            createdAt: s.incidents.createdAt,
+            reference: s.requests.reference,
+            name: s.requests.name,
+          })
+          .from(s.incidents)
+          .innerJoin(s.requests, eq(s.requests.id, s.incidents.requestId))
+          .where(eq(s.incidents.status, "open"))
+          .orderBy(desc(s.incidents.id))
+          .limit(30),
+        db
+          .select({
+            id: s.assistantActions.id,
+            requestId: s.assistantActions.requestId,
+            actionType: s.assistantActions.actionType,
+            channel: s.assistantActions.channel,
+            subject: s.assistantActions.subject,
+            status: s.assistantActions.status,
+            createdAt: s.assistantActions.createdAt,
+          })
+          .from(s.assistantActions)
+          .orderBy(desc(s.assistantActions.id))
+          .limit(12),
+      ]);
+
+    const tasks: AssistantTask[] = [];
+    for (const request of requests) {
+      if (["to_analyze", "awaiting_mds"].includes(request.status)) {
+        tasks.push({
+          id: `request-${request.id}`,
+          kind: "request",
+          priority: "urgent",
+          title: "Répondre à une nouvelle demande",
+          detail: `${request.serviceName || request.problemType} · ${request.city}`,
+          requestId: request.id,
+          reference: request.reference,
+          clientName: request.name,
+          dueAt: request.createdAt,
+          actionLabel: "Ouvrir le dossier",
+        });
+      } else if (["needs_information", "proposed_slot", "awaiting_client"].includes(request.status)) {
+        tasks.push({
+          id: `follow-up-${request.id}`,
+          kind: "request",
+          priority: "follow_up",
+          title: "Suivre une réponse en attente",
+          detail: `${request.serviceName || request.problemType} · ${request.name}`,
+          requestId: request.id,
+          reference: request.reference,
+          clientName: request.name,
+          dueAt: request.proposedStart || request.desiredStart || request.createdAt,
+          actionLabel: "Préparer une relance",
+        });
+      } else if (["in_progress", "en_route"].includes(request.status)) {
+        tasks.push({
+          id: `intervention-${request.id}`,
+          kind: "request",
+          priority: "today",
+          title: "Poursuivre l’intervention sur place",
+          detail: `${request.serviceName || request.problemType} · ${request.name}`,
+          requestId: request.id,
+          reference: request.reference,
+          clientName: request.name,
+          dueAt: request.proposedStart || request.desiredStart,
+          actionLabel: "Ouvrir l’intervention",
+        });
+      }
+    }
+    for (const appointment of appointments) {
+      if (appointment.status === "cancelled") continue;
+      if (parisDay(appointment.startAt) !== parisDay(new Date())) continue;
+      tasks.push({
+        id: `appointment-${appointment.id}`,
+        kind: "appointment",
+        priority: "today",
+        title: "Rendez-vous aujourd’hui",
+        detail: `${appointment.city} · ${appointment.name}`,
+        requestId: appointment.requestId,
+        reference: appointment.reference,
+        clientName: appointment.name,
+        dueAt: appointment.startAt,
+        actionLabel: "Voir le dossier",
+      });
+    }
+    for (const quote of quoteDrafts) {
+      tasks.push({
+        id: `quote-${quote.id}`,
+        kind: "quote",
+        priority: "follow_up",
+        title: "Vérifier un devis préparé",
+        detail: `${quote.reference} · ${quote.totalCents / 100} €`,
+        requestId: quote.requestId,
+        reference: quote.reference,
+        clientName: null,
+        dueAt: quote.createdAt,
+        actionLabel: "Ouvrir le devis",
+      });
+    }
+    for (const invoice of invoices.filter(item => !item.paidAt)) {
+      tasks.push({
+        id: `invoice-${invoice.id}`,
+        kind: "invoice",
+        priority: "follow_up",
+        title: "Contrôler une facture impayée",
+        detail: `${invoice.reference} · ${invoice.amountCents ? `${invoice.amountCents / 100} €` : "montant à vérifier"}`,
+        requestId: invoice.requestId,
+        reference: invoice.reference,
+        clientName: invoice.name,
+        dueAt: invoice.issuedAt,
+        actionLabel: "Ouvrir la facture",
+      });
+    }
+    for (const payment of payments) {
+      tasks.push({
+        id: `payment-${payment.id}`,
+        kind: "payment",
+        priority: "urgent",
+        title: "Vérifier un paiement en échec",
+        detail: `${payment.reference} · ${payment.failureReason || payment.status}`,
+        requestId: payment.requestId,
+        reference: payment.reference,
+        clientName: payment.name,
+        dueAt: null,
+        actionLabel: "Voir le paiement",
+      });
+    }
+    for (const message of messages) {
+      tasks.push({
+        id: `message-${message.id}`,
+        kind: "message",
+        priority: "urgent",
+        title: "Vérifier une notification non aboutie",
+        detail: `${message.channel.toUpperCase()} · ${message.lastError || message.status}`,
+        requestId: message.requestId,
+        reference: null,
+        clientName: null,
+        dueAt: message.createdAt,
+        actionLabel: "Ouvrir le dossier",
+      });
+    }
+    for (const incident of incidents) {
+      tasks.push({
+        id: `incident-${incident.id}`,
+        kind: "incident",
+        priority: "urgent",
+        title: "Traiter un incident ouvert",
+        detail: `${incident.reference} · ${incident.message.slice(0, 140)}`,
+        requestId: incident.requestId,
+        reference: incident.reference,
+        clientName: incident.name,
+        dueAt: incident.createdAt,
+        actionLabel: "Ouvrir le dossier",
+      });
+    }
+    const rank = { urgent: 0, today: 1, follow_up: 2 };
+    tasks.sort((a, b) => rank[a.priority] - rank[b.priority] || (a.dueAt?.getTime() ?? 0) - (b.dueAt?.getTime() ?? 0));
+    return {
+      tasks: tasks.slice(0, 20),
+      counts: {
+        urgent: tasks.filter(task => task.priority === "urgent").length,
+        today: tasks.filter(task => task.priority === "today").length,
+        followUp: tasks.filter(task => task.priority === "follow_up").length,
+        draftActions: actions.filter(action => action.status === "proposed").length,
+        unpaidInvoices: invoices.filter(invoice => !invoice.paidAt).length,
+      },
+      recentActions: actions,
+      channels: providerReadiness(),
+      assistantModel,
+      note: "Les brouillons sont préparés par l’assistante puis doivent être validés par l’artisan. Aucun envoi n’est automatique depuis ce tableau.",
+    };
+  }),
+  draft: artisan.input(draftInput).mutation(async ({ input, ctx }) => {
+    const db = await dbRequired();
+    const [request] = await db.select().from(s.requests).where(eq(s.requests.id, input.requestId)).limit(1);
+    if (!request) fail("Le dossier demandé est introuvable.", "NOT_FOUND");
+    const recipient = input.channel === "email" ? request.email : input.channel === "sms" ? request.phone : request.phone;
+    if (!recipient) fail("Le dossier ne contient pas de coordonnée pour cette action.", "BAD_REQUEST");
+    const draft = await createDraftWithAi(request, input.actionType, input.channel);
+    const dedupeKey = `assistant:${ctx.user.id}:${request.id}:${input.actionType}:${input.channel}:${Date.now()}`;
+    const [created] = await db.insert(s.assistantActions).values({
+      requestId: request.id,
+      createdBy: ctx.user.id,
+      actionType: input.actionType,
+      channel: input.channel,
+      recipient,
+      subject: draft.subject,
+      body: draft.body,
+      status: "proposed",
+      dedupeKey,
+    }).$returningId();
+    await recordAudit(db, ctx.user.id, "assistant.draft", "assistant_action", created.id);
+    return {
+      id: created.id,
+      ...draft,
+      actionType: input.actionType,
+      channel: input.channel,
+      recipient,
+      status: "proposed" as const,
+      note: draft.generatedBy === "fallback" ? "Brouillon de secours utilisé : l’IA était indisponible. Relisez-le avant toute action." : "Brouillon IA créé. Rien ne sera envoyé sans votre validation.",
+    };
+  }),
+  approve: artisan.input(z.object({ actionId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+    const db = await dbRequired();
+    const [action] = await db.select().from(s.assistantActions).where(eq(s.assistantActions.id, input.actionId)).limit(1);
+    if (!action) fail("Cette proposition n’existe plus.", "NOT_FOUND");
+    if (action.status !== "proposed") fail("Cette proposition a déjà été traitée.", "CONFLICT");
+    const channel = action.channel;
+    if (channel === "call") fail("Les appels réels ne sont pas encore configurés. Utilisez le script pour appeler manuellement.", "CONFLICT");
+    const p = await principal(db);
+    const ready = providerReadiness();
+    const enabled = channel === "email" ? p.emailEnabled && ready.email && !!p.emailFrom : p.smsEnabled && ready.sms && !!p.smsFrom;
+    await db.transaction(async tx => {
+      await tx.insert(s.messageOutbox).values({
+        dedupeKey: `assistant-action:${action.id}`,
+        requestId: action.requestId,
+        userId: null,
+        organizationId: null,
+        channel,
+        recipient: action.recipient,
+        subject: action.subject,
+        body: action.body,
+        status: enabled ? "queued" : "disabled",
+        lastError: enabled ? null : "Canal externe non configuré ou désactivé dans MDS.",
+      });
+      await tx.update(s.assistantActions).set({
+        status: enabled ? "approved" : "failed",
+        approvedAt: new Date(),
+        completedAt: enabled ? null : new Date(),
+        lastError: enabled ? null : "Canal externe non configuré ou désactivé dans MDS.",
+      }).where(eq(s.assistantActions.id, action.id));
+      await recordAudit(tx, ctx.user.id, "assistant.approve", "assistant_action", action.id);
+    });
+    if (!enabled) return { status: "failed" as const, note: "Le brouillon est conservé, mais aucun message n’a été envoyé : configurez d’abord le canal dans Paramètres MDS." };
+    const result = await processOutbox(db, p, 1);
+    const [outbox] = await db.select({ status: s.messageOutbox.status, lastError: s.messageOutbox.lastError }).from(s.messageOutbox).where(eq(s.messageOutbox.dedupeKey, `assistant-action:${action.id}`)).limit(1);
+    if (outbox?.status === "accepted" || outbox?.status === "delivered") {
+      await db.update(s.assistantActions).set({ status: "sent", completedAt: new Date(), lastError: null }).where(eq(s.assistantActions.id, action.id));
+      return { status: "sent" as const, note: "Le message a été accepté par le fournisseur configuré." };
+    }
+    return { status: "approved" as const, note: outbox?.lastError || (result.messagesFailed ? "Le fournisseur a refusé le message. Le dossier reste visible pour reprise." : "Le message est en attente de traitement.") };
+  }),
+  cancel: artisan.input(z.object({ actionId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+    const db = await dbRequired();
+    const [action] = await db.select({ id: s.assistantActions.id, status: s.assistantActions.status }).from(s.assistantActions).where(eq(s.assistantActions.id, input.actionId)).limit(1);
+    if (!action) fail("Cette proposition n’existe plus.", "NOT_FOUND");
+    if (action.status !== "proposed") fail("Cette proposition a déjà été traitée.", "CONFLICT");
+    await db.update(s.assistantActions).set({ status: "cancelled", completedAt: new Date() }).where(eq(s.assistantActions.id, input.actionId));
+    await recordAudit(db, ctx.user.id, "assistant.cancel", "assistant_action", input.actionId);
+    return { success: true as const };
+  }),
+});

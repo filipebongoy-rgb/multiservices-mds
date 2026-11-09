@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import {
   Activity,
   AlertTriangle,
+  Bot,
   Bell,
   CalendarDays,
   CheckCircle2,
@@ -38,6 +39,7 @@ import {
 import { ArtisanSettings } from "@/components/mds/private-artisan-settings";
 import { ArtisanCalendar } from "@/components/mds/private-calendar";
 import { AutomationSettings } from "@/components/mds/private-automation";
+import { ArtisanAssistant } from "@/components/mds/private-assistant";
 import { ArtisanLocationsMap } from "@/components/mds/ArtisanLocationsMap";
 import {
   activeRequestStatuses,
@@ -49,6 +51,7 @@ import {
 import "@/components/mds/private.css";
 
 const navigation = [
+  { id: "assistant", name: "Assistant", icon: Bot },
   { id: "requests", name: "Demandes", icon: ClipboardList },
   { id: "planning", name: "Planning", icon: CalendarDays },
   { id: "interventions", name: "Interventions", icon: Wrench },
@@ -142,7 +145,7 @@ function ArtisanAccessDenied({ name }: { name: string | null }) {
   );
 }
 function ArtisanWorkspace() {
-  const [tab, setTab] = useState<Tab>("requests");
+  const [tab, setTab] = useState<Tab>("assistant");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [urgentNotice, setUrgentNotice] = useState<RequestRecord | null>(null);
@@ -204,6 +207,7 @@ function ArtisanWorkspace() {
     a => a.status !== "cancelled" && dayKey(a.startAt) === dayKey(new Date())
   );
   const tabTitle: Record<Tab, string> = {
+    assistant: "Assistant",
     requests: "Demandes",
     planning: "Planning",
     interventions: "Interventions",
@@ -359,6 +363,7 @@ function ArtisanWorkspace() {
         </section>
       )}
       <div className="stack" style={{ minWidth: 0 }}>
+        {tab === "assistant" && <ArtisanAssistant onOpenRequest={openRequest} />}
         {tab === "requests" && (
           <>
             <div className="artisan-requests-toolbar">

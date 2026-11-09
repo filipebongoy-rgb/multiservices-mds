@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { invokeLLM } from "../_core/llm";
 import { router } from "../_core/trpc";
@@ -503,9 +503,19 @@ export const assistantRouter = router({
         return { created: false as const, draftId: existing[0].id, totalCents: existing[0].totalCents, note: "Le brouillon de devis existant a été retrouvé dans le dossier." };
       }
       const snapshot = request.pricingSnapshot as { totalCents?: number | null; included?: string; excluded?: string; conditions?: string } | null;
-      const totalCents = request.proposedPriceCents ?? snapshot?.totalCents ?? null;
+      const [catalogService] = await db
+        .select({ priceCents: s.services.priceCents, pricingMode: s.services.pricingMode, name: s.services.name })
+        .from(s.services)
+        .where(and(
+          request.serviceId ? eq(s.services.id, request.serviceId) : eq(s.services.name, request.serviceName || ""),
+          eq(s.services.active, true),
+          isNull(s.services.deletedAt),
+        ))
+        .limit(1);
+      const catalogPrice = catalogService?.priceCents ?? null;
+      const totalCents = request.proposedPriceCents ?? snapshot?.totalCents ?? catalogPrice;
       if (!Number.isSafeInteger(totalCents) || totalCents === null || totalCents < 0) {
-        fail("Le dossier ne contient pas encore de prix validé. L’assistante ne crée aucun montant inventé.", "CONFLICT");
+        fail("Aucun tarif actif ne correspond à cette prestation. Configurez son prix dans le catalogue MDS pour remplir le devis.", "CONFLICT");
       }
       const now = new Date();
       const validUntil = new Date(now);
@@ -523,7 +533,9 @@ export const assistantRouter = router({
         lines: [{ label: request.serviceName || request.problemType || "Prestation MDS", quantity: 1, unitCents: totalCents, vatBasisPoints: 2000 }],
         included: snapshot?.included || "Périmètre décrit dans la demande client.",
         excluded: snapshot?.excluded || "Travaux supplémentaires non décrits dans la demande.",
-        conditions: snapshot?.conditions || "Le devis reste soumis à vérification du périmètre sur place.",
+        conditions: snapshot?.conditions || (catalogService?.pricingMode === "fixed"
+          ? "Montant calculé à partir du tarif catalogue actif de la prestation. Toute modification du périmètre fera l’objet d’un nouveau devis."
+          : "Montant préparé à partir du tarif catalogue actif. Vérifier le périmètre sur place avant validation du devis."),
         paymentTerms: "Paiement selon les conditions validées par le client et MDS.",
         depositCents: 0,
         taxNote: "TVA incluse selon le taux applicable.",
@@ -539,7 +551,7 @@ export const assistantRouter = router({
         reference: `MDS-D-${now.toISOString().slice(0, 10)}-${Date.now()}`,
       }).$returningId();
       await recordAudit(db, ctx.user.id, "assistant.quoteDraft.prepare", "quoteDraft", created.id);
-      return { created: true as const, draftId: created.id, totalCents: totals.totalCents, note: "Le brouillon de devis a été rempli avec les données du dossier. Il reste à vérifier avant génération et envoi." };
+      return { created: true as const, draftId: created.id, totalCents: totals.totalCents, note: `Le brouillon de devis a été rempli avec le tarif ${new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(totals.totalCents / 100)} du dossier. Il reste à vérifier avant génération et envoi.` };
     }),
   draft: artisan.input(draftInput).mutation(async ({ input, ctx }) => {
     const db = await dbRequired();

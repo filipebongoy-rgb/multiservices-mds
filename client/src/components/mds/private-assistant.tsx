@@ -217,13 +217,13 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
   const data = query.data;
 
   return (
-    <section className="assistant-dashboard stack" aria-labelledby="assistant-title">
+    <section className="assistant-dashboard stack" aria-labelledby="assistant-title" aria-label="Missions et actions">
       <header className="assistant-hero assistant-hero-compact">
         <div className="assistant-hero-icon" aria-hidden="true"><Bot size={25} /></div>
         <div>
           <span className="eyebrow">Contrôle rapide</span>
-          <h2 id="assistant-title">Missions et actions</h2>
-          <p className="assistant-hero-help">La mission la plus importante est affichée juste en dessous.</p>
+          <h2 id="assistant-title">À faire maintenant</h2>
+          <span className="sr-only">Missions et actions. La mission la plus importante est affichée juste en dessous.</span>
         </div>
       </header>
 
@@ -234,7 +234,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
         <div className="assistant-voice-copy">
           <span className="eyebrow">Commande simple</span>
           <h3 id="assistant-voice-title">Parler à l’assistante</h3>
-          <p>Dites une phrase courte. Exemple : « ouvre les demandes ».</p>
+          <p>Dites ou écrivez une consigne courte.</p>
         </div>
         <div className="assistant-voice-actions">
           <ActionButton className="primary" onClick={listen} disabled={listening}>
@@ -253,8 +253,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
           <div className="panel stack assistant-quick-panel">
           <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
             <div>
-              <span className="eyebrow">Prochaine action</span>
-              <h3 style={{ margin: "4px 0 0" }}>À faire maintenant</h3>
+              <h3 style={{ margin: 0 }}>Prochaine action</h3>
             </div>
             <span className="badge">{data.tasks.length}</span>
           </div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowRight, Copy, MessageCircle, Share2, Users } from "lucide-react";
 import { Link } from "wouter";
+import { trades } from "@shared/mds";
 
 export default function Network() {
   const [notice, setNotice] = useState<string | null>(null);
@@ -51,6 +52,33 @@ export default function Network() {
         <Link className="network-action-card" href="/suivi">
           <Copy size={24} aria-hidden="true" /><strong>Partager mon suivi</strong><span>Retrouver le lien sécurisé de votre demande sans exposer vos informations.</span><ArrowRight size={18} aria-hidden="true" />
         </Link>
+      </section>
+
+      <section className="network-local-section" aria-labelledby="network-services-title">
+        <div className="section-heading">
+          <span className="eyebrow">Proximité</span>
+          <h2 id="network-services-title">Quel service cherchez-vous à Rennes ?</h2>
+          <p className="muted">Choisissez directement un métier. Vous arriverez sur une demande déjà orientée.</p>
+        </div>
+        <div className="network-service-chips">
+          {trades.map(trade => (
+            <Link key={trade.slug} href={`/demande?metier=${trade.slug}`} className="network-service-chip">
+              <strong>{trade.name}</strong><span>{trade.short}</span><ArrowRight size={16} aria-hidden="true" />
+            </Link>
+          ))}
+          <Link href="/demande?libre=1" className="network-service-chip network-service-chip-other">
+            <strong>Autre problème</strong><span>Décrire librement votre besoin</span><ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
+
+      <section className="network-how" aria-labelledby="network-how-title">
+        <div className="section-heading"><span className="eyebrow">Simple comme une demande locale</span><h2 id="network-how-title">De la demande à l’intervention</h2></div>
+        <ol>
+          <li><strong>1. Décrivez</strong><span>Service, problème, adresse et disponibilité.</span></li>
+          <li><strong>2. MDS répond</strong><span>Une réponse claire, un créneau ou un devis.</span></li>
+          <li><strong>3. Suivez</strong><span>Artisan en route, photos et fin de travaux contrôlée.</span></li>
+        </ol>
       </section>
 
       <section className="network-privacy-note">

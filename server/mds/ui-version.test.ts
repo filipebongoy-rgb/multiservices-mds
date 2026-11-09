@@ -685,6 +685,9 @@ describe("assistante opérationnelle artisan", () => {
     );
     expect(artisan).toContain('id: "assistant"');
     expect(artisan).toContain("<ArtisanAssistant");
+    expect(artisan).toContain("/artisan/requests?request=${id}");
+    expect(artisan).toContain('new URLSearchParams(location.split("?")[1] || "")');
+    expect(artisan).toContain('rawSection === "demandes" ? "requests" : rawSection');
     expect(assistant).toContain("Missions et actions");
     expect(assistant).toContain("Ouvrir la mission");
     expect(assistant).toContain("Valider et envoyer");

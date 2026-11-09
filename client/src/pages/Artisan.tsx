@@ -64,7 +64,9 @@ const navigation = [
 type Tab = (typeof navigation)[number]["id"];
 
 function tabFromPath(path: string, isCollaborator: boolean): Tab {
-  const section = path.split("/")[2] as Tab | undefined;
+  const cleanPath = path.split("?")[0];
+  const rawSection = cleanPath.split("/")[2];
+  const section = (rawSection === "demandes" ? "requests" : rawSection) as Tab | undefined;
   const allowed = isCollaborator ? ["requests", "planning", "interventions"] : navigation.map(item => item.id);
   return section && allowed.includes(section) ? section : isCollaborator ? "requests" : "assistant";
 }
@@ -221,7 +223,9 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
   );
   useEffect(() => {
     setTab(tabFromPath(location, isCollaborator));
-    setSelectedId(null);
+    const request = new URLSearchParams(location.split("?")[1] || "").get("request");
+    const requestId = request ? Number(request) : null;
+    setSelectedId(requestId && Number.isInteger(requestId) ? requestId : null);
   }, [location, isCollaborator]);
   const tabTitle: Record<Tab, string> = {
     assistant: "Assistant",
@@ -233,8 +237,7 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
     team: "Équipe",
   };
   const openRequest = (id: number) => {
-    setSelectedId(id);
-    setLocation("/artisan/demandes");
+    setLocation(`/artisan/requests?request=${id}`);
   };
   const refreshRequests = () => {
     void requestsQuery.refetch();

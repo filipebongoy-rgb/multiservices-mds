@@ -654,6 +654,20 @@ describe("notification de réservation", () => {
   });
 });
 
+describe("alerte téléphone d’affectation artisan", () => {
+  it("demande la permission et détecte une affectation nouvelle rapidement", () => {
+    const artisan = readFileSync(
+      new URL("../../client/src/pages/Artisan.tsx", import.meta.url),
+      "utf8"
+    );
+    expect(artisan).toContain("Notification.requestPermission");
+    expect(artisan).toContain("refetchInterval: 5_000");
+    expect(artisan).toContain('item.title === "Nouvelle intervention affectée"');
+    expect(artisan).toContain("new window.Notification");
+    expect(artisan).toContain("Activer les alertes téléphone");
+  });
+});
+
 
 describe("assistante opérationnelle artisan", () => {
   it("affiche un poste de pilotage branché sur les données réelles", () => {

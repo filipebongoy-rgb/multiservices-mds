@@ -805,15 +805,47 @@ function Interventions({
 function Notifications({ onOpen }: { onOpen: (id: number) => void }) {
   const [onlyUnread, setOnlyUnread] = useState(false);
   const [visibleCount, setVisibleCount] = useState(10);
+  const [phonePermission, setPhonePermission] = useState<NotificationPermission | "unsupported">(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return "unsupported";
+    return window.Notification.permission;
+  });
+  const knownNotificationIds = useRef<Set<number> | null>(null);
   const notifications = trpc.mds.notifications.list.useQuery(undefined, {
     retry: false,
-    refetchInterval: 30_000,
+    refetchInterval: 5_000,
   });
   const read = trpc.mds.notifications.read.useMutation({
     onSuccess: () => void notifications.refetch(),
   });
   const allNotifications = notifications.data ?? [];
   const unreadCount = allNotifications.filter(item => !item.readAt).length;
+  useEffect(() => {
+    if (!notifications.data) return;
+    const current = new Set(notifications.data.map(item => item.id));
+    if (knownNotificationIds.current === null) {
+      knownNotificationIds.current = current;
+      return;
+    }
+    const freshAssignment = notifications.data.find(
+      item =>
+        !knownNotificationIds.current?.has(item.id) &&
+        !item.readAt &&
+        item.title === "Nouvelle intervention affectée"
+    );
+    if (freshAssignment && phonePermission === "granted" && "Notification" in window) {
+      new window.Notification("Nouvelle intervention MDS", {
+        body: freshAssignment.message,
+        tag: `mds-assignment-${freshAssignment.id}`,
+        icon: "/mds-logo-180.png",
+      });
+    }
+    knownNotificationIds.current = current;
+  }, [notifications.data, phonePermission]);
+  const enablePhoneAlerts = async () => {
+    if (!("Notification" in window)) return;
+    const permission = await window.Notification.requestPermission();
+    setPhonePermission(permission);
+  };
   const visibleNotifications = allNotifications
     .filter(item => !onlyUnread || !item.readAt)
     .slice(0, visibleCount);
@@ -827,10 +859,19 @@ function Notifications({ onOpen }: { onOpen: (id: number) => void }) {
           {unreadCount} notification{unreadCount !== 1 ? "s" : ""} non lue
           {unreadCount !== 1 ? "s" : ""}
         </p>
-        <ActionButton onClick={() => setOnlyUnread(value => !value)}>
-          {onlyUnread ? "Voir toutes" : "Voir les non lues"}
-        </ActionButton>
+        <div className="row" style={{ flexWrap: "wrap" }}>
+          {phonePermission !== "granted" && phonePermission !== "unsupported" && (
+            <ActionButton className="primary" onClick={() => void enablePhoneAlerts()}>
+              {phonePermission === "denied" ? "Autoriser dans les réglages du téléphone" : "Activer les alertes téléphone"}
+            </ActionButton>
+          )}
+          <ActionButton onClick={() => setOnlyUnread(value => !value)}>
+            {onlyUnread ? "Voir toutes" : "Voir les non lues"}
+          </ActionButton>
+        </div>
       </div>
+      {phonePermission === "granted" && <p className="notice" role="status">Alertes téléphone activées : l’artisan est prévenu dès qu’une intervention lui est affectée.</p>}
+      {phonePermission === "denied" && <p className="notice warning" role="status">Les alertes sont bloquées par le téléphone. Ouvrez les réglages du navigateur, autorisez les notifications pour MDS, puis rechargez la page.</p>}
       <QueryState
         loading={notifications.isLoading}
         error={notifications.error}

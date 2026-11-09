@@ -53,3 +53,9 @@ Cette règle est un défaut opérationnel et non une certification individuelle 
 L’analyse vidéo a confirmé que l’assistante était trop longue : cartes volumineuses, bouton « Ouvrir » répété, trois actions de relance par ligne, avertissements permanents et historique toujours ouvert. Le poste affiche maintenant un contrôle rapide compact. Un clic sur une ligne ouvre le dossier, une seule action prépare la relance, le panneau de brouillon n’apparaît qu’après sélection et l’historique est replié.
 
 Les demandes de test peuvent être retirées par l’administrateur avec le mot de confirmation `SUPPRIMER`. Le serveur n’autorise ce retrait que pour les dossiers terminés ou inactifs, renseigne `deletedAt`, annule les rendez-vous confirmés et affectations encore ouvertes, écrit un audit et exclut la demande des listes. Les demandes actives restent protégées.
+
+## Alerte téléphone lors d’une affectation — 9 novembre 2026
+
+L’affectation d’une intervention crée déjà une notification artisan persistée côté serveur. L’espace artisan la lit désormais toutes les cinq secondes. Lorsqu’une nouvelle notification porte le titre « Nouvelle intervention affectée », le navigateur mobile affiche une alerte système après autorisation de l’artisan. Un bouton dédié permet d’activer les alertes et explique le cas de refus dans les réglages du téléphone. Les identifiants évitent les doublons pendant la session ; la cloche MDS reste la source persistante.
+
+Ce mécanisme fonctionne lorsque l’espace MDS est ouvert ou actif dans le navigateur. La réception navigateur lorsque l’application est totalement fermée nécessite Web Push/VAPID et sera activée séparément, avec une configuration sécurisée.

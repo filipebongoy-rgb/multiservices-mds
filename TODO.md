@@ -64,3 +64,11 @@
 - [x] L’historique des brouillons est replié par défaut et ne pousse plus les actions urgentes vers le bas de l’écran.
 - [x] L’administrateur peut retirer une demande terminée, refusée, annulée, expirée, clôturée, payée ou facturée avec confirmation explicite. Le retrait est réversible côté données via `deletedAt`, audité et exclu des listes actives.
 - [x] Une demande encore active ne peut pas être retirée silencieusement ; elle doit d’abord être annulée ou terminée selon le workflow métier.
+
+## Alerte téléphone lors d’une affectation
+
+- [x] Lorsqu’une notification serveur « Nouvelle intervention affectée » apparaît, l’espace artisan la détecte toutes les 5 secondes et déclenche une notification navigateur sur le téléphone si l’autorisation est active.
+- [x] Un bouton « Activer les alertes téléphone » demande l’autorisation au premier usage ; l’écran indique clairement si les alertes sont actives ou bloquées par les réglages du navigateur.
+- [x] L’alerte reprend le message du dossier, utilise le logo MDS et évite les doublons pendant la session grâce à l’identifiant de notification.
+- [x] La notification interne reste persistée et visible même si le téléphone refuse les notifications navigateur.
+- [ ] Les notifications lorsque le navigateur est complètement fermé nécessiteront une extension Web Push avec clés VAPID ; cette étape n’est pas activée sans configuration fournisseur.

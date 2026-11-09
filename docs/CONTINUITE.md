@@ -71,3 +71,7 @@ Les navigations haute et basse de l’atelier sont désormais de vrais liens ver
 L’artisan peut maintenant appuyer sur « Parler à l’assistante » et dire une phrase courte en français, par exemple « ouvre les demandes », « ouvre le planning », « actualise » ou « prépare une relance ». La reconnaissance vocale du navigateur fournit le texte ; une zone d’écriture reste disponible si la voix n’est pas prise en charge. L’assistante affiche sa réponse et la lit avec la voix du téléphone lorsque cela est possible.
 
 Les commandes de navigation et de préparation sont exécutées directement. Les actions sensibles restent protégées : une relance est seulement préparée et doit être relue puis validée ; un rendez-vous prêt est identifié mais sa confirmation finale reste un bouton explicite. Aucun appel ou message externe ne part sur une simple phrase mal comprise.
+
+## Contrôle en quatre boutons — 9 novembre 2026
+
+Pour réduire le défilement, l’assistant affiche quatre accès directs : Demandes, Planning, Interventions et Actualiser. Il ne montre que les trois premières missions au départ ; un bouton permet d’afficher les autres. Cette vue courte est complémentaire à la commande vocale et ne demande aucune compréhension technique.

@@ -693,6 +693,8 @@ describe("assistante opérationnelle artisan", () => {
     expect(assistant).toContain("ouvre les demandes");
     expect(assistant).toContain("prépare une relance");
     expect(assistant).toContain("SpeechRecognition");
+    expect(assistant).toContain('aria-label="Actions rapides"');
+    expect(assistant).toContain("Voir les ${data.tasks.length - 3} autres missions");
     expect(assistant).toContain("window.confirm");
     expect(server).toContain("assistantRouter");
     expect(server).toContain("processOutbox");

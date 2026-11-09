@@ -89,3 +89,9 @@
 - [x] L’assistante répond oralement lorsque la synthèse vocale du téléphone est disponible et affiche toujours sa réponse à l’écran.
 - [x] La préparation d’une relance ne l’envoie pas automatiquement ; la confirmation humaine reste obligatoire avant tout message ou appel.
 - [x] La commande de confirmation d’un rendez-vous demande encore l’action visible « Confirmer le rendez-vous » afin d’éviter une validation accidentelle par une phrase mal comprise.
+
+## Contrôle en quatre boutons
+
+- [x] L’écran assistant affiche quatre boutons directs : Demandes, Planning, Interventions et Actualiser.
+- [x] La liste des missions montre seulement les trois premières au départ ; un bouton « Voir les autres missions » affiche le reste uniquement à la demande.
+- [x] Les boutons sont suffisamment grands pour un téléphone et restent utilisables sans comprendre le fonctionnement interne de l’IA.

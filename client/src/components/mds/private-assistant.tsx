@@ -97,6 +97,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
   const [command, setCommand] = useState("");
   const [voiceReply, setVoiceReply] = useState("Dites : « ouvre les demandes » ou « prépare une relance ».");
   const [listening, setListening] = useState(false);
+  const [showAllTasks, setShowAllTasks] = useState(false);
   const [, setLocation] = useLocation();
 
   const prepareDraft = async (task: Task, channel: Channel) => {
@@ -256,6 +257,12 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
           </div>
         </div>
         <p className="assistant-voice-reply" role="status" aria-live="polite">{voiceReply}</p>
+        <div className="assistant-quick-links" aria-label="Actions rapides">
+          <ActionButton onClick={() => setLocation("/artisan/requests")}>Demandes</ActionButton>
+          <ActionButton onClick={() => setLocation("/artisan/planning")}>Planning</ActionButton>
+          <ActionButton onClick={() => setLocation("/artisan/interventions")}>Interventions</ActionButton>
+          <ActionButton onClick={() => void query.refetch()}>Actualiser</ActionButton>
+        </div>
       </section>
 
       <div className="assistant-layout">
@@ -271,7 +278,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
             <div className="empty">Aucune tâche urgente. Vous pouvez vous concentrer sur les interventions.</div>
           ) : (
             <div className="assistant-task-list">
-              {data.tasks.map(task => (
+              {(showAllTasks ? data.tasks : data.tasks.slice(0, 3)).map(task => (
                     <article className={`assistant-task assistant-task-${task.priority}`} key={task.id} onClick={() => task.requestId && onOpenRequest(task.requestId)} role={task.requestId ? "button" : undefined} tabIndex={task.requestId ? 0 : undefined} onKeyDown={event => { if (task.requestId && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onOpenRequest(task.requestId); } }}>
                   <div className="assistant-task-icon">{taskIcon(task)}</div>
                   <div className="assistant-task-copy">
@@ -295,6 +302,11 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
                 </article>
               ))}
             </div>
+          )}
+          {data.tasks.length > 3 && (
+            <ActionButton className="secondary" onClick={() => setShowAllTasks(value => !value)}>
+              {showAllTasks ? "Voir moins" : `Voir les ${data.tasks.length - 3} autres missions`}
+            </ActionButton>
           )}
         </div>
 

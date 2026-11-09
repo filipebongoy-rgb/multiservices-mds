@@ -4204,3 +4204,48 @@ input[type="checkbox"] {
     padding-top: 8px;
   }
 }
+.home-secondary-cta {
+  border-color: rgba(255, 255, 255, 0.55);
+  color: #fff;
+  background: transparent;
+}
+.home-secondary-cta:hover {
+  color: #1d2428;
+  background: #fff;
+}
+.home-referral-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 22px 0 28px;
+  padding: 20px 22px;
+  border-left: 4px solid #bc4c23;
+  background: #fff5ec;
+}
+.home-referral-cta h2 {
+  margin: 4px 0 5px;
+  color: #172a38;
+  font-size: clamp(20px, 3vw, 26px);
+}
+.home-referral-cta p {
+  max-width: 640px;
+  margin: 0;
+  color: #555b59;
+}
+.home-referral-action {
+  display: grid;
+  gap: 7px;
+  justify-items: end;
+  flex: 0 0 auto;
+}
+.home-share-notice {
+  color: #28623f;
+  font-size: 13px;
+  font-weight: 600;
+}
+@media (max-width: 680px) {
+  .home-referral-cta { align-items: flex-start; flex-direction: column; }
+  .home-referral-action { width: 100%; justify-items: stretch; }
+  .home-referral-action .btn { width: 100%; justify-content: center; }
+}

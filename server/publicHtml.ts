@@ -22,7 +22,7 @@ const titles: Record<string, string> = {
   "/artisan/team": "Équipe — Espace artisan",
 };
 const descriptions: Record<string, string> = {
-  "/": "Décrivez votre besoin de réparation ou de travaux à MDS. Votre artisan vous propose des conditions ; vous confirmez avant toute intervention.",
+  "/": "Trouvez un artisan local à Rennes pour plomberie, électricité, chauffage, peinture et petits travaux. Décrivez votre besoin et recevez une réponse MDS.",
   "/prestations":
     "Recherchez une prestation validée par MDS ou envoyez une demande libre pour vos réparations, travaux et besoins de maintenance.",
   "/confidentialite":

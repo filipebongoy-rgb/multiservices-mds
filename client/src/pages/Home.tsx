@@ -15,6 +15,7 @@ import {
   Phone,
   Search,
   ShieldCheck,
+  Share2,
   ThumbsUp,
   Wrench,
   Zap,
@@ -28,6 +29,7 @@ const icons = [Droplets, Zap, Flame, Paintbrush, Wrench];
 export default function Home() {
   const [, setLocation] = useLocation();
   const [query, setQuery] = useState("");
+  const [shareNotice, setShareNotice] = useState<string | null>(null);
   useEffect(() => {
     void fetch("/api/site-visit", {
       method: "POST",
@@ -60,6 +62,25 @@ export default function Home() {
     else setLocation("/demande?libre=1");
   }
 
+  async function shareMds() {
+    const shareData = {
+      title: "MULTISERVICES MDS — artisan local à Rennes",
+      text: "Un artisan local pour les dépannages et petits travaux à Rennes et alentours.",
+      url: window.location.origin,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setShareNotice("Merci pour la recommandation.");
+      } else {
+        await navigator.clipboard.writeText(window.location.origin);
+        setShareNotice("Lien copié. Vous pouvez l’envoyer à un proche.");
+      }
+    } catch {
+      setShareNotice(null);
+    }
+  }
+
   return (
     <main id="main-content" className="simple-home page-shell">
       <ActiveRequestBanner />
@@ -75,13 +96,12 @@ export default function Home() {
               DÉPANNAGE &amp; PETITS TRAVAUX · RENNES + 30 KM
             </span>
             <h1 id="home-title">
-              Un seul interlocuteur.{" "}
+              Votre artisan local à Rennes.{' '}
               <span className="home-title-rest">Tous vos travaux.</span>
             </h1>
             <p className="home-lead">
-              Plomberie, électricité, chauffage, peinture et petits travaux à
-              Rennes et ses alentours.{" "}
-              <strong>Votre confort, notre priorité !</strong>
+                Décrivez votre besoin en quelques mots. MDS vous répond pour
+              organiser la suite, à Rennes et ses alentours.
             </p>
             <div className="home-trust-chips" aria-label="Engagements clés">
               <span className="badge home-trust-chip">
@@ -102,8 +122,11 @@ export default function Home() {
               style={{ marginTop: 14, flexWrap: "wrap", gap: 10 }}
             >
               <Link href="/demande" className="btn primary">
-                Demander un devis gratuit
+                Décrire mon besoin
                 <ArrowRight size={18} aria-hidden="true" />
+              </Link>
+              <Link href="/prestations" className="btn ghost home-secondary-cta">
+                Voir les prestations
               </Link>
             </div>
           </div>
@@ -152,6 +175,20 @@ export default function Home() {
             </span>
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
+        </div>
+      </section>
+
+      <section className="home-referral-cta" aria-label="Recommander MDS">
+        <div>
+          <span className="eyebrow">Artisan local</span>
+          <h2>Vous connaissez quelqu’un qui cherche un artisan ?</h2>
+          <p>Partagez MDS à Rennes. La personne décrit directement son besoin, sans passer par vous.</p>
+        </div>
+        <div className="home-referral-action">
+          <button type="button" className="btn dark" onClick={() => void shareMds()}>
+            <Share2 size={17} aria-hidden="true" /> Partager MDS
+          </button>
+          {shareNotice && <span className="home-share-notice" role="status">{shareNotice}</span>}
         </div>
       </section>
 

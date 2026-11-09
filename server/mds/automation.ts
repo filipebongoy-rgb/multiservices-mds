@@ -15,7 +15,7 @@ import {
   type Database,
 } from "./common";
 import { fail, proposalStates } from "./workflow";
-import { expireRequest } from "./requests";
+import { autoConfirmRequest, expireRequest } from "./requests";
 import {
   processOutbox,
   providerReadiness,
@@ -119,6 +119,8 @@ export async function runAutomation(
       expired: 0,
       extrasExpired: 0,
       reminders: 0,
+      appointmentsConfirmed: 0,
+      requestsClosed: 0,
       messagesAccepted: 0,
       messagesFailed: 0,
       messagesUncertain: 0,
@@ -252,6 +254,50 @@ export async function runAutomation(
       }
       return { expired, extrasExpired, reminders: reminderCount };
     });
+    let appointmentsConfirmed = 0;
+    let requestsClosed = 0;
+    const [settings] = await db.select().from(s.settings).limit(1);
+    const actor = actorId ?? settings?.artisanUserId ?? null;
+    if (actor) {
+      const readyToConfirm = await db
+        .select({ id: s.requests.id, proposedStart: s.requests.proposedStart, quoteStatus: s.requests.quoteStatus })
+        .from(s.requests)
+        .where(inArray(s.requests.status, ["proposed_slot", "awaiting_client"]))
+        .limit(50);
+      for (const request of readyToConfirm) {
+        if (!request.proposedStart || request.quoteStatus === "pending" || request.quoteStatus === "refused") continue;
+        try {
+          await autoConfirmRequest(request.id, actor);
+          appointmentsConfirmed++;
+        } catch {
+          // Le dossier reste visible dans l’atelier si une condition métier manque.
+        }
+      }
+      const paidRequests = await db
+        .select({ id: s.requests.id })
+        .from(s.requests)
+        .where(eq(s.requests.status, "paid"))
+        .limit(100);
+      for (const candidate of paidRequests) {
+        try {
+          const closed = await db.transaction(async tx => {
+            const [request] = await tx.select().from(s.requests).where(eq(s.requests.id, candidate.id)).limit(1).for("update");
+            if (!request || request.status !== "paid") return false;
+            const [intervention] = await tx.select().from(s.interventions).where(eq(s.interventions.requestId, request.id)).limit(1);
+            if (!intervention?.completedAt || !intervention.clientConfirmedAt) return false;
+            const [afterPhoto] = await tx.select({ id: s.documents.id }).from(s.documents).where(and(eq(s.documents.requestId, request.id), eq(s.documents.kind, "photo"), eq(s.documents.photoStage, "after"))).limit(1);
+            if (!afterPhoto) return false;
+            await tx.update(s.requests).set({ status: "closed", version: request.version + 1, lastAction: "assistant:autoValidate", lastActionVersion: request.version + 1 }).where(and(eq(s.requests.id, request.id), eq(s.requests.version, request.version)));
+            await event(tx, request, "closed", "Dossier clôturé automatiquement : paiement, intervention, preuve photo et confirmation client vérifiés.", "system", actor);
+            await recordAudit(tx, actor, "assistant.request.autoValidate.scheduled", "request", request.id);
+            return true;
+          });
+          if (closed) requestsClosed++;
+        } catch {
+          // Une anomalie isolée ne bloque pas le contrôle des autres dossiers.
+        }
+      }
+    }
     const acceptedMessages = await db
       .select()
       .from(s.messageOutbox)
@@ -278,7 +324,7 @@ export async function runAutomation(
       }
     }
     const external = await processOutbox(db, await principal(db), 10);
-    const result = { ...summary, ...external };
+    const result = { ...summary, appointmentsConfirmed, requestsClosed, ...external };
     await db
       .update(s.automationRuns)
       .set({ status: "succeeded", summary: result, finishedAt: new Date() })

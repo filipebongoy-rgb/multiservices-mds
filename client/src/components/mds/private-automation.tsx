@@ -39,10 +39,10 @@ export function AutomationSettings() {
     },
   });
   const run = trpc.mds.automation.run.useMutation({
-    onSuccess: r => {
-      setNotice(
-        `${r.expired} proposition(s) expirée(s), ${r.reminders} rappel(s), ${r.messagesAccepted} message(s) accepté(s) par le fournisseur.`
-      );
+      onSuccess: r => {
+        setNotice(
+        `${r.expired} expiration(s), ${r.reminders} rappel(s), ${r.appointmentsConfirmed} rendez-vous confirmé(s), ${r.requestsClosed} dossier(s) clôturé(s), ${r.messagesAccepted} message(s) accepté(s).`
+        );
       void data.refetch();
     },
   });

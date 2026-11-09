@@ -5,6 +5,8 @@ import { trades } from "@shared/mds";
 
 export default function Network() {
   const [notice, setNotice] = useState<string | null>(null);
+  const [selectedTrade, setSelectedTrade] = useState("");
+  const [requestMessage, setRequestMessage] = useState("");
 
   async function shareMds() {
     const data = {
@@ -25,6 +27,30 @@ export default function Network() {
     }
   }
 
+  async function shareRequest() {
+    const query = selectedTrade
+      ? `?metier=${encodeURIComponent(selectedTrade)}&source=reseau`
+      : "?source=reseau";
+    const chosenTrade = trades.find(trade => trade.slug === selectedTrade);
+    const detail = requestMessage.trim() || "un dépannage ou des petits travaux";
+    const data = {
+      title: "Demande MDS à Rennes",
+      text: `Je cherche un artisan à Rennes pour ${chosenTrade?.name.toLocaleLowerCase("fr") || "un service"}. ${detail}`,
+      url: `${window.location.origin}/demande${query}`,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(data);
+        setNotice("Demande partagée. Le destinataire pourra la compléter.");
+      } else {
+        await navigator.clipboard.writeText(`${data.text} ${data.url}`);
+        setNotice("Demande copiée. Vous pouvez l’envoyer à un proche.");
+      }
+    } catch {
+      setNotice(null);
+    }
+  }
+
   return (
     <main id="main-content" className="page-shell network-page">
       <header className="public-page-heading">
@@ -39,6 +65,24 @@ export default function Network() {
         <div className="network-share-action">
           <button type="button" className="btn primary" onClick={() => void shareMds()}><Share2 size={17} aria-hidden="true" /> Partager MDS</button>
           {notice && <span role="status" className="home-share-notice">{notice}</span>}
+        </div>
+      </section>
+
+      <section className="network-request-share" aria-labelledby="network-request-share-title">
+        <div>
+          <span className="eyebrow">Recommandation locale</span>
+          <h2 id="network-request-share-title">Partager une demande précise</h2>
+          <p>Choisissez le métier et ajoutez quelques mots. Le lien partagé ouvre une demande déjà préparée, sans afficher votre adresse.</p>
+        </div>
+        <div className="network-request-form">
+          <label htmlFor="network-trade">Métier recherché</label>
+          <select id="network-trade" value={selectedTrade} onChange={event => setSelectedTrade(event.target.value)}>
+            <option value="">Choisir un métier</option>
+            {trades.map(trade => <option key={trade.slug} value={trade.slug}>{trade.name}</option>)}
+          </select>
+          <label htmlFor="network-message">Votre message (facultatif)</label>
+          <textarea id="network-message" value={requestMessage} onChange={event => setRequestMessage(event.target.value)} maxLength={240} placeholder="Ex. une fuite sous l’évier…" />
+          <button type="button" className="btn dark" onClick={() => void shareRequest()}><MessageCircle size={17} aria-hidden="true" /> Partager cette demande</button>
         </div>
       </section>
 

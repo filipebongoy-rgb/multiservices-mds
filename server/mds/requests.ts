@@ -26,6 +26,7 @@ import {
   procedure,
   publicRequest,
   recordAudit,
+  requireArtisan,
   requestFilter,
   secretHash,
   secureEqual,
@@ -495,6 +496,8 @@ export const requestsRouter = router({
   list: artisan.query(({ ctx }) => listScoped(ctx.user)),
   waitlist: artisan.query(async ({ ctx }) => {
     const db = await dbRequired();
+    if (ctx.user.role !== "admin")
+      fail("La liste d’attente globale est réservée à l’administrateur MDS.", "FORBIDDEN");
     await principal(db);
     const rows = await db
       .select({ entry: s.waitlistEntries, request: s.requests })
@@ -520,9 +523,9 @@ export const requestsRouter = router({
       const db = await dbRequired();
       const result = await db.transaction(async tx => {
         const p = await principal(tx, true);
-        if (ctx.user.role !== "admin")
-          fail("Cet accès est réservé à l’artisan MDS.", "FORBIDDEN");
+        await requireArtisan(tx, ctx.user);
         const r = await load(tx, input);
+        await authorizeRequest(tx, r, ctx.user);
         if (await expire(tx, r)) return { expired: true as const };
         checkVersion(r, input.version);
         const message = input.message?.trim();

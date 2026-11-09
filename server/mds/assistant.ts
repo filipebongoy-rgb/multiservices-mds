@@ -3,7 +3,7 @@ import { z } from "zod";
 import { invokeLLM } from "../_core/llm";
 import { router } from "../_core/trpc";
 import * as s from "../../drizzle/schema";
-import { artisan, dbRequired, principal, recordAudit } from "./common";
+import { artisan, dbRequired, principal, recordAudit, requireAdmin } from "./common";
 import { fail } from "./workflow";
 import { processOutbox, providerReadiness } from "./outbox";
 import { createOutboundVoiceCall, voiceProviderReadiness } from "./voice-agent";
@@ -139,8 +139,9 @@ async function createDraftWithAi(
 }
 
 export const assistantRouter = router({
-  overview: artisan.query(async () => {
+  overview: artisan.query(async ({ ctx }) => {
     const db = await dbRequired();
+    await requireAdmin(db, ctx.user);
     const [requests, appointments, quoteDrafts, invoices, payments, messages, incidents, actions] =
       await Promise.all([
         db
@@ -416,6 +417,7 @@ export const assistantRouter = router({
     };
   }),
   autoConfirm: artisan.input(z.object({ requestId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+    await requireAdmin(await dbRequired(), ctx.user);
     const result = await autoConfirmRequest(input.requestId, ctx.user.id);
     return {
       success: true as const,

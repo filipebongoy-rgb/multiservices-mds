@@ -102,6 +102,40 @@ export const adminInvites = mysqlTable("mds_admin_invites", {
   ...dates(),
 });
 
+export const artisanTeam = mysqlTable(
+  "mds_artisan_team",
+  {
+    id: id(),
+    ownerUserId: int("ownerUserId")
+      .notNull()
+      .references(() => users.id),
+    userId: int("userId").references(() => users.id),
+    email: varchar("email", { length: 320 }).notNull(),
+    displayName: varchar("displayName", { length: 200 }).notNull(),
+    role: mysqlEnum("role", ["technician", "assistant"]).default("technician").notNull(),
+    status: mysqlEnum("status", ["pending", "active", "revoked"]).default("pending").notNull(),
+    ...dates(),
+  },
+  table => [uniqueIndex("artisan_team_owner_email").on(table.ownerUserId, table.email)]
+);
+
+export const artisanAssignments = mysqlTable(
+  "mds_artisan_assignments",
+  {
+    id: id(),
+    requestId: int("requestId")
+      .notNull()
+      .references(() => requests.id),
+    teamMemberId: int("teamMemberId")
+      .notNull()
+      .references(() => artisanTeam.id),
+    assignedBy: int("assignedBy").references(() => users.id),
+    status: mysqlEnum("status", ["assigned", "completed", "cancelled"]).default("assigned").notNull(),
+    ...dates(),
+  },
+  table => [uniqueIndex("artisan_assignment_request").on(table.requestId)]
+);
+
 export const settings = mysqlTable("mds_settings", {
   id: int("id").primaryKey(),
   zone: varchar("zone", { length: 300 }).default("").notNull(),

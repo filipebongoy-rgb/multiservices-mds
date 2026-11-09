@@ -27,3 +27,11 @@ Le 9 novembre 2026, MDS a préparé un agent vocal natif sans Retell. Twilio Voi
 ## Confirmation autonome des rendez-vous — 9 novembre 2026
 
 L’assistante peut maintenant confirmer un rendez-vous prêt lorsque la demande possède un créneau proposé, un prix contractuel valide et aucun devis en attente. La confirmation passe par une transaction unique, réutilise le verrou principal, vérifie la zone, la durée, les temps de déplacement, les indisponibilités et les conflits, puis crée le rendez-vous et l’intervention. Toute anomalie reste bloquée avec le motif métier ; l’action est auditée et les notifications sont traitées après commit.
+
+## Équipe terrain et collaborateurs — 9 novembre 2026
+
+MDS possède maintenant les tables `mds_artisan_team` et `mds_artisan_assignments`. L’administrateur peut ajouter un collaborateur par e-mail, avec un rôle technicien ou assistant, puis lui affecter un dossier. Si le compte existe, l’accès est actif immédiatement ; sinon l’invitation reste en attente et s’active lors de l’inscription locale avec la même adresse.
+
+Un collaborateur actif ouvre un atelier limité aux demandes, au planning et aux interventions. Le filtrage serveur porte sur les affectations réelles : il ne peut pas consulter les autres dossiers, les paiements, les contrats, l’activité globale, l’assistante de pilotage ou les paramètres. Les actions sensibles restent réservées à l’administrateur MDS. La révocation est auditée et n’efface pas l’historique.
+
+L’affectation automatique par distance, disponibilité et compétence n’est pas encore activée : elle nécessitera les zones, spécialités et disponibilités propres à chaque collaborateur afin d’éviter une affectation incorrecte.

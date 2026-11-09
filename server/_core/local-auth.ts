@@ -12,6 +12,7 @@ import {
   localSessions,
   localPasswordResets,
   adminInvites,
+  artisanTeam,
   users,
   settings,
   messageOutbox,
@@ -199,6 +200,10 @@ export async function registerLocalUser(input: {
         passwordHash: hashPassword(input.password, salt),
         passwordSalt: salt,
       });
+      await tx
+        .update(artisanTeam)
+        .set({ userId: created[0].id, status: "active" })
+        .where(and(eq(artisanTeam.email, email), eq(artisanTeam.status, "pending")));
     });
   } catch (error) {
     if (/(localLoginKey|duplicate|unique)/i.test(String(error))) {

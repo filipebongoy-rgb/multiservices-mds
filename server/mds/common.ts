@@ -44,8 +44,18 @@ export async function requireArtisan(db: SqlDb, user: Identity) {
   if (!user || user.id <= 0)
     fail("Connectez-vous pour accéder à l’espace artisan.", "UNAUTHORIZED");
   const p = await principal(db);
-  if (user.role !== "admin")
+  if (user.role === "admin") return;
+  const [member] = await db
+    .select({ id: s.artisanTeam.id })
+    .from(s.artisanTeam)
+    .where(and(eq(s.artisanTeam.userId, user.id), eq(s.artisanTeam.status, "active")))
+    .limit(1);
+  if (!member)
     fail("Cet accès est réservé à l’artisan MDS.", "FORBIDDEN");
+}
+export async function requireAdmin(db: SqlDb, user: Identity) {
+  if (!user || user.id <= 0) fail("Connectez-vous pour continuer.", "UNAUTHORIZED");
+  if (user.role !== "admin") fail("Cette action est réservée à l’administrateur MDS.", "FORBIDDEN");
 }
 export async function workspaceOwnerId(db: SqlDb, user: Identity) {
   if (!user || user.id <= 0)
@@ -119,6 +129,18 @@ export async function orgIds(db: SqlDb, userId: number) {
 export async function requestFilter(db: SqlDb, user: s.User) {
   const p = await principal(db);
   if (user.role === "admin") return sql`true`;
+  const [member] = await db
+    .select({ id: s.artisanTeam.id })
+    .from(s.artisanTeam)
+    .where(and(eq(s.artisanTeam.userId, user.id), eq(s.artisanTeam.status, "active")))
+    .limit(1);
+  if (member) {
+    const assignments = await db
+      .select({ requestId: s.artisanAssignments.requestId })
+      .from(s.artisanAssignments)
+      .where(and(eq(s.artisanAssignments.teamMemberId, member.id), eq(s.artisanAssignments.status, "assigned")));
+    return assignments.length ? inArray(s.requests.id, assignments.map(row => row.requestId)) : sql`false`;
+  }
   const ids = await orgIds(db, user.id);
   return or(
     and(isNull(s.requests.organizationId), eq(s.requests.userId, user.id)),
@@ -131,6 +153,26 @@ export async function authorizeRequest(
   user: Identity,
   token?: string
 ) {
+  if (user && user.id > 0 && user.role !== "admin") {
+    const [member] = await db
+      .select({ id: s.artisanTeam.id })
+      .from(s.artisanTeam)
+      .where(and(eq(s.artisanTeam.userId, user.id), eq(s.artisanTeam.status, "active")))
+      .limit(1);
+    if (member) {
+      const [assignment] = await db
+        .select({ id: s.artisanAssignments.id })
+        .from(s.artisanAssignments)
+        .where(and(
+          eq(s.artisanAssignments.teamMemberId, member.id),
+          eq(s.artisanAssignments.requestId, request.id),
+          eq(s.artisanAssignments.status, "assigned")
+        ))
+        .limit(1);
+      if (!assignment) fail("Ce dossier ne vous est pas affecté.", "FORBIDDEN");
+      return;
+    }
+  }
   // Organization permissions are live membership, never a historic author or guest capability.
   if (request.organizationId) {
     await membership(db, request.organizationId, user);

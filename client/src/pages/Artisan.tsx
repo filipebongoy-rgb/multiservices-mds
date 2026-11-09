@@ -40,6 +40,7 @@ import { ArtisanSettings } from "@/components/mds/private-artisan-settings";
 import { ArtisanCalendar } from "@/components/mds/private-calendar";
 import { AutomationSettings } from "@/components/mds/private-automation";
 import { ArtisanAssistant } from "@/components/mds/private-assistant";
+import { ArtisanTeam } from "@/components/mds/private-team";
 import { ArtisanLocationsMap } from "@/components/mds/ArtisanLocationsMap";
 import {
   activeRequestStatuses,
@@ -57,11 +58,13 @@ const navigation = [
   { id: "interventions", name: "Interventions", icon: Wrench },
   { id: "settlements", name: "Mes règlements", icon: WalletCards },
   { id: "activity", name: "Activité", icon: Activity },
+  { id: "team", name: "Équipe", icon: Users },
 ] as const;
 type Tab = (typeof navigation)[number]["id"];
 
 export default function Artisan() {
   const auth = useAuth();
+  const teamAccess = trpc.mds.team.me.useQuery(undefined, { enabled: !!auth.user, retry: false });
   if (auth.loading)
     return (
       <main className="page-shell">
@@ -107,9 +110,9 @@ export default function Artisan() {
         </section>
       </main>
     );
-  if (auth.user.role !== "admin")
+  if (auth.user.role !== "admin" && !teamAccess.data)
     return <ArtisanAccessDenied name={auth.user.name} />;
-  return <ArtisanWorkspace />;
+  return <ArtisanWorkspace isCollaborator={auth.user.role !== "admin"} />;
 }
 function ArtisanAccessDenied({ name }: { name: string | null }) {
   return (
@@ -144,8 +147,8 @@ function ArtisanAccessDenied({ name }: { name: string | null }) {
     </main>
   );
 }
-function ArtisanWorkspace() {
-  const [tab, setTab] = useState<Tab>("assistant");
+function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean }) {
+  const [tab, setTab] = useState<Tab>(isCollaborator ? "requests" : "assistant");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [urgentNotice, setUrgentNotice] = useState<RequestRecord | null>(null);
@@ -158,6 +161,7 @@ function ArtisanWorkspace() {
   const waitlistQuery = trpc.mds.requests.waitlist.useQuery(undefined, {
     retry: false,
     refetchInterval: 30_000,
+    enabled: !isCollaborator,
   });
   const catalogQuery = trpc.mds.catalog.list.useQuery(
     { includeInactive: true },
@@ -213,6 +217,7 @@ function ArtisanWorkspace() {
     interventions: "Interventions",
     settlements: "Mes règlements",
     activity: "Activité",
+    team: "Équipe",
   };
   const openRequest = (id: number) => {
     setSelectedId(id);
@@ -265,7 +270,7 @@ function ArtisanWorkspace() {
         </div>
       </header>
       <nav className="artisan-tabs" aria-label="Espace artisan">
-        {navigation.map(item => (
+        {navigation.filter(item => !isCollaborator || ["requests", "planning", "interventions"].includes(item.id)).map(item => (
           <button
             key={item.id}
             type="button"
@@ -507,9 +512,10 @@ function ArtisanWorkspace() {
             }}
           />
         )}
+        {tab === "team" && !isCollaborator && <ArtisanTeam />}
       </div>
       <nav className="artisan-mobile-bar" aria-label="Navigation artisan">
-        {navigation.map(item => (
+        {navigation.filter(item => !isCollaborator || ["requests", "planning", "interventions"].includes(item.id)).map(item => (
           <button
             key={item.id}
             type="button"

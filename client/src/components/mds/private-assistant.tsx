@@ -100,28 +100,32 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
   const [voiceReply, setVoiceReply] = useState("Je vous montre la prochaine action. Dites : « ouvre les demandes », « ouvre le planning » ou « prépare une relance ».");
   const [listening, setListening] = useState(false);
   const [showAllTasks, setShowAllTasks] = useState(false);
-  const autonomyStarted = useRef(false);
+  const autonomySeen = useRef<Set<string>>(new Set());
+  const autonomyRunning = useRef(false);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!query.data || autonomyStarted.current) return;
-    autonomyStarted.current = true;
+    if (!query.data || autonomyRunning.current) return;
     const autonomousTasks = query.data.tasks
-      .filter(task => task.requestId && (task.autoQuoteable || task.autoConfirmable || task.autoValidateable))
+      .filter(task => task.requestId && !autonomySeen.current.has(task.id) && (task.autoQuoteable || task.autoConfirmable || task.autoValidateable))
       .slice(0, 5);
     if (!autonomousTasks.length) return;
+    autonomyRunning.current = true;
     void (async () => {
       let completed = 0;
       for (const task of autonomousTasks) {
         try {
           if (task.autoQuoteable && task.requestId) {
             await prepareQuoteMutation.mutateAsync({ requestId: task.requestId });
+            autonomySeen.current.add(task.id);
             completed += 1;
           } else if (task.autoConfirmable && task.requestId) {
             await autoConfirmMutation.mutateAsync({ requestId: task.requestId });
+            autonomySeen.current.add(task.id);
             completed += 1;
           } else if (task.autoValidateable && task.requestId) {
             await autoValidateMutation.mutateAsync({ requestId: task.requestId });
+            autonomySeen.current.add(task.id);
             completed += 1;
           }
         } catch {
@@ -132,6 +136,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
         setNotice(`${completed} action${completed > 1 ? "s" : ""} préparée${completed > 1 ? "s" : ""} automatiquement.`);
         await utils.mds.assistant.overview.invalidate();
       }
+      autonomyRunning.current = false;
     })();
   }, [query.data, prepareQuoteMutation, autoConfirmMutation, autoValidateMutation, utils]);
 
@@ -256,7 +261,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
         <div>
           <span className="eyebrow">Votre aide au quotidien</span>
           <h2 id="assistant-title">Une action à la fois</h2>
-          <p className="assistant-hero-help">Je prépare les devis, confirme les rendez-vous prêts et clôture les dossiers conformes. Vous gardez la main sur les messages envoyés.</p>
+          <p className="assistant-hero-help">Je surveille les nouvelles tâches, prépare les devis, confirme les rendez-vous prêts et clôture les dossiers conformes. Vous gardez la main sur les messages envoyés.</p>
           <span className="sr-only">La mission la plus importante est affichée juste en dessous.</span>
         </div>
       </header>

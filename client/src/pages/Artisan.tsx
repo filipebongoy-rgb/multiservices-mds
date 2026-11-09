@@ -284,14 +284,11 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
       </header>
       <nav className="artisan-tabs" aria-label="Espace artisan">
         {navigation.filter(item => !isCollaborator || ["requests", "planning", "interventions"].includes(item.id)).map(item => (
-          <button
+          <Link
             key={item.id}
-            type="button"
+            href={`/artisan/${item.id}`}
             className={`artisan-tab ${tab === item.id ? "active" : ""}`}
-            onClick={() => {
-              setLocation(`/artisan/${item.id}`);
-              setSelectedId(null);
-            }}
+            onClick={() => setSelectedId(null)}
             aria-current={tab === item.id ? "page" : undefined}
           >
             <item.icon size={16} aria-hidden="true" />
@@ -299,7 +296,7 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
             {item.id === "requests" && pending.length > 0 && (
               <span className="artisan-tab-badge">{pending.length}</span>
             )}
-          </button>
+          </Link>
         ))}
       </nav>
       {tab === "requests" && nextRequest && (
@@ -529,14 +526,11 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
       </div>
       <nav className="artisan-mobile-bar" aria-label="Navigation artisan">
         {navigation.filter(item => (isCollaborator ? ["requests", "planning", "interventions"] : ["assistant", "requests", "planning", "interventions"]).includes(item.id)).map(item => (
-          <button
+          <Link
             key={item.id}
-            type="button"
+            href={`/artisan/${item.id}`}
             className={`artisan-mobile-btn ${tab === item.id ? "active" : ""}`}
-            onClick={() => {
-              setLocation(`/artisan/${item.id}`);
-              setSelectedId(null);
-            }}
+            onClick={() => setSelectedId(null)}
             aria-current={tab === item.id ? "page" : undefined}
           >
             <item.icon size={20} aria-hidden="true" />
@@ -544,7 +538,7 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
             {item.id === "requests" && pending.length > 0 && (
               <span className="artisan-mobile-badge">{pending.length}</span>
             )}
-          </button>
+          </Link>
         ))}
         {!isCollaborator && (
           <button type="button" className={`artisan-mobile-btn ${showMore ? "active" : ""}`} onClick={() => setShowMore(value => !value)} aria-expanded={showMore}>

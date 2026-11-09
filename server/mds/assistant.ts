@@ -1,4 +1,4 @@
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { invokeLLM } from "../_core/llm";
 import { router } from "../_core/trpc";
@@ -38,6 +38,7 @@ type AssistantTask = {
   dueAt: Date | null;
   actionLabel: string;
   autoConfirmable?: boolean;
+  assignedTo?: string | null;
 };
 
 function parisDay(value: Date) {
@@ -159,8 +160,11 @@ export const assistantRouter = router({
             proposedStart: s.requests.proposedStart,
             quoteStatus: s.requests.quoteStatus,
             createdAt: s.requests.createdAt,
+            assignedTo: s.artisanTeam.displayName,
           })
           .from(s.requests)
+          .leftJoin(s.artisanAssignments, and(eq(s.artisanAssignments.requestId, s.requests.id), eq(s.artisanAssignments.status, "assigned")))
+          .leftJoin(s.artisanTeam, eq(s.artisanTeam.id, s.artisanAssignments.teamMemberId))
           .orderBy(desc(s.requests.id))
           .limit(100),
         db
@@ -271,7 +275,7 @@ export const assistantRouter = router({
           kind: "request",
           priority: "urgent",
           title: "Répondre à une nouvelle demande",
-          detail: `${request.serviceName || request.problemType} · ${request.city}`,
+          detail: `${request.serviceName || request.problemType} · ${request.city}${request.assignedTo ? ` · Affectée à ${request.assignedTo}` : " · Affectation à confirmer"}`,
           requestId: request.id,
           reference: request.reference,
           clientName: request.name,
@@ -289,7 +293,7 @@ export const assistantRouter = router({
           kind: "request",
           priority: autoConfirmable ? "today" : "follow_up",
           title: autoConfirmable ? "Confirmer le rendez-vous prêt" : "Suivre une réponse en attente",
-          detail: `${request.serviceName || request.problemType} · ${request.name}`,
+          detail: `${request.serviceName || request.problemType} · ${request.name}${request.assignedTo ? ` · Affectée à ${request.assignedTo}` : " · Affectation à confirmer"}`,
           requestId: request.id,
           reference: request.reference,
           clientName: request.name,
@@ -303,7 +307,7 @@ export const assistantRouter = router({
           kind: "request",
           priority: "today",
           title: "Poursuivre l’intervention sur place",
-          detail: `${request.serviceName || request.problemType} · ${request.name}`,
+          detail: `${request.serviceName || request.problemType} · ${request.name}${request.assignedTo ? ` · Affectée à ${request.assignedTo}` : " · Affectation à confirmer"}`,
           requestId: request.id,
           reference: request.reference,
           clientName: request.name,

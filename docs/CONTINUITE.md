@@ -59,3 +59,9 @@ Les demandes de test peuvent être retirées par l’administrateur avec le mot 
 L’affectation d’une intervention crée déjà une notification artisan persistée côté serveur. L’espace artisan la lit désormais toutes les cinq secondes. Lorsqu’une nouvelle notification porte le titre « Nouvelle intervention affectée », le navigateur mobile affiche une alerte système après autorisation de l’artisan. Un bouton dédié permet d’activer les alertes et explique le cas de refus dans les réglages du téléphone. Les identifiants évitent les doublons pendant la session ; la cloche MDS reste la source persistante.
 
 Ce mécanisme fonctionne lorsque l’espace MDS est ouvert ou actif dans le navigateur. La réception navigateur lorsque l’application est totalement fermée nécessite Web Push/VAPID et sera activée séparément, avec une configuration sécurisée.
+
+## Clarification de l’assistante après test vidéo — 9 novembre 2026
+
+La vidéo a montré que l’artisan ne comprenait ni le titre « À faire maintenant », ni le rôle de l’assistante, et que le clic sur la navigation « Demandes » semblait seulement faire défiler l’écran. L’interface affiche maintenant « Missions et actions », explique en une phrase que l’assistante prépare le planning et les dossiers, et présente « Ouvrir la mission » comme action visible sur chaque tâche. Les tâches indiquent également l’affectation réelle ou « Affectation à confirmer ».
+
+Les navigations haute et basse de l’atelier sont désormais de vrais liens vers `/artisan/requests`, `/artisan/planning` et les autres routes dédiées, ce qui évite une dépendance à un simple changement d’état local.

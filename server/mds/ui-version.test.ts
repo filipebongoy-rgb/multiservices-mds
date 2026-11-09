@@ -685,9 +685,10 @@ describe("assistante opérationnelle artisan", () => {
     );
     expect(artisan).toContain('id: "assistant"');
     expect(artisan).toContain("<ArtisanAssistant");
-    expect(assistant).toContain("À faire maintenant");
+    expect(assistant).toContain("Missions et actions");
+    expect(assistant).toContain("Ouvrir la mission");
     expect(assistant).toContain("Valider et envoyer");
-    expect(assistant).toContain("Aucun message ne partira sans validation");
+    expect(assistant).toContain("L’assistante prépare, vous validez");
     expect(assistant).toContain("window.confirm");
     expect(server).toContain("assistantRouter");
     expect(server).toContain("processOutbox");

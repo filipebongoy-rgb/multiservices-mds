@@ -4140,3 +4140,5 @@ input[type="checkbox"] {
   .assistant-metric strong { font-size: 23px; }
   .assistant-metric span { font-size: 12px; }
 }
+.assistant-hero-help { grid-column: 2 / -1; margin: -2px 0 0; font-size: 13px; color: #5b6870; }
+@media (max-width: 760px) { .assistant-hero-help { grid-column: 1 / -1; } }

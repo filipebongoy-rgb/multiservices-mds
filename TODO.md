@@ -72,3 +72,11 @@
 - [x] L’alerte reprend le message du dossier, utilise le logo MDS et évite les doublons pendant la session grâce à l’identifiant de notification.
 - [x] La notification interne reste persistée et visible même si le téléphone refuse les notifications navigateur.
 - [ ] Les notifications lorsque le navigateur est complètement fermé nécessiteront une extension Web Push avec clés VAPID ; cette étape n’est pas activée sans configuration fournisseur.
+
+## Clarification de l’assistante après test vidéo — 9 novembre 2026
+
+- [x] Le titre ambigu « À faire maintenant » est remplacé par « Missions et actions ».
+- [x] Une explication courte précise le fonctionnement : une mission affectée apparaît dans la liste, puis le bouton « Ouvrir la mission » mène au dossier et au planning.
+- [x] Chaque tâche liée à un dossier affiche maintenant une action visible ; le clic sur toute la ligne reste également actif.
+- [x] L’état de l’affectation est écrit dans le détail : « Affectée à [artisan] » ou « Affectation à confirmer ».
+- [x] Les onglets artisan utilisent de vrais liens de route, notamment « Demandes », afin d’ouvrir une page dédiée au lieu de simplement faire défiler l’écran courant.

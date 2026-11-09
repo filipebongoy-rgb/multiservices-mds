@@ -30,6 +30,8 @@ type Task = {
   clientName: string | null;
   dueAt: string | Date | null;
   actionLabel: string;
+  autoConfirmable?: boolean;
+  assignedTo?: string | null;
 };
 type ActionType =
   | "follow_up"
@@ -116,7 +118,8 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
         <div className="assistant-hero-icon" aria-hidden="true"><Bot size={25} /></div>
         <div>
           <span className="eyebrow">Contrôle rapide</span>
-          <h2 id="assistant-title">À faire maintenant</h2>
+          <h2 id="assistant-title">Missions et actions</h2>
+          <p className="assistant-hero-help">Une mission affectée apparaît ici. Cliquez sur « Ouvrir la mission » pour voir le dossier et le planning.</p>
         </div>
         <ActionButton aria-label="Actualiser l’assistante" onClick={() => void query.refetch()} disabled={query.isFetching}>
           <RefreshCw size={17} aria-hidden="true" />
@@ -138,8 +141,8 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
           <div className="panel stack assistant-quick-panel">
           <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
             <div>
-              <span className="eyebrow">À faire maintenant</span>
-              <h3 style={{ margin: "4px 0 0" }}>Une seule liste, dans le bon ordre</h3>
+              <span className="eyebrow">Prochaine action</span>
+              <h3 style={{ margin: "4px 0 0" }}>Voici ce que vous devez faire</h3>
             </div>
             <span className="badge">{data.tasks.length}</span>
           </div>
@@ -156,6 +159,11 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
                     {task.dueAt && <small>{task.priority === "today" ? `Aujourd’hui · ${dateTime(task.dueAt)}` : dateTime(task.dueAt)}</small>}
                   </div>
                   <div className="assistant-task-actions" onClick={event => event.stopPropagation()}>
+                    {task.requestId && !task.autoConfirmable && (
+                      <ActionButton className="primary" onClick={() => onOpenRequest(task.requestId!)}>
+                        Ouvrir la mission
+                      </ActionButton>
+                    )}
                     {task.requestId && task.autoConfirmable && (
                       <ActionButton className="primary" disabled={autoConfirmMutation.isPending} onClick={async () => { if (!window.confirm("Confirmer ce rendez-vous et l’ajouter au planning ?")) return; try { const result = await autoConfirmMutation.mutateAsync({ requestId: task.requestId! }); setNotice(result.note); await utils.mds.assistant.overview.invalidate(); } catch { /* ErrorNotice displays the mutation error. */ } }}><CalendarClock size={15} aria-hidden="true" /> {autoConfirmMutation.isPending ? "Confirmation…" : "Confirmer le rendez-vous"}</ActionButton>
                     )}

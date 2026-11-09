@@ -85,7 +85,6 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
   const autoValidateMutation = trpc.mds.assistant.autoValidate.useMutation();
   const cancelMutation = trpc.mds.assistant.cancel.useMutation();
   const utils = trpc.useUtils();
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [draft, setDraft] = useState<{
     id: number;
     subject: string;
@@ -108,7 +107,6 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
       setNotice("Ouvrez le dossier pour traiter cette action.");
       return;
     }
-    setSelectedTask(task);
     setNotice(null);
     try {
       const result = await draftMutation.mutateAsync({
@@ -229,17 +227,10 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
         </div>
       </header>
 
-      <div className="assistant-metrics" aria-label="Résumé de l’activité">
-        <div className="assistant-metric urgent"><strong>{data.counts.urgent}</strong><span>À traiter en priorité</span></div>
-        <div className="assistant-metric"><strong>{data.counts.today}</strong><span>Aujourd’hui</span></div>
-        <div className="assistant-metric"><strong>{data.counts.followUp}</strong><span>À relancer</span></div>
-        <div className="assistant-metric"><strong>{data.counts.unpaidInvoices}</strong><span>Factures à vérifier</span></div>
-      </div>
-
       <ErrorNotice error={draftMutation.error || approveMutation.error || cancelMutation.error || autoConfirmMutation.error || prepareQuoteMutation.error || autoValidateMutation.error} />
       {notice && <p className="notice" role="status">{notice}</p>}
 
-      <section className="panel assistant-voice-panel" aria-labelledby="assistant-voice-title">
+      <section className="panel assistant-voice-panel" aria-labelledby="assistant-voice-title" aria-label="Actions rapides">
         <div className="assistant-voice-copy">
           <span className="eyebrow">Commande simple</span>
           <h3 id="assistant-voice-title">Parler à l’assistante</h3>
@@ -256,12 +247,6 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
           </div>
         </div>
         <p className="assistant-voice-reply" role="status" aria-live="polite">{voiceReply}</p>
-        <div className="assistant-quick-links" aria-label="Actions rapides">
-          <ActionButton onClick={() => setLocation("/artisan/requests")}>Demandes</ActionButton>
-          <ActionButton onClick={() => setLocation("/artisan/planning")}>Planning</ActionButton>
-          <ActionButton onClick={() => setLocation("/artisan/interventions")}>Interventions</ActionButton>
-          <ActionButton onClick={() => void query.refetch()}>Actualiser</ActionButton>
-        </div>
       </section>
 
       <div className="assistant-layout">

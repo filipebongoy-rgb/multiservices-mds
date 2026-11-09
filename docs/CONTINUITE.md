@@ -65,3 +65,9 @@ Ce mécanisme fonctionne lorsque l’espace MDS est ouvert ou actif dans le navi
 La vidéo a montré que l’artisan ne comprenait ni le titre « À faire maintenant », ni le rôle de l’assistante, et que le clic sur la navigation « Demandes » semblait seulement faire défiler l’écran. L’interface affiche maintenant « Missions et actions », explique en une phrase que l’assistante prépare le planning et les dossiers, et présente « Ouvrir la mission » comme action visible sur chaque tâche. Les tâches indiquent également l’affectation réelle ou « Affectation à confirmer ».
 
 Les navigations haute et basse de l’atelier sont désormais de vrais liens vers `/artisan/requests`, `/artisan/planning` et les autres routes dédiées, ce qui évite une dépendance à un simple changement d’état local.
+
+## Assistante parlée et langage très simple — 9 novembre 2026
+
+L’artisan peut maintenant appuyer sur « Parler à l’assistante » et dire une phrase courte en français, par exemple « ouvre les demandes », « ouvre le planning », « actualise » ou « prépare une relance ». La reconnaissance vocale du navigateur fournit le texte ; une zone d’écriture reste disponible si la voix n’est pas prise en charge. L’assistante affiche sa réponse et la lit avec la voix du téléphone lorsque cela est possible.
+
+Les commandes de navigation et de préparation sont exécutées directement. Les actions sensibles restent protégées : une relance est seulement préparée et doit être relue puis validée ; un rendez-vous prêt est identifié mais sa confirmation finale reste un bouton explicite. Aucun appel ou message externe ne part sur une simple phrase mal comprise.

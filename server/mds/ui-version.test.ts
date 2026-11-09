@@ -689,6 +689,10 @@ describe("assistante opérationnelle artisan", () => {
     expect(assistant).toContain("Ouvrir la mission");
     expect(assistant).toContain("Valider et envoyer");
     expect(assistant).toContain("L’assistante prépare, vous validez");
+    expect(assistant).toContain("Parler à l’assistante");
+    expect(assistant).toContain("ouvre les demandes");
+    expect(assistant).toContain("prépare une relance");
+    expect(assistant).toContain("SpeechRecognition");
     expect(assistant).toContain("window.confirm");
     expect(server).toContain("assistantRouter");
     expect(server).toContain("processOutbox");

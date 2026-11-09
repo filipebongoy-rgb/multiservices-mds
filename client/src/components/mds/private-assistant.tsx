@@ -9,6 +9,8 @@ import {
   Copy,
   FileText,
   Mail,
+  Mic,
+  MicOff,
   MessageSquare,
   Phone,
   RefreshCw,
@@ -18,6 +20,19 @@ import {
 import { trpc } from "@/lib/trpc";
 import { dateTime } from "@shared/mds";
 import { ActionButton, ErrorNotice, QueryState } from "./private-common";
+import { useLocation } from "wouter";
+
+type BrowserSpeechRecognition = {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+type BrowserSpeechRecognitionConstructor = new () => BrowserSpeechRecognition;
 
 type Task = {
   id: string;
@@ -79,6 +94,10 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
   } | null>(null);
   const [copyDone, setCopyDone] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [command, setCommand] = useState("");
+  const [voiceReply, setVoiceReply] = useState("Dites : « ouvre les demandes » ou « prépare une relance ».");
+  const [listening, setListening] = useState(false);
+  const [, setLocation] = useLocation();
 
   const prepareDraft = async (task: Task, channel: Channel) => {
     if (!task.requestId) {
@@ -105,6 +124,89 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
     await navigator.clipboard?.writeText(`${draft.subject}\n\n${draft.body}`);
     setCopyDone(true);
     window.setTimeout(() => setCopyDone(false), 1800);
+  };
+
+  const speak = (text: string) => {
+    setVoiceReply(text);
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "fr-FR";
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const executeCommand = async (rawCommand: string) => {
+    const text = rawCommand.trim().toLocaleLowerCase("fr-FR");
+    if (!text) {
+      speak("Je n’ai pas entendu de demande. Dites par exemple : ouvre le planning.");
+      return;
+    }
+    if (text.includes("demande")) {
+      setLocation("/artisan/requests");
+      speak("J’ouvre les demandes.");
+      return;
+    }
+    if (text.includes("planning") || text.includes("rendez-vous") || text.includes("rendez vous")) {
+      setLocation("/artisan/planning");
+      speak("J’ouvre le planning.");
+      return;
+    }
+    if (text.includes("intervention") || text.includes("mission")) {
+      setLocation("/artisan/interventions");
+      speak("J’ouvre les interventions.");
+      return;
+    }
+    if (text.includes("actualise") || text.includes("actualise") || text.includes("rafraîchi") || text.includes("rafraichi")) {
+      await query.refetch();
+      speak("C’est actualisé.");
+      return;
+    }
+    if (text.includes("relance") || text.includes("message")) {
+      const task = data.tasks.find(item => item.requestId && (item.priority === "follow_up" || item.kind === "payment" || item.kind === "message"));
+      if (task) {
+        await prepareDraft(task, "email");
+        speak(`J’ai préparé une relance pour ${task.clientName || "le client"}. Vérifiez le message avant l’envoi.`);
+      } else {
+        speak("Je ne trouve pas de client à relancer.");
+      }
+      return;
+    }
+    if (text.includes("confirme") || text.includes("confirmer")) {
+      const task = data.tasks.find(item => item.requestId && item.autoConfirmable);
+      if (task) {
+        speak("J’ai trouvé le rendez-vous. Utilisez le bouton Confirmer le rendez-vous pour valider.");
+      } else {
+        speak("Je ne trouve pas de rendez-vous prêt à confirmer.");
+      }
+      return;
+    }
+    speak("Je peux ouvrir les demandes, le planning ou les interventions, actualiser, ou préparer une relance.");
+  };
+
+  const listen = () => {
+    const SpeechRecognition = (window as Window & { SpeechRecognition?: BrowserSpeechRecognitionConstructor; webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor }).SpeechRecognition
+      ?? (window as Window & { webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor }).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      speak("La commande vocale n’est pas disponible ici. Écrivez votre demande dans la case.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "fr-FR";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = event => {
+      const transcript = event.results[0]?.[0]?.transcript || "";
+      setCommand(transcript);
+      void executeCommand(transcript);
+    };
+    recognition.onerror = () => {
+      setListening(false);
+      speak("Je n’ai pas compris. Essayez avec des mots simples.");
+    };
+    recognition.onend = () => setListening(false);
+    setListening(true);
+    recognition.start();
   };
 
   if (query.isLoading) return <QueryState loading />;
@@ -136,6 +238,25 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
 
       <ErrorNotice error={draftMutation.error || approveMutation.error || cancelMutation.error || autoConfirmMutation.error} />
       {notice && <p className="notice" role="status">{notice}</p>}
+
+      <section className="panel assistant-voice-panel" aria-labelledby="assistant-voice-title">
+        <div className="assistant-voice-copy">
+          <span className="eyebrow">Commande simple</span>
+          <h3 id="assistant-voice-title">Parler à l’assistante</h3>
+          <p>Dites une phrase courte. Exemple : « ouvre les demandes ».</p>
+        </div>
+        <div className="assistant-voice-actions">
+          <ActionButton className="primary" onClick={listen} disabled={listening}>
+            {listening ? <MicOff size={18} aria-hidden="true" /> : <Mic size={18} aria-hidden="true" />}
+            {listening ? "J’écoute…" : "Parler à l’assistante"}
+          </ActionButton>
+          <div className="assistant-command-row">
+            <input aria-label="Demande à l’assistante" value={command} onChange={event => setCommand(event.target.value)} placeholder="Écrire une demande" />
+            <ActionButton onClick={() => void executeCommand(command)}>Faire</ActionButton>
+          </div>
+        </div>
+        <p className="assistant-voice-reply" role="status" aria-live="polite">{voiceReply}</p>
+      </section>
 
       <div className="assistant-layout">
           <div className="panel stack assistant-quick-panel">

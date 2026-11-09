@@ -80,3 +80,12 @@
 - [x] Chaque tâche liée à un dossier affiche maintenant une action visible ; le clic sur toute la ligne reste également actif.
 - [x] L’état de l’affectation est écrit dans le détail : « Affectée à [artisan] » ou « Affectation à confirmer ».
 - [x] Les onglets artisan utilisent de vrais liens de route, notamment « Demandes », afin d’ouvrir une page dédiée au lieu de simplement faire défiler l’écran courant.
+
+## Assistante parlée et langage très simple
+
+- [x] Le poste assistant utilise des phrases courtes et concrètes, compréhensibles par une personne peu habituée aux applications : « Missions et actions », « Ouvrir la mission », « Parler à l’assistante ».
+- [x] Un bouton vocal utilise la reconnaissance vocale du navigateur en français ; une zone de texte reste disponible sur les téléphones qui ne prennent pas la voix en charge.
+- [x] Les commandes simples prises en charge sont : ouvrir les demandes, ouvrir le planning, ouvrir les interventions, actualiser, préparer une relance et rechercher un rendez-vous prêt à confirmer.
+- [x] L’assistante répond oralement lorsque la synthèse vocale du téléphone est disponible et affiche toujours sa réponse à l’écran.
+- [x] La préparation d’une relance ne l’envoie pas automatiquement ; la confirmation humaine reste obligatoire avant tout message ou appel.
+- [x] La commande de confirmation d’un rendez-vous demande encore l’action visible « Confirmer le rendez-vous » afin d’éviter une validation accidentelle par une phrase mal comprise.

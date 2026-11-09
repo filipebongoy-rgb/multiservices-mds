@@ -51,6 +51,20 @@ export default function Network() {
     }
   }
 
+  function openSocial(channel: "whatsapp" | "sms" | "email" | "facebook") {
+    const url = `${window.location.origin}/reseau`;
+    const text = "MULTISERVICES MDS : un artisan local pour les dépannages et petits travaux à Rennes et alentours.";
+    const encodedText = encodeURIComponent(`${text} ${url}`);
+    const href = channel === "whatsapp"
+      ? `https://wa.me/?text=${encodedText}`
+      : channel === "sms"
+        ? `sms:?body=${encodedText}`
+        : channel === "email"
+          ? `mailto:?subject=${encodeURIComponent("Un artisan local à Rennes")}&body=${encodedText}`
+          : `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+    window.open(href, "_blank", "noopener,noreferrer");
+  }
+
   return (
     <main id="main-content" className="page-shell network-page">
       <header className="public-page-heading">
@@ -65,6 +79,16 @@ export default function Network() {
         <div className="network-share-action">
           <button type="button" className="btn primary" onClick={() => void shareMds()}><Share2 size={17} aria-hidden="true" /> Partager MDS</button>
           {notice && <span role="status" className="home-share-notice">{notice}</span>}
+        </div>
+      </section>
+
+      <section className="network-social-share" aria-label="Partager sur les réseaux sociaux">
+        <strong>Partager aussi par</strong>
+        <div>
+          <button type="button" onClick={() => openSocial("whatsapp")}>WhatsApp</button>
+          <button type="button" onClick={() => openSocial("sms")}>SMS</button>
+          <button type="button" onClick={() => openSocial("email")}>E-mail</button>
+          <button type="button" onClick={() => openSocial("facebook")}>Facebook</button>
         </div>
       </section>
 

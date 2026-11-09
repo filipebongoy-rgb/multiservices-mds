@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
-
+import { isPageRoute } from "../publicHtml";
 const source = readFileSync(
   new URL(
     "../../client/src/components/mds/private-artisan-requests.tsx",
@@ -127,6 +127,25 @@ describe("espace artisan mobile : l'ouverture d'un dossier masque la liste pour 
     expect(manifest).toContain('"/artisan/requests/:id"');
     expect(manifest).toContain('"/artisan/interventions/:id"');
     expect(layoutSrc).toContain('location.startsWith("/artisan")');
+  });
+  it("le serveur reconnaît toutes les sous-routes artisan et les fiches dynamiques", () => {
+    for (const r of [
+      "/artisan",
+      "/artisan/assistant",
+      "/artisan/demandes",
+      "/artisan/requests",
+      "/artisan/requests/42",
+      "/artisan/planning",
+      "/artisan/interventions",
+      "/artisan/interventions/7",
+      "/artisan/settlements",
+      "/artisan/activity",
+      "/artisan/team",
+    ]) {
+      expect(isPageRoute(r)).toBe(true);
+    }
+    expect(isPageRoute("/artisan/invalide")).toBe(false);
+    expect(isPageRoute("/artisan/requests/abc")).toBe(false);
   });
   it("garde l’assistante compacte et propose un retrait réversible des dossiers terminés", () => {
     const assistant = readFileSync(new URL("../../client/src/components/mds/private-assistant.tsx", import.meta.url), "utf8");

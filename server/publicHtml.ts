@@ -12,6 +12,14 @@ const titles: Record<string, string> = {
   "/connexion": "Connexion",
   "/confidentialite": "Confidentialité",
   "/mentions-legales": "Mentions légales",
+  "/artisan/assistant": "Assistant — Espace artisan",
+  "/artisan/demandes": "Demandes — Espace artisan",
+  "/artisan/requests": "Demandes — Espace artisan",
+  "/artisan/planning": "Planning — Espace artisan",
+  "/artisan/interventions": "Interventions — Espace artisan",
+  "/artisan/settlements": "Mes règlements — Espace artisan",
+  "/artisan/activity": "Activité — Espace artisan",
+  "/artisan/team": "Équipe — Espace artisan",
 };
 const descriptions: Record<string, string> = {
   "/": "Décrivez votre besoin de réparation ou de travaux à MDS. Votre artisan vous propose des conditions ; vous confirmez avant toute intervention.",
@@ -20,6 +28,22 @@ const descriptions: Record<string, string> = {
   "/confidentialite":
     "Découvrez quelles informations sont conservées par MULTISERVICES MDS et comment sont protégés vos dossiers et vos pièces jointes.",
 };
+const ARTISAN_ROUTE =
+  /^\/artisan(?:\/(assistant|requests|demandes|planning|interventions|settlements|activity|team)(?:\/\d+)?)?$/;
+function artisanPageTitle(pathname: string): string | null {
+  const m = pathname.match(
+    /^\/artisan\/(requests|demandes|interventions)\/(\d+)$/
+  );
+  if (!m) return null;
+  return (
+    (m[1] === "interventions"
+      ? "Fiche intervention"
+      : "Dossier de demande") +
+    " n° " +
+    m[2] +
+    " — Espace artisan"
+  );
+}
 function escape(value: string) {
   return value.replace(
     /[&<>"']/g,
@@ -35,7 +59,8 @@ export function publicPageHtml(
   publicDir: string
 ) {
   const title =
-    (titles[pathname] || "Page introuvable") + " — MULTISERVICES MDS";
+    (artisanPageTitle(pathname) || titles[pathname] || "Page introuvable") +
+    " — MULTISERVICES MDS";
   const description =
     descriptions[pathname] ||
     "MULTISERVICES MDS — demandes, suivi et espaces sécurisés pour vos interventions.";
@@ -70,5 +95,5 @@ export function publicPageHtml(
     .replace('<div id="root"></div>', '<div id="root">' + body + "</div>");
 }
 export function isPageRoute(pathname: string) {
-  return pathname in titles;
+  return pathname in titles || ARTISAN_ROUTE.test(pathname);
 }

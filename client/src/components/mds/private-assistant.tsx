@@ -97,7 +97,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
   const [copyDone, setCopyDone] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [command, setCommand] = useState("");
-  const [voiceReply, setVoiceReply] = useState("Dites : « ouvre les demandes » ou « prépare une relance ».");
+  const [voiceReply, setVoiceReply] = useState("Je vous montre la prochaine action. Dites : « ouvre les demandes », « ouvre le planning » ou « prépare une relance ».");
   const [listening, setListening] = useState(false);
   const [showAllTasks, setShowAllTasks] = useState(false);
   const [, setLocation] = useLocation();
@@ -221,9 +221,10 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
       <header className="assistant-hero assistant-hero-compact">
         <div className="assistant-hero-icon" aria-hidden="true"><Bot size={25} /></div>
         <div>
-          <span className="eyebrow">Contrôle rapide</span>
-          <h2 id="assistant-title">À faire maintenant</h2>
-          <span className="sr-only">Missions et actions. La mission la plus importante est affichée juste en dessous.</span>
+          <span className="eyebrow">Votre aide au quotidien</span>
+          <h2 id="assistant-title">Une action à la fois</h2>
+          <p className="assistant-hero-help">Je prépare les dossiers. Vous voyez clairement ce qui doit être fait maintenant.</p>
+          <span className="sr-only">La mission la plus importante est affichée juste en dessous.</span>
         </div>
       </header>
 
@@ -251,9 +252,10 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
 
       <div className="assistant-layout">
           <div className="panel stack assistant-quick-panel">
-          <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
-            <div>
-              <h3 style={{ margin: 0 }}>Prochaine action</h3>
+            <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
+              <div>
+              <h3 style={{ margin: 0 }}>À faire maintenant</h3>
+              <p className="assistant-panel-help">Commencez par le premier bouton. L’assistante vous dira ensuite quoi faire.</p>
             </div>
             <span className="badge">{data.tasks.length}</span>
           </div>
@@ -267,6 +269,9 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
                   <div className="assistant-task-copy">
                     <strong>{task.title}</strong>
                     <span>{task.detail}</span>
+                    {task.autoQuoteable && <small className="assistant-task-next">Le devis peut être rempli automatiquement avec le tarif du dossier.</small>}
+                    {task.autoConfirmable && <small className="assistant-task-next">Le créneau est prêt. Un clic suffit pour l’ajouter au planning.</small>}
+                    {task.autoValidateable && <small className="assistant-task-next">Photos, paiement et confirmation client sont enregistrés.</small>}
                     {task.dueAt && <small>{task.priority === "today" ? `Aujourd’hui · ${dateTime(task.dueAt)}` : dateTime(task.dueAt)}</small>}
                   </div>
                   <div className="assistant-task-actions" onClick={event => event.stopPropagation()}>

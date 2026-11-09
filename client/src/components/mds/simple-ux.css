@@ -4142,6 +4142,9 @@ input[type="checkbox"] {
 }
 .assistant-hero-help { grid-column: 2 / -1; margin: -2px 0 0; font-size: 13px; color: #5b6870; }
 @media (max-width: 760px) { .assistant-hero-help { grid-column: 1 / -1; } }
+.assistant-panel-help { margin: 5px 0 0; color: #5b6870; font-size: 13px; }
+.assistant-task-next { color: #8b421d !important; font-weight: 600; }
+.assistant-quick-panel .assistant-task:first-child { border-left: 3px solid var(--assistant-orange); padding-left: 9px; background: #fffaf3; }
 .assistant-voice-panel { display: grid; gap: 12px; border: 2px solid #e7a15c; background: #fffaf3; }
 .assistant-voice-copy h3 { margin: 4px 0; font-size: 20px; }
 .assistant-voice-copy p, .assistant-voice-reply { margin: 0; color: #4f5b63; }

@@ -247,7 +247,7 @@ export function Footer() {
   const [location] = useLocation();
   const { user } = useAuth();
   if (
-    location === "/artisan" ||
+    location.startsWith("/artisan") ||
     (user?.role === "admin" && location === "/profil")
   )
     return null;
@@ -280,7 +280,7 @@ export function MobileBottomNav() {
   const [location] = useLocation();
   const { user } = useAuth();
   if (
-    location === "/artisan" ||
+    location.startsWith("/artisan") ||
     (user?.role === "admin" && location === "/profil")
   )
     return null;

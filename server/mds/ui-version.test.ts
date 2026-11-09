@@ -112,10 +112,21 @@ describe("espace artisan mobile : l'ouverture d'un dossier masque la liste pour 
   });
   it("ouvre chaque espace artisan sur une route dédiée et regroupe les derniers accès dans Plus", () => {
     const app = readFileSync(new URL("../../client/src/App.tsx", import.meta.url), "utf8");
+    const manifest = readFileSync(new URL("../../public/manus-routes.json", import.meta.url), "utf8");
+    const layoutSrc = readFileSync(new URL("../../client/src/components/mds/Layout.tsx", import.meta.url), "utf8");
     expect(app).toContain('path="/artisan/:section"');
+    expect(app).toContain('path="/artisan/:section/:id"');
     expect(artisan).toContain('setLocation(`/artisan/${item.id}`)');
     expect(artisan).toContain('aria-label="Autres espaces artisan"');
     expect(css).toContain("grid-template-columns: repeat(5, minmax(0, 1fr));");
+    expect(artisan).toContain("artisan-fiche-page");
+    expect(artisan).toContain("artisan-fiche-bar");
+    expect(artisan).toContain("artisan-fiche-back");
+    expect(requests).toContain("artisan-fiche-actions");
+    expect(requests).toContain("backLabel");
+    expect(manifest).toContain('"/artisan/requests/:id"');
+    expect(manifest).toContain('"/artisan/interventions/:id"');
+    expect(layoutSrc).toContain('location.startsWith("/artisan")');
   });
   it("garde l’assistante compacte et propose un retrait réversible des dossiers terminés", () => {
     const assistant = readFileSync(new URL("../../client/src/components/mds/private-assistant.tsx", import.meta.url), "utf8");
@@ -685,8 +696,8 @@ describe("assistante opérationnelle artisan", () => {
     );
     expect(artisan).toContain('id: "assistant"');
     expect(artisan).toContain("<ArtisanAssistant");
-    expect(artisan).toContain("/artisan/requests?request=${id}");
-    expect(artisan).toContain('new URLSearchParams(location.split("?")[1] || "")');
+    expect(artisan).toContain("/artisan/requests/${id}");
+    expect(artisan).toContain("parseArtisanRoute");
     expect(artisan).toContain('rawSection === "demandes" ? "requests" : rawSection');
     expect(assistant).toContain("Missions et actions");
     expect(assistant).toContain("La mission la plus importante est affichée juste en dessous.");

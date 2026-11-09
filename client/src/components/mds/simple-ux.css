@@ -4161,3 +4161,43 @@ input[type="checkbox"] {
 .assistant-dashboard > .assistant-history-details { order: 4; }
 .assistant-dashboard > .assistant-layout .assistant-quick-panel { border: 2px solid #e7a15c; }
 .assistant-dashboard > .assistant-layout .assistant-quick-panel h3 { font-size: 22px; }
+
+
+/* Page fiche dédiée : chaque demande/intervention a sa propre URL */
+.artisan-fiche-page { max-width: 900px; margin: 0 auto; }
+.artisan-fiche-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 4px 0 12px;
+  border-bottom: 1px solid #e7e5e2;
+  margin-bottom: 8px;
+}
+.artisan-fiche-back {
+  font-weight: 600;
+  font-size: 14px;
+}
+/* Action à réaliser : zone d'action prioritaire de la fiche */
+.artisan-fiche-actions {
+  border: 2px solid #e7a15c;
+  border-radius: 12px;
+  background: #fffaf3;
+  padding: 16px;
+  gap: 12px;
+}
+.artisan-fiche-actions h4 {
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+@media (max-width: 600px) {
+  .artisan-fiche-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #fff;
+    padding-top: 8px;
+  }
+}

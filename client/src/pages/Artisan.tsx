@@ -7,6 +7,7 @@ import {
   Bell,
   CalendarDays,
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
   ClipboardList,
   Clock,
@@ -63,14 +64,22 @@ const navigation = [
 ] as const;
 type Tab = (typeof navigation)[number]["id"];
 
-function tabFromPath(path: string, isCollaborator: boolean): Tab {
-  const cleanPath = path.split("?")[0];
-  const rawSection = cleanPath.split("/")[2];
-  const section = (rawSection === "demandes" ? "requests" : rawSection) as Tab | undefined;
-  const allowed = isCollaborator ? ["requests", "planning", "interventions"] : navigation.map(item => item.id);
-  return section && allowed.includes(section) ? section : isCollaborator ? "requests" : "assistant";
+function parseArtisanRoute(pathname: string, isCollaborator: boolean): { tab: Tab; id: number | null } {
+  const segments = pathname.replace(/^\/+|\/+$/g, "").split("/");
+  const rawSection = segments[1] || "";
+  const section = (rawSection === "demandes" ? "requests" : rawSection) as Tab;
+  const allowed = isCollaborator
+    ? ["requests", "planning", "interventions"]
+    : navigation.map(item => item.id);
+  const tab = allowed.includes(section) ? section : isCollaborator ? "requests" : "assistant";
+  const rawId = segments[2];
+  const idNum = rawId ? Number(rawId) : NaN;
+  const id = Number.isInteger(idNum) && idNum > 0 ? idNum : null;
+  return { tab, id };
 }
-
+function tabFromPath(path: string, isCollaborator: boolean): Tab {
+  return parseArtisanRoute(path, isCollaborator).tab;
+}
 export default function Artisan() {
   const auth = useAuth();
   const teamAccess = trpc.mds.team.me.useQuery(undefined, { enabled: !!auth.user, retry: false });
@@ -158,8 +167,11 @@ function ArtisanAccessDenied({ name }: { name: string | null }) {
 }
 function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean }) {
   const [location, setLocation] = useLocation();
-  const [tab, setTab] = useState<Tab>(tabFromPath(location, isCollaborator));
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const { tab, id: routeId } = parseArtisanRoute(location, isCollaborator);
+  const isFiche = routeId !== null;
+  const backHref = tab === "interventions" ? "/artisan/interventions" : "/artisan/requests";
+  const backLabel = tab === "interventions" ? "Retour aux interventions" : "Retour aux demandes";
+  const sectionTitle = tab === "interventions" ? "Fiche intervention" : "Dossier de demande";
   const [showHistory, setShowHistory] = useState(false);
   const [urgentNotice, setUrgentNotice] = useState<RequestRecord | null>(null);
   const [urgentMapOnly, setUrgentMapOnly] = useState(false);
@@ -221,12 +233,6 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
   const todayAppointments = appointments.filter(
     a => a.status !== "cancelled" && dayKey(a.startAt) === dayKey(new Date())
   );
-  useEffect(() => {
-    setTab(tabFromPath(location, isCollaborator));
-    const request = new URLSearchParams(location.split("?")[1] || "").get("request");
-    const requestId = request ? Number(request) : null;
-    setSelectedId(requestId && Number.isInteger(requestId) ? requestId : null);
-  }, [location, isCollaborator]);
   const tabTitle: Record<Tab, string> = {
     assistant: "Assistant",
     requests: "Demandes",
@@ -237,7 +243,7 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
     team: "Équipe",
   };
   const openRequest = (id: number) => {
-    setLocation(`/artisan/requests?request=${id}`);
+    setLocation(`/artisan/requests/${id}`);
   };
   const refreshRequests = () => {
     void requestsQuery.refetch();
@@ -247,9 +253,11 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
   };
   return (
     <main
-      className="page-shell private-workspace"
+      className={`page-shell private-workspace ${isFiche ? "artisan-fiche-page" : ""}`}
       style={{ paddingTop: 24, paddingBottom: 64 }}
     >
+      {!isFiche && (
+        <>
       <header className="artisan-ws-head">
         <div>
           <span className="eyebrow">Espace artisan privé</span>
@@ -291,7 +299,6 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
             key={item.id}
             href={`/artisan/${item.id}`}
             className={`artisan-tab ${tab === item.id ? "active" : ""}`}
-            onClick={() => setSelectedId(null)}
             aria-current={tab === item.id ? "page" : undefined}
           >
             <item.icon size={16} aria-hidden="true" />
@@ -302,6 +309,27 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
           </Link>
         ))}
       </nav>
+        </>
+      )}
+      {isFiche ? (
+        <>
+          <div className="artisan-fiche-bar">
+            <Link href={backHref} className="btn secondary artisan-fiche-back">
+              <ChevronLeft size={17} aria-hidden="true" />
+              {backLabel}
+            </Link>
+            <span className="eyebrow">{sectionTitle}</span>
+          </div>
+          <RequestDetail
+            id={routeId}
+            services={services}
+            onBack={() => setLocation(backHref)}
+            onChanged={refreshRequests}
+            backLabel={backLabel}
+          />
+        </>
+      ) : (
+        <>
       {tab === "requests" && nextRequest && (
         <section
           className="artisan-next-action"
@@ -455,15 +483,16 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
                 request =>
                   showHistory ||
                   activeRequestStatuses.includes(request.status) ||
-                  request.id === selectedId
+                  request.id === routeId
               )}
               services={services}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
+              selectedId={routeId}
+              onSelect={id => { if (id) openRequest(id); }}
               loading={requestsQuery.isLoading}
               error={requestsQuery.error}
               retry={requestsQuery.refetch}
               onChanged={refreshRequests}
+              listOnly
             />
             <details className="panel">
               <summary
@@ -508,12 +537,13 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
           <Interventions
             requests={requests}
             services={services}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
+            selectedId={routeId}
+            onSelect={id => id && setLocation(`/artisan/interventions/${id}`)}
             loading={requestsQuery.isLoading}
             error={requestsQuery.error}
             retry={requestsQuery.refetch}
             onChanged={refreshRequests}
+            listOnly
           />
         )}
         {tab === "settlements" && <Settlements />}
@@ -527,13 +557,14 @@ function ArtisanWorkspace({ isCollaborator = false }: { isCollaborator?: boolean
         )}
         {tab === "team" && !isCollaborator && <ArtisanTeam />}
       </div>
+        </>
+      )}
       <nav className="artisan-mobile-bar" aria-label="Navigation artisan">
         {navigation.filter(item => (isCollaborator ? ["requests", "planning", "interventions"] : ["assistant", "requests", "planning", "interventions"]).includes(item.id)).map(item => (
           <Link
             key={item.id}
             href={`/artisan/${item.id}`}
             className={`artisan-mobile-btn ${tab === item.id ? "active" : ""}`}
-            onClick={() => setSelectedId(null)}
             aria-current={tab === item.id ? "page" : undefined}
           >
             <item.icon size={20} aria-hidden="true" />
@@ -651,6 +682,7 @@ function Interventions({
   error,
   retry,
   onChanged,
+  listOnly = false,
 }: {
   requests: RequestRecord[];
   services: Service[];
@@ -660,6 +692,7 @@ function Interventions({
   error: unknown;
   retry: () => unknown;
   onChanged: () => void;
+  listOnly?: boolean;
 }) {
   const [showCompleted, setShowCompleted] = useState(false);
   const select = (id: number | null) => {
@@ -702,6 +735,49 @@ function Interventions({
       </div>
       <QueryState loading={loading} error={error} retry={retry} />
       {!loading && !error && (
+        listOnly ? (
+          <div className="panel stack artisan-list-panel" style={{ minWidth: 0 }}>
+            {!visible.length && (
+              <p className="muted">
+                Aucune intervention {showCompleted ? "terminée" : "à réaliser"}.
+              </p>
+            )}
+            {visible.map(request => (
+              <button
+                type="button"
+                key={request.id}
+                className="data-row"
+                onClick={() => select(request.id)}
+                aria-pressed={selectedId === request.id}
+                style={{
+                  width: "100%",
+                  minHeight: 72,
+                  textAlign: "left",
+                  border: 0,
+                  background: selectedId === request.id ? "#fff3ed" : "transparent",
+                  padding: 12,
+                  cursor: "pointer",
+                  borderLeft: selectedId === request.id ? "4px solid #bc4c23" : "4px solid transparent",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <strong>{request.name}</strong>
+                    <p>{request.serviceName || "Demande libre"} · {request.city}</p>
+                    <StatusBadge status={request.status} />
+                    {request.proposedStart && (
+                      <p className="muted">{dateTime(request.proposedStart)}</p>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, color: "#bc4c23", fontSize: 13, fontWeight: 600, flexShrink: 0 }} aria-hidden="true">
+                    <span>Ouvrir</span>
+                    <ChevronRight size={18} />
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : (
         <div
           className="split-view artisan-split"
           style={{ alignItems: "start" }}
@@ -795,6 +871,7 @@ function Interventions({
             )}
           </div>
         </div>
+        )
       )}
     </section>
   );

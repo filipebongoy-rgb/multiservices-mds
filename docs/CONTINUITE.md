@@ -83,3 +83,7 @@ Le clic fonctionnait mais la route `/artisan/demandes` n’était pas reconnue p
 ## Assistante lisible au premier regard — 9 novembre 2026
 
 L’analyse vidéo a montré que la mission réelle se trouvait trop bas, après quatre compteurs et la commande vocale. La mise en page place maintenant la mission prioritaire juste après le titre. Le texte indique « La mission la plus importante est affichée juste en dessous », les compteurs et la voix sont secondaires, et le jargon de paiement est traduit en phrases compréhensibles.
+
+
+## Chaque information sur sa propre page — 9 novembre 2026
+Le retour d’expérience et les vidéos ont confirmé que l’écran artisan unique avec le détail affiché sous la liste provoquait un défilement infini et donnait l’impression que les clics ne menaient nulle part. La logique a été inversée : l’ouverture d’une demande ou d’une intervention affiche désormais une page dédiée à son URL propre (`/artisan/requests/:id` et `/artisan/interventions/:id`). La liste ne montre plus le dossier en dessous mais sert d’aiguillage vers ces fiches. Chaque fiche est autonome, possède son bouton de retour en haut et en bas, met en avant l’action à réaliser avant les détails d’historique, et n’embarque ni la barre d’onglets ni la liste concurrente. Les routes dynamiques sont déclarées dans le manifeste public `/manus-routes.json`, et la navigation publique reste masquée sur l’ensemble des sous-pages artisan. La suite de 336 tests automatisés couvre le routage, la cohérence des libellés et les protections de confidentialité.

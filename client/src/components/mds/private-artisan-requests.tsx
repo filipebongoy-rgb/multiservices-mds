@@ -158,6 +158,7 @@ export function ArtisanRequests({
   error,
   retry,
   onChanged,
+  listOnly = false,
 }: {
   requests: RequestRecord[];
   services: Service[];
@@ -167,13 +168,14 @@ export function ArtisanRequests({
   error: unknown;
   retry: () => unknown;
   onChanged: () => void;
+  listOnly?: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const archiveMutation = trpc.mds.requests.archive.useMutation();
   const detailRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    if (selectedId === null) return;
+    if (selectedId === null || listOnly) return;
     const frame = window.requestAnimationFrame(() => {
       detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       detailRef.current?.focus({ preventScroll: true });
@@ -239,6 +241,75 @@ export function ArtisanRequests({
       <QueryState loading={loading} error={error} retry={retry} />
       <ErrorNotice error={archiveMutation.error} />
       {!loading && !error && (
+        listOnly ? (
+          <div className="panel stack artisan-list-panel" style={{ minWidth: 0 }}>
+            <p className="muted">
+              {filtered.length} dossier{filtered.length !== 1 ? "s" : ""} ·
+              actions urgentes en premier
+            </p>
+            {filtered.length === 0 ? (
+              <div className="empty">
+                {requests.length
+                  ? "Aucune demande ne correspond à votre recherche."
+                  : "Aucune demande reçue pour le moment."}
+              </div>
+            ) : (
+              <ul className="data-list" style={{ listStyle: "none", padding: 0 }}>
+                {filtered.map(request => (
+                  <li key={request.id} style={{ display: "flex", alignItems: "stretch", borderBottom: "1px solid #e7e5e2" }}>
+                    <button
+                      className="data-row"
+                      type="button"
+                      onClick={() => select(request.id)}
+                      aria-pressed={selectedId === request.id}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "16px 12px",
+                        minHeight: 72,
+                        background: selectedId === request.id ? "#fff3ed" : "transparent",
+                        border: "none",
+                        borderBottom: "none",
+                        borderRadius: 6,
+                        cursor: "pointer",
+                        borderLeft: selectedId === request.id ? "4px solid #bc4c23" : "4px solid transparent",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
+                            <strong>{request.name}</strong>
+                            <span className="eyebrow">{request.reference}</span>
+                          </div>
+                          <p>{request.serviceName || "Demande libre"} · {request.city}</p>
+                          <StatusBadge status={request.status} />
+                          {urgencyLabel(request) && (
+                            <span className="badge" style={{ marginLeft: 6, background: "#fff0e8", color: "#a53d18" }}>
+                              Urgent
+                            </span>
+                          )}
+                          {requestPriority(request) < 2 && (
+                            <span className="badge" style={{ marginLeft: 6 }}>Action requise</span>
+                          )}
+                          <p className="muted" style={{ marginTop: 8 }}>{dateTime(request.createdAt)}</p>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, color: "#bc4c23", fontSize: 13, fontWeight: 600, flexShrink: 0 }} aria-hidden="true">
+                          <span>Ouvrir</span>
+                          <ChevronRight size={18} />
+                        </div>
+                      </div>
+                    </button>
+                    {["cancelled", "refused", "expired", "closed", "completed", "paid", "invoiced"].includes(request.status) && (
+                      <button type="button" className="icon-button" aria-label={`Retirer ${request.reference}`} title="Retirer ce dossier" onClick={() => void archive(request)} disabled={archiveMutation.isPending} style={{ alignSelf: "center", margin: "0 8px", color: "#a33d2a" }}>
+                        <Trash2 size={17} aria-hidden="true" />
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : (
         <div
           className="split-view artisan-split"
           style={{ alignItems: "start" }}
@@ -384,6 +455,7 @@ export function ArtisanRequests({
             )}
           </div>
         </div>
+        )
       )}
     </div>
   );
@@ -394,11 +466,13 @@ export function RequestDetail({
   services,
   onBack,
   onChanged,
+  backLabel,
 }: {
   id: number;
   services: Service[];
   onBack: () => void;
   onChanged: () => void;
+  backLabel?: string;
 }) {
   const detail = trpc.mds.requests.detail.useQuery({ id }, { retry: false });
   const utils = trpc.useUtils();
@@ -585,8 +659,7 @@ export function RequestDetail({
           padding: "10px 14px",
         }}
       >
-        <ChevronLeft size={17} aria-hidden="true" /> Retour à la liste des
-        demandes
+        <ChevronLeft size={17} aria-hidden="true" /> {backLabel ?? "Retour à la liste des demandes"}
       </ActionButton>
       <header className="stack">
         <div
@@ -654,147 +727,6 @@ export function RequestDetail({
           </p>
         )}
       </section>
-      {request.pricingSnapshot ? (
-        <PricingSnapshotSummary snapshot={request.pricingSnapshot} />
-      ) : (
-        <p className="notice">
-          Ancien dossier : aucun instantané des conditions et des frais au dépôt
-          n’a été conservé. Le tarif du catalogue actuel ne prouve pas les
-          anciennes conditions. Le parcours historique reste disponible ; faites
-          accepter un vrai devis pour clarifier ou modifier le périmètre.
-        </p>
-      )}
-      <section className="notice stack">
-        <h4>Créneau et proposition</h4>
-        <p className="row">
-          <CalendarDays size={17} aria-hidden="true" />
-          Souhait client : {dateTime(request.desiredStart)}
-        </p>
-        {request.proposedStart && (
-          <p>Proposé par MDS : {dateTime(request.proposedStart)}</p>
-        )}
-        {!!request.alternatives?.length && (
-          <details>
-            <summary>
-              Autres créneaux proposés ({request.alternatives.length})
-            </summary>
-            <ul>
-              {request.alternatives.map(value => (
-                <li key={value.id}>{dateTime(value.startAt)}</li>
-              ))}
-            </ul>
-          </details>
-        )}
-        <p>
-          Prix proposé : {money(request.proposedPriceCents)} · Durée :{" "}
-          {request.durationMinutes} min
-        </p>
-        {request.proposalMessage && (
-          <p style={{ whiteSpace: "pre-wrap" }}>{request.proposalMessage}</p>
-        )}
-        {request.expiresAt && (
-          <p className="muted">
-            Validité de la proposition : {dateTime(request.expiresAt)}
-          </p>
-        )}
-        {request.quoteStatus !== "none" && (
-          <p>
-            Devis :{" "}
-            {
-              {
-                pending: "en attente d’accord client",
-                accepted: "accepté par le client",
-                refused: "refusé par le client",
-              }[request.quoteStatus]
-            }
-          </p>
-        )}
-        {detail.data?.appointment &&
-        detail.data.appointment.status !== "cancelled" ? (
-          <p className="success-message">
-            Rendez-vous confirmé : {dateTime(detail.data.appointment.startAt)} →{" "}
-            {dateTime(detail.data.appointment.endAt)}
-          </p>
-        ) : (
-          <p className="muted">
-            Aucun rendez-vous définitif : les deux validations sont nécessaires.
-          </p>
-        )}
-      </section>
-      {detail.data?.intervention?.clientSignedAt ? (
-        <section className="stack">
-          <h4>Signature du client</h4>
-          <p className="success-message" role="status">
-            Signée le {dateTime(detail.data.intervention.clientSignedAt)}.
-            {detail.data.intervention.clientConfirmationMessage &&
-              ` « ${detail.data.intervention.clientConfirmationMessage} »`}
-          </p>
-          {detail.data.intervention.clientSignatureDocumentId && (
-            <SignatureThumb
-              id={detail.data.intervention.clientSignatureDocumentId}
-              reference={request.reference}
-            />
-          )}
-        </section>
-      ) : detail.data?.intervention?.clientConfirmedAt ? (
-        <section className="stack">
-          <h4>Validation client</h4>
-          <p className="success-message" role="status">
-            Confirmée le {dateTime(detail.data.intervention.clientConfirmedAt)}.
-            {detail.data.intervention.clientConfirmationMessage &&
-              ` « ${detail.data.intervention.clientConfirmationMessage} »`}
-          </p>
-        </section>
-      ) : null}
-      {request.status === "completed" &&
-        !detail.data?.intervention?.clientConfirmedAt && (
-          <details
-            open
-            className="panel stack"
-            style={{ background: "#fffaf7", borderColor: "#e4cbbd" }}
-          >
-            <summary
-              style={{
-                minHeight: 36,
-                cursor: "pointer",
-                fontWeight: 700,
-              }}
-            >
-              <Pen size={15} color="#bc4c23" aria-hidden="true" /> Faire signer
-              le client sur cet écran
-            </summary>
-            <p className="small-text muted" style={{ marginTop: 8 }}>
-              Tendez cet écran au client pour qu’il confirme et signe la fin des
-              travaux avec son doigt.
-            </p>
-            <SignaturePad
-              disabled={confirmCompletion.isPending}
-              error={confirmCompletion.error}
-              onSign={handleClientSign}
-            />
-          </details>
-        )}
-      {detail.data && (
-        <PrivateOperations detail={detail.data} onChanged={refresh} />
-      )}
-      {editable && (
-        <PrivateQuoteBuilder
-          request={request}
-          latestQuoteDocumentId={
-            documents.filter(doc => doc.kind === "quote").at(-1)?.id
-          }
-          onChanged={refresh}
-          onSubmitQuote={amount => {
-            setQuoteAmount(amount);
-            setAction("quote");
-          }}
-        />
-      )}
-      <PaymentTools
-        requestId={request.id}
-        version={request.version}
-        reference={request.reference}
-      />
       {["confirmed", "planned", "en_route"].includes(request.status) && (
         <section className="trip-gps-readiness" aria-live="polite">
           <div>
@@ -867,7 +799,8 @@ export function RequestDetail({
           )}
         </section>
       )}
-      <section className="stack" aria-label="Répondre à la demande">
+      <section className="stack artisan-fiche-actions" aria-label="Répondre à la demande">
+        <h4 style={{ margin: 0, color: "#bc4c23", fontSize: 16 }}>Action à réaliser</h4>
         {mutation.isPending && (
           <p className="notice" role="status">
             Enregistrement de l’action en cours… Les autres actions sont
@@ -1091,6 +1024,148 @@ export function RequestDetail({
           </details>
         )}
       </section>
+      {request.pricingSnapshot ? (
+        <PricingSnapshotSummary snapshot={request.pricingSnapshot} />
+      ) : (
+        <p className="notice">
+          Ancien dossier : aucun instantané des conditions et des frais au dépôt
+          n’a été conservé. Le tarif du catalogue actuel ne prouve pas les
+          anciennes conditions. Le parcours historique reste disponible ; faites
+          accepter un vrai devis pour clarifier ou modifier le périmètre.
+        </p>
+      )}
+      <section className="notice stack">
+        <h4>Créneau et proposition</h4>
+        <p className="row">
+          <CalendarDays size={17} aria-hidden="true" />
+          Souhait client : {dateTime(request.desiredStart)}
+        </p>
+        {request.proposedStart && (
+          <p>Proposé par MDS : {dateTime(request.proposedStart)}</p>
+        )}
+        {!!request.alternatives?.length && (
+          <details>
+            <summary>
+              Autres créneaux proposés ({request.alternatives.length})
+            </summary>
+            <ul>
+              {request.alternatives.map(value => (
+                <li key={value.id}>{dateTime(value.startAt)}</li>
+              ))}
+            </ul>
+          </details>
+        )}
+        <p>
+          Prix proposé : {money(request.proposedPriceCents)} · Durée :{" "}
+          {request.durationMinutes} min
+        </p>
+        {request.proposalMessage && (
+          <p style={{ whiteSpace: "pre-wrap" }}>{request.proposalMessage}</p>
+        )}
+        {request.expiresAt && (
+          <p className="muted">
+            Validité de la proposition : {dateTime(request.expiresAt)}
+          </p>
+        )}
+        {request.quoteStatus !== "none" && (
+          <p>
+            Devis :{" "}
+            {
+              {
+                pending: "en attente d’accord client",
+                accepted: "accepté par le client",
+                refused: "refusé par le client",
+              }[request.quoteStatus]
+            }
+          </p>
+        )}
+        {detail.data?.appointment &&
+        detail.data.appointment.status !== "cancelled" ? (
+          <p className="success-message">
+            Rendez-vous confirmé : {dateTime(detail.data.appointment.startAt)} →{" "}
+            {dateTime(detail.data.appointment.endAt)}
+          </p>
+        ) : (
+          <p className="muted">
+            Aucun rendez-vous définitif : les deux validations sont nécessaires.
+          </p>
+        )}
+      </section>
+      {detail.data?.intervention?.clientSignedAt ? (
+        <section className="stack">
+          <h4>Signature du client</h4>
+          <p className="success-message" role="status">
+            Signée le {dateTime(detail.data.intervention.clientSignedAt)}.
+            {detail.data.intervention.clientConfirmationMessage &&
+              ` « ${detail.data.intervention.clientConfirmationMessage} »`}
+          </p>
+          {detail.data.intervention.clientSignatureDocumentId && (
+            <SignatureThumb
+              id={detail.data.intervention.clientSignatureDocumentId}
+              reference={request.reference}
+            />
+          )}
+        </section>
+      ) : detail.data?.intervention?.clientConfirmedAt ? (
+        <section className="stack">
+          <h4>Validation client</h4>
+          <p className="success-message" role="status">
+            Confirmée le {dateTime(detail.data.intervention.clientConfirmedAt)}.
+            {detail.data.intervention.clientConfirmationMessage &&
+              ` « ${detail.data.intervention.clientConfirmationMessage} »`}
+          </p>
+        </section>
+      ) : null}
+      {request.status === "completed" &&
+        !detail.data?.intervention?.clientConfirmedAt && (
+          <details
+            open
+            className="panel stack"
+            style={{ background: "#fffaf7", borderColor: "#e4cbbd" }}
+          >
+            <summary
+              style={{
+                minHeight: 36,
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
+            >
+              <Pen size={15} color="#bc4c23" aria-hidden="true" /> Faire signer
+              le client sur cet écran
+            </summary>
+            <p className="small-text muted" style={{ marginTop: 8 }}>
+              Tendez cet écran au client pour qu’il confirme et signe la fin des
+              travaux avec son doigt.
+            </p>
+            <SignaturePad
+              disabled={confirmCompletion.isPending}
+              error={confirmCompletion.error}
+              onSign={handleClientSign}
+            />
+          </details>
+        )}
+      {detail.data && (
+        <PrivateOperations detail={detail.data} onChanged={refresh} />
+      )}
+      {editable && (
+        <PrivateQuoteBuilder
+          request={request}
+          latestQuoteDocumentId={
+            documents.filter(doc => doc.kind === "quote").at(-1)?.id
+          }
+          onChanged={refresh}
+          onSubmitQuote={amount => {
+            setQuoteAmount(amount);
+            setAction("quote");
+          }}
+        />
+      )}
+      <PaymentTools
+        requestId={request.id}
+        version={request.version}
+        reference={request.reference}
+      />
+
       <details className="stack">
         <summary
           style={{
@@ -1149,6 +1224,19 @@ export function RequestDetail({
           </ol>
         )}
       </details>
+      <div style={{ marginTop: 24, textAlign: "center" }}>
+        <ActionButton
+          className="secondary"
+          onClick={() => {
+            onBack();
+            try {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            } catch {}
+          }}
+        >
+          <ChevronLeft size={17} aria-hidden="true" /> {backLabel ?? "Retour à la liste des demandes"}
+        </ActionButton>
+      </div>
       {request.status === "completed" && (
         <ReviewForm
           requestId={request.id}

@@ -45,8 +45,15 @@ function Routes() {
   const [location] = useLocation();
   useEffect(() => {
     window.scrollTo(0, 0);
+    const resolvedTitle =
+      titles[location] ||
+      (location.match(/^\/artisan\/(requests|demandes)\/\d+/)
+        ? "Dossier artisan"
+        : location.match(/^\/artisan\/interventions\/\d+/)
+          ? "Fiche intervention"
+          : "Page introuvable");
     document.title =
-      (titles[location] || "Page introuvable") + " — MULTISERVICES MDS";
+      resolvedTitle + " — MULTISERVICES MDS";
     let robots = document.querySelector(
       'meta[name="robots"]'
     ) as HTMLMetaElement | null;
@@ -55,17 +62,18 @@ function Routes() {
       robots.name = "robots";
       document.head.appendChild(robots);
     }
-    robots.content = [
-      "/artisan",
-      "/suivi",
-      "/paiements",
-      "/demande",
-      "/professionnels",
-      "/profil",
-      "/connexion",
-    ].includes(location)
-      ? "noindex, nofollow"
-      : "index, follow";
+      robots.content =
+        location.startsWith("/artisan") ||
+        [
+          "/suivi",
+          "/paiements",
+          "/demande",
+          "/professionnels",
+          "/profil",
+          "/connexion",
+        ].includes(location)
+        ? "noindex, nofollow"
+        : "index, follow";
   }, [location]);
   return (
     <>
@@ -84,8 +92,9 @@ function Routes() {
           <Route path="/paiements" component={Payments} />
           <Route path="/suivi" component={Tracking} />
           <Route path="/professionnels" component={Professional} />
-          <Route path="/artisan" component={Artisan} />
+          <Route path="/artisan/:section/:id" component={Artisan} />
           <Route path="/artisan/:section" component={Artisan} />
+          <Route path="/artisan" component={Artisan} />
           <Route path="/profil" component={Profile} />
           <Route path="/connexion" component={Auth} />
           <Route path="/confidentialite" component={Privacy} />

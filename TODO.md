@@ -108,3 +108,13 @@
 - [x] Le bouton « Actualiser » n’est plus répété en haut de l’écran ; un seul accès reste disponible dans les actions secondaires.
 - [x] Le titre est « À faire maintenant » et explique directement la prochaine action.
 - [x] Les codes de paiement comme `card_declined` sont remplacés par une phrase simple en français.
+
+
+## Chaque information sur sa propre page — 9 novembre 2026
+- [x] L’ouverture d’un dossier de demande affiche une page dédiée à l’URL `/artisan/requests/:id`, sans la liste des autres demandes et sans la barre d’onglets.
+- [x] La liste des demandes `/artisan/requests` n’affiche plus le détail en dessous : elle renvoie chaque clic vers la page du dossier correspondant.
+- [x] Les fiches interventions bénéficient de la même page dédiée à l’URL `/artisan/interventions/:id`.
+- [x] La fiche présente l’action à réaliser avant les détails d’historique et de documents, avec un bouton de retour en haut et en bas.
+- [x] Les routes dynamiques de fiches sont déclarées dans le manifeste public `/manus-routes.json`.
+- [x] La barre de navigation publique et le pied de page restent masqués sur toutes les sous-pages artisan.
+- [x] La suite de non-régression (336 tests) valide le routage de chaque espace artisan et la cohérence des libellés de retour.

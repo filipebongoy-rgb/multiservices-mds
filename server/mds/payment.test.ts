@@ -752,6 +752,63 @@ describe("Checkout durable sans second débit", () => {
 
 describe("webhook signé, exact et dédupliqué", () => {
   beforeEach(() => db.put(s.payments, [payment()]));
+  it("enchaîne Checkout test, retour webhook et interaction dossier sans encaissement commercial", async () => {
+    db.clear();
+    db.put(s.settings, [{ id: 1, artisanUserId: 1 }]);
+    db.put(s.requests, [request()]);
+    db.put(s.invoices, [invoice()]);
+
+    const checkout = await caller().checkout(input);
+    expect(checkout).toEqual({
+      url: "https://checkout.stripe.com/c/pay/mock",
+      mode: "test",
+    });
+    const params = boundary.create.mock.calls[0][0];
+    const reserved = db.rows(s.payments)[0];
+    expect(reserved).toMatchObject({
+      status: "pending",
+      checkoutSessionId: "cs_test_mock",
+      paymentIntentId: "pi_mock",
+      amountCents: 12000,
+    });
+
+    const event: any = {
+      object: "event",
+      id: "evt_e2e_test_checkout",
+      type: "checkout.session.completed",
+      livemode: false,
+      data: {
+        object: session(params, {
+          id: reserved.checkoutSessionId,
+          payment_intent: reserved.paymentIntentId,
+          status: "complete",
+          payment_status: "paid",
+          metadata: params.metadata,
+        }),
+      },
+    };
+    expect(await processPaymentEvent(event, "test")).toMatchObject({
+      duplicate: false,
+      outcome: "test_succeeded_no_fulfillment",
+    });
+    expect(db.rows(s.payments)[0]).toMatchObject({
+      status: "succeeded",
+      receivedAmountCents: 12000,
+      creditedAt: null,
+    });
+    expect(db.rows(s.invoices)[0].paidAt).toBeNull();
+    expect(db.rows(s.requests)[0]).toMatchObject({
+      status: "invoiced",
+      version: 4,
+    });
+    expect(db.rows(s.paymentEvents)).toHaveLength(1);
+
+    expect(await processPaymentEvent(event, "test")).toMatchObject({
+      duplicate: true,
+      outcome: "test_succeeded_no_fulfillment",
+    });
+    expect(db.rows(s.paymentEvents)).toHaveLength(1);
+  });
   it("succès test reste ledger uniquement ; redirection/annulation ne possède aucune mutation paid", async () => {
     expect(await processPaymentEvent(signedEvent(), "test")).toMatchObject({
       outcome: "test_succeeded_no_fulfillment",

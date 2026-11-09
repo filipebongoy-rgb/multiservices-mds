@@ -79,6 +79,15 @@ function provisionalQuoteCents(
   return Math.ceil((hourly * duration) / 60 / 500) * 500;
 }
 
+function inferTrade(request: typeof s.requests.$inferSelect) {
+  const text = `${request.serviceName || ""} ${request.problemType || ""} ${request.description || ""}`.toLocaleLowerCase("fr-FR");
+  if (/plomb|fuite|robinet|évier|evier|wc|douche|chauffe-eau/.test(text)) return "plomberie";
+  if (/électric|electric|prise|interrupteur|tableau|vmc|éclairage|eclairage/.test(text)) return "electricite";
+  if (/chauffage|chaudière|chaudiere|radiateur|thermostat/.test(text)) return "chauffage";
+  if (/peinture|mur|plafond|porte|ponçage|poncage|enduit/.test(text)) return "peinture";
+  return "maintenance";
+}
+
 function paymentReason(reason: string | null, status: string) {
   const value = (reason || status).toLocaleLowerCase("fr-FR");
   if (value.includes("insufficient") || value.includes("fonds insuffisants")) {
@@ -530,8 +539,8 @@ export const assistantRouter = router({
         .limit(1);
       const catalogPrice = catalogService?.priceCents ?? null;
       const authoritativePrice = request.proposedPriceCents ?? snapshot?.totalCents ?? catalogPrice;
-      const provisionalPrice = authoritativePrice == null && catalogService
-        ? provisionalQuoteCents(catalogService.trade, catalogService.durationMinutes)
+      const provisionalPrice = authoritativePrice == null
+        ? provisionalQuoteCents(inferTrade(request), catalogService?.durationMinutes ?? request.durationMinutes)
         : null;
       const totalCents = authoritativePrice ?? provisionalPrice;
       if (!Number.isSafeInteger(totalCents) || totalCents === null || totalCents < 0) {
@@ -554,7 +563,7 @@ export const assistantRouter = router({
         included: snapshot?.included || "Périmètre décrit dans la demande client.",
         excluded: snapshot?.excluded || "Travaux supplémentaires non décrits dans la demande.",
         conditions: snapshot?.conditions || (provisionalPrice != null
-          ? "Estimation provisoire préparée automatiquement selon le métier et la durée prévue. L’artisan doit vérifier le périmètre et le montant avant tout envoi au client. Aucun paiement ne peut être demandé sur cette estimation seule."
+          ? `Estimation provisoire préparée automatiquement selon le métier détecté (${inferTrade(request)}) et la durée prévue. L’artisan doit vérifier le périmètre et le montant avant tout envoi au client. Aucun paiement ne peut être demandé sur cette estimation seule.`
           : catalogService?.pricingMode === "fixed"
           ? "Montant calculé à partir du tarif catalogue actif de la prestation. Toute modification du périmètre fera l’objet d’un nouveau devis."
           : "Montant préparé à partir du tarif catalogue actif. Vérifier le périmètre sur place avant validation du devis."),

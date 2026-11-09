@@ -8,7 +8,8 @@ const boundary = vi.hoisted(() => ({ db: null as any }));
 vi.mock("../db", () => ({ getDb: async () => boundary.db }));
 import { requestsRouter, expireRequest } from "./requests";
 import { operationsRouter } from "./operations";
-const app = router({ requests: requestsRouter, operations: operationsRouter });
+import { assistantRouter } from "./assistant";
+const app = router({ requests: requestsRouter, operations: operationsRouter, assistant: assistantRouter });
 const db = new MockDatabase();
 const token = "memory-only-private-track-key";
 const future = "2030-01-02T10:00:00Z";
@@ -178,6 +179,36 @@ describe("réponses rapides et départ réel", () => {
       clientConfirmedAt: expect.any(Date),
       clientConfirmationMessage: "Résultat conforme.",
     });
+  });
+  it("valide et clôture automatiquement après preuve photo, signature et paiement", async () => {
+    db.put(s.requests, [request(1, { status: "paid" })]);
+    db.put(s.interventions, [{
+      id: 1,
+      requestId: 1,
+      appointmentId: 1,
+      startedAt: new Date(),
+      completedAt: new Date(),
+      clientConfirmedAt: new Date(),
+      clientConfirmationMessage: "Résultat conforme.",
+    }]);
+    db.put(s.documents, [{ id: 99, requestId: 1, kind: "photo", photoStage: "after" }]);
+    const result = await owner().assistant.autoValidate({ requestId: 1 });
+    expect(result).toMatchObject({ success: true });
+    expect(db.rows(s.requests)[0]).toMatchObject({ status: "closed", version: 1 });
+  });
+  it("bloque la validation automatique si la preuve photo manque", async () => {
+    db.put(s.requests, [request(1, { status: "paid" })]);
+    db.put(s.interventions, [{
+      id: 1,
+      requestId: 1,
+      appointmentId: 1,
+      startedAt: new Date(),
+      completedAt: new Date(),
+      clientConfirmedAt: new Date(),
+    }]);
+    db.put(s.documents, []);
+    await expect(owner().assistant.autoValidate({ requestId: 1 })).rejects.toThrow("photo après travaux");
+    expect(db.rows(s.requests)[0].status).toBe("paid");
   });
 
   it.each(["photo", "diagnostic"] as const)(

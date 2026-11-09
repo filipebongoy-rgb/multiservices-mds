@@ -286,7 +286,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
                     {task.dueAt && <small>{task.priority === "today" ? `Aujourd’hui · ${dateTime(task.dueAt)}` : dateTime(task.dueAt)}</small>}
                   </div>
                   <div className="assistant-task-actions" onClick={event => event.stopPropagation()}>
-                    {task.requestId && !task.autoConfirmable && (
+                    {task.requestId && !task.autoConfirmable && !task.autoValidateable && !task.autoQuoteable && (
                       <ActionButton className="primary" onClick={() => onOpenRequest(task.requestId!)}>
                         Ouvrir la mission
                       </ActionButton>

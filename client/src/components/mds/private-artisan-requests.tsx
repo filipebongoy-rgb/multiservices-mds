@@ -244,8 +244,7 @@ export function ArtisanRequests({
         listOnly ? (
           <div className="panel stack artisan-list-panel" style={{ minWidth: 0 }}>
             <p className="muted">
-              {filtered.length} dossier{filtered.length !== 1 ? "s" : ""} ·
-              actions urgentes en premier
+              {filtered.length} dossier{filtered.length !== 1 ? "s" : ""}
             </p>
             {filtered.length === 0 ? (
               <div className="empty">
@@ -321,8 +320,7 @@ export function ArtisanRequests({
             style={{ minWidth: 0 }}
           >
             <p className="muted">
-              {filtered.length} dossier{filtered.length !== 1 ? "s" : ""} ·
-              actions urgentes en premier
+              {filtered.length} dossier{filtered.length !== 1 ? "s" : ""}
             </p>
             {filtered.length === 0 ? (
               <div className="empty">
@@ -393,11 +391,6 @@ export function ArtisanRequests({
                               }}
                             >
                               Urgent
-                            </span>
-                          )}
-                          {requestPriority(request) < 2 && (
-                            <span className="badge" style={{ marginLeft: 6 }}>
-                              Action requise
                             </span>
                           )}
                           <p className="muted" style={{ marginTop: 8 }}>

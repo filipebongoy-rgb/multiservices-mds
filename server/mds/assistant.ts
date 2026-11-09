@@ -63,6 +63,22 @@ function actionLabel(actionType: z.infer<typeof draftInput>["actionType"]) {
   }[actionType];
 }
 
+function provisionalQuoteCents(
+  trade: string | null | undefined,
+  durationMinutes: number | null | undefined,
+) {
+  const hourlyRates: Record<string, number> = {
+    plomberie: 8500,
+    electricite: 9000,
+    chauffage: 9500,
+    peinture: 7500,
+    maintenance: 7000,
+  };
+  const hourly = hourlyRates[trade || ""] ?? 8000;
+  const duration = Math.max(60, Math.min(durationMinutes || 60, 480));
+  return Math.ceil((hourly * duration) / 60 / 500) * 500;
+}
+
 function paymentReason(reason: string | null, status: string) {
   const value = (reason || status).toLocaleLowerCase("fr-FR");
   if (value.includes("insufficient") || value.includes("fonds insuffisants")) {
@@ -504,7 +520,7 @@ export const assistantRouter = router({
       }
       const snapshot = request.pricingSnapshot as { totalCents?: number | null; included?: string; excluded?: string; conditions?: string } | null;
       const [catalogService] = await db
-        .select({ priceCents: s.services.priceCents, pricingMode: s.services.pricingMode, name: s.services.name })
+        .select({ priceCents: s.services.priceCents, pricingMode: s.services.pricingMode, name: s.services.name, trade: s.services.trade, durationMinutes: s.services.durationMinutes })
         .from(s.services)
         .where(and(
           request.serviceId ? eq(s.services.id, request.serviceId) : eq(s.services.name, request.serviceName || ""),
@@ -513,9 +529,13 @@ export const assistantRouter = router({
         ))
         .limit(1);
       const catalogPrice = catalogService?.priceCents ?? null;
-      const totalCents = request.proposedPriceCents ?? snapshot?.totalCents ?? catalogPrice;
+      const authoritativePrice = request.proposedPriceCents ?? snapshot?.totalCents ?? catalogPrice;
+      const provisionalPrice = authoritativePrice == null && catalogService
+        ? provisionalQuoteCents(catalogService.trade, catalogService.durationMinutes)
+        : null;
+      const totalCents = authoritativePrice ?? provisionalPrice;
       if (!Number.isSafeInteger(totalCents) || totalCents === null || totalCents < 0) {
-        fail("Aucun tarif actif ne correspond à cette prestation. Configurez son prix dans le catalogue MDS pour remplir le devis.", "CONFLICT");
+        fail("Le dossier ne contient pas assez d’informations pour préparer un montant. Ajoutez une prestation active ou un prix proposé.", "CONFLICT");
       }
       const now = new Date();
       const validUntil = new Date(now);
@@ -533,7 +553,9 @@ export const assistantRouter = router({
         lines: [{ label: request.serviceName || request.problemType || "Prestation MDS", quantity: 1, unitCents: totalCents, vatBasisPoints: 2000 }],
         included: snapshot?.included || "Périmètre décrit dans la demande client.",
         excluded: snapshot?.excluded || "Travaux supplémentaires non décrits dans la demande.",
-        conditions: snapshot?.conditions || (catalogService?.pricingMode === "fixed"
+        conditions: snapshot?.conditions || (provisionalPrice != null
+          ? "Estimation provisoire préparée automatiquement selon le métier et la durée prévue. L’artisan doit vérifier le périmètre et le montant avant tout envoi au client. Aucun paiement ne peut être demandé sur cette estimation seule."
+          : catalogService?.pricingMode === "fixed"
           ? "Montant calculé à partir du tarif catalogue actif de la prestation. Toute modification du périmètre fera l’objet d’un nouveau devis."
           : "Montant préparé à partir du tarif catalogue actif. Vérifier le périmètre sur place avant validation du devis."),
         paymentTerms: "Paiement selon les conditions validées par le client et MDS.",
@@ -551,7 +573,7 @@ export const assistantRouter = router({
         reference: `MDS-D-${now.toISOString().slice(0, 10)}-${Date.now()}`,
       }).$returningId();
       await recordAudit(db, ctx.user.id, "assistant.quoteDraft.prepare", "quoteDraft", created.id);
-      return { created: true as const, draftId: created.id, totalCents: totals.totalCents, note: `Le brouillon de devis a été rempli avec le tarif ${new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(totals.totalCents / 100)} du dossier. Il reste à vérifier avant génération et envoi.` };
+      return { created: true as const, draftId: created.id, totalCents: totals.totalCents, note: `${provisionalPrice != null ? "Une estimation provisoire" : "Le brouillon de devis"} de ${new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(totals.totalCents / 100)} a été préparée. Vérifiez le montant avant génération et envoi.` };
     }),
   draft: artisan.input(draftInput).mutation(async ({ input, ctx }) => {
     const db = await dbRequired();

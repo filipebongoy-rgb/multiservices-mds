@@ -13,7 +13,6 @@ import {
   MicOff,
   MessageSquare,
   Phone,
-  RefreshCw,
   Send,
   X,
 } from "lucide-react";
@@ -222,12 +221,8 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
         <div>
           <span className="eyebrow">Contrôle rapide</span>
           <h2 id="assistant-title">Missions et actions</h2>
-          <p className="assistant-hero-help">Une mission affectée apparaît ici. Cliquez sur « Ouvrir la mission » pour voir le dossier et le planning.</p>
+          <p className="assistant-hero-help">La mission la plus importante est affichée juste en dessous.</p>
         </div>
-        <ActionButton aria-label="Actualiser l’assistante" onClick={() => void query.refetch()} disabled={query.isFetching}>
-          <RefreshCw size={17} aria-hidden="true" />
-          {query.isFetching ? "Actualisation…" : "Actualiser"}
-        </ActionButton>
       </header>
 
       <div className="assistant-metrics" aria-label="Résumé de l’activité">
@@ -270,7 +265,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
           <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
             <div>
               <span className="eyebrow">Prochaine action</span>
-              <h3 style={{ margin: "4px 0 0" }}>Voici ce que vous devez faire</h3>
+              <h3 style={{ margin: "4px 0 0" }}>À faire maintenant</h3>
             </div>
             <span className="badge">{data.tasks.length}</span>
           </div>

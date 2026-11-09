@@ -101,3 +101,10 @@
 - [x] Le bouton « Ouvrir la mission » ouvre la page Demandes avec l’identifiant exact du dossier dans l’URL.
 - [x] La page Demandes lit cet identifiant et affiche directement le détail correspondant au lieu de revenir silencieusement à Assistant.
 - [x] Les anciennes adresses `/artisan/demandes` sont reconnues comme alias de `/artisan/requests`.
+
+## Assistante lisible au premier regard
+
+- [x] La mission urgente et son bouton d’action apparaissent avant les compteurs, la voix et l’historique.
+- [x] Le bouton « Actualiser » n’est plus répété en haut de l’écran ; un seul accès reste disponible dans les actions secondaires.
+- [x] Le titre est « À faire maintenant » et explique directement la prochaine action.
+- [x] Les codes de paiement comme `card_declined` sont remplacés par une phrase simple en français.

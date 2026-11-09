@@ -4153,3 +4153,11 @@ input[type="checkbox"] {
 .assistant-quick-links { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .assistant-quick-links .btn { min-height: 44px; justify-content: center; padding-inline: 8px; }
 @media (max-width: 560px) { .assistant-quick-links { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* L’action urgente doit être visible avant les compteurs et les outils secondaires. */
+.assistant-dashboard { display: flex; flex-direction: column; }
+.assistant-dashboard > .assistant-layout { order: 1; }
+.assistant-dashboard > .assistant-voice-panel { order: 2; }
+.assistant-dashboard > .assistant-metrics { order: 3; }
+.assistant-dashboard > .assistant-history-details { order: 4; }
+.assistant-dashboard > .assistant-layout .assistant-quick-panel { border: 2px solid #e7a15c; }
+.assistant-dashboard > .assistant-layout .assistant-quick-panel h3 { font-size: 22px; }

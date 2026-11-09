@@ -79,3 +79,7 @@ Pour réduire le défilement, l’assistant affiche quatre accès directs : Dema
 ## Correction du dossier artisan — 9 novembre 2026
 
 Le clic fonctionnait mais la route `/artisan/demandes` n’était pas reconnue par le convertisseur d’onglets qui attendait `requests`. De plus, l’identifiant sélectionné était perdu dès le changement d’URL. La navigation utilise maintenant `/artisan/requests?request=ID`, conserve l’identifiant, affiche directement le dossier demandé et reconnaît l’ancien alias français.
+
+## Assistante lisible au premier regard — 9 novembre 2026
+
+L’analyse vidéo a montré que la mission réelle se trouvait trop bas, après quatre compteurs et la commande vocale. La mise en page place maintenant la mission prioritaire juste après le titre. Le texte indique « La mission la plus importante est affichée juste en dessous », les compteurs et la voix sont secondaires, et le jargon de paiement est traduit en phrases compréhensibles.

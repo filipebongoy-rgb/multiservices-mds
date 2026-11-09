@@ -689,6 +689,8 @@ describe("assistante opérationnelle artisan", () => {
     expect(artisan).toContain('new URLSearchParams(location.split("?")[1] || "")');
     expect(artisan).toContain('rawSection === "demandes" ? "requests" : rawSection');
     expect(assistant).toContain("Missions et actions");
+    expect(assistant).toContain("La mission la plus importante est affichée juste en dessous.");
+    expect(assistant).toContain("À faire maintenant");
     expect(assistant).toContain("Ouvrir la mission");
     expect(assistant).toContain("Valider et envoyer");
     expect(assistant).toContain("L’assistante prépare, vous validez");
@@ -702,6 +704,8 @@ describe("assistante opérationnelle artisan", () => {
     expect(server).toContain("assistantRouter");
     expect(server).toContain("processOutbox");
     expect(server).toContain('model: assistantModel');
+    expect(server).toContain("La carte du client a été refusée par sa banque");
+    expect(server).toContain("paymentReason");
   });
 
   it("conserve les brouillons et interdit un envoi implicite", () => {

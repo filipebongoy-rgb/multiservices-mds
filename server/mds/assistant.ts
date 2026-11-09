@@ -60,6 +60,19 @@ function actionLabel(actionType: z.infer<typeof draftInput>["actionType"]) {
   }[actionType];
 }
 
+function paymentReason(reason: string | null, status: string) {
+  const value = (reason || status).toLocaleLowerCase("fr-FR");
+  if (value.includes("insufficient") || value.includes("fonds insuffisants")) {
+    return "La carte du client a été refusée par sa banque : fonds insuffisants.";
+  }
+  if (value.includes("expired")) return "La carte du client est expirée. Contactez le client.";
+  if (value.includes("declined") || value.includes("refus")) {
+    return "Le paiement du client a été refusé par sa banque. Contactez le client.";
+  }
+  if (value.includes("cancel")) return "Le paiement a été annulé. Vérifiez avec le client.";
+  return "Le paiement n’a pas abouti. Vérifiez le dossier et contactez le client.";
+}
+
 function fallbackDraft(
   request: typeof s.requests.$inferSelect,
   actionType: z.infer<typeof draftInput>["actionType"],
@@ -366,7 +379,7 @@ export const assistantRouter = router({
         kind: "payment",
         priority: "urgent",
         title: "Vérifier un paiement en échec",
-        detail: `${payment.reference} · ${payment.failureReason || payment.status}`,
+        detail: `${payment.reference} · ${paymentReason(payment.failureReason, payment.status)}`,
         requestId: payment.requestId,
         reference: payment.reference,
         clientName: payment.name,

@@ -917,7 +917,9 @@ export function RequestDetail({
                 Faire signer le client sur cet écran
               </ActionButton>
             )}
-          {request.status === "completed" && hasInvoice && (
+          {request.status === "completed" &&
+            detail.data?.intervention?.clientConfirmedAt &&
+            hasInvoice && (
             <ActionButton
               disabled={mutation.isPending}
               onClick={() => setAction("invoice")}
@@ -984,25 +986,7 @@ export function RequestDetail({
                   >
                     Organiser un diagnostic
                   </ActionButton>
-                  <ActionButton
-                    disabled={mutation.isPending}
-                    onClick={() => {
-                      setQuoteAmount(undefined);
-                      setAction("quote");
-                    }}
-                  >
-                    <FileText size={17} aria-hidden="true" />
-                    Soumettre un PDF de devis
-                  </ActionButton>
                 </>
-              )}
-              {["confirmed", "planned"].includes(request.status) && (
-                <ActionButton
-                  disabled={mutation.isPending}
-                  onClick={() => setAction("start")}
-                >
-                  Commencer si déjà sur place
-                </ActionButton>
               )}
               {canCancel && (
                 <ActionButton

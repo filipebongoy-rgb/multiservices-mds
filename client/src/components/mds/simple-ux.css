@@ -4335,3 +4335,22 @@ input[type="checkbox"] {
   .network-request-share { grid-template-columns: 1fr; }
   .network-service-chips, .network-how ol { grid-template-columns: 1fr; }
 }
+
+/* Planning artisan : grille hebdomadaire compacte, lisible d’un seul regard. */
+.mds-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(112px, 1fr)); gap: 1px; overflow-x: auto; border: 1px solid #e6e3de; border-radius: 14px; background: #e6e3de; }
+.mds-calendar-day { min-height: 260px; background: #fff; }
+.mds-calendar-day-header { display: grid; gap: 2px; min-height: 58px; padding: 10px 8px; border-bottom: 1px solid #ece9e4; background: #faf9f7; color: #59616a; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.mds-calendar-day-header strong { color: #172331; font-size: 13px; letter-spacing: 0; text-transform: none; }
+.mds-calendar-day-body { display: grid; align-content: start; gap: 8px; min-height: 200px; padding: 8px; }
+.mds-calendar-empty { padding: 12px 4px; color: #9a9fa3; font-size: 12px; text-align: center; }
+.mds-calendar-event-wrap { position: relative; }
+.mds-calendar-event { display: grid; gap: 3px; width: 100%; padding: 9px 8px; border: 0; border-left: 4px solid #1769aa; border-radius: 8px; background: #eaf3fb; color: #172331; cursor: pointer; text-align: left; transition: background .15s ease, transform .15s ease; }
+.mds-calendar-event:hover, .mds-calendar-event:focus-visible { background: #d9ebf9; outline: 2px solid #1769aa; outline-offset: 2px; transform: translateY(-1px); }
+.mds-calendar-event strong { font-size: 12px; }
+.mds-calendar-event span { overflow: hidden; font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.mds-calendar-event small { color: #1769aa; font-size: 11px; }
+.mds-calendar-event em { overflow: hidden; color: #59616a; font-size: 10px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.mds-calendar-event.is-completed { border-left-color: #5d8b69; background: #edf5ee; }
+.mds-calendar-delete { position: absolute; top: 6px; right: 5px; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 5px; background: rgb(255 255 255 / 75%); color: #a33f1d; cursor: pointer; }
+.mds-calendar-delete:hover, .mds-calendar-delete:focus-visible { background: #fff; outline: 2px solid #bc4c23; }
+@media (max-width: 760px) { .mds-calendar-grid { grid-template-columns: repeat(7, minmax(118px, 1fr)); } .mds-calendar-day { min-height: 220px; } }

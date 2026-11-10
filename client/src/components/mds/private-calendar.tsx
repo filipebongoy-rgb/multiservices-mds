@@ -245,87 +245,46 @@ export function ArtisanCalendar({ onOpen }: { onOpen: (id: number) => void }) {
                 </ActionButton>
               )}
             </div>
-            <div aria-live="polite" className="stack">
+            <div aria-live="polite" className="mds-calendar-grid">
               {days.map(day => {
                 const appointments = query.data.appointments
                   .filter(a => dayKey(a.startAt) === day)
-                  .filter(a => {
-                    if (statusFilter === "upcoming")
-                      return a.status !== "completed";
-                    if (statusFilter === "completed")
-                      return a.status === "completed";
-                    return true;
-                  });
+                  .filter(a => statusFilter === "upcoming" ? a.status !== "completed" : statusFilter === "completed" ? a.status === "completed" : true);
                 return (
-                  <section
-                    key={day}
-                    style={{ borderTop: "1px solid #e7e5e2", paddingTop: 16 }}
-                  >
-                    <h3
-                      style={{
-                        fontSize: 16,
-                        marginBottom: 8,
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {dateLabel(day)}
-                    </h3>
-                    {!appointments.length && (
-                      <p className="muted">Aucun rendez-vous confirmé.</p>
-                    )}
-                    {appointments.map(a => (
-                      <div
-                        key={a.id}
-                        className="data-row row"
-                        style={{
-                          justifyContent: "space-between",
-                          flexWrap: "wrap",
-                          gap: 12,
-                        }}
-                      >
-                        <div>
-                          <strong>
-                            {timeLabel(a.startAt)} – {timeLabel(a.endAt)} ·{" "}
-                            {a.name}
-                          </strong>
-                          <p>
-                            {a.address} · {a.postcode}
-                          </p>
-                          <small className="muted">
-                            {a.reference}
-                            {a.status === "in_progress"
-                              ? " · En cours"
-                              : a.status === "completed"
-                                ? " · Terminée"
-                                : " · Confirmé"}
-                            {a.travelMinutes
-                              ? ` · trajet ${a.travelMinutes} min avant`
-                              : ""}
-                            {a.bufferMinutes
-                              ? ` · marge ${a.bufferMinutes} min après`
-                              : ""}
-                          </small>
+                  <section key={day} className="mds-calendar-day">
+                    <header className="mds-calendar-day-header">
+                      <span>{dateLabel(day).split(" ")[0]}</span>
+                      <strong>{dateLabel(day).replace(/^[^ ]+ /, "")}</strong>
+                    </header>
+                    <div className="mds-calendar-day-body">
+                      {!appointments.length && <span className="mds-calendar-empty">Libre</span>}
+                      {appointments.map(a => (
+                        <div key={a.id} className="mds-calendar-event-wrap">
+                          <button
+                            type="button"
+                            className={`mds-calendar-event ${a.status === "completed" ? "is-completed" : ""}`}
+                            onClick={() => onOpen(a.requestId)}
+                            title={`${a.name} — ouvrir le dossier`}
+                          >
+                            <strong>{timeLabel(a.startAt)}</strong>
+                            <span>{a.name}</span>
+                            <small>{a.status === "in_progress" ? "En cours" : a.status === "completed" ? "Terminée" : "Confirmé"}</small>
+                            <em>{a.address}</em>
+                          </button>
+                          <button
+                            type="button"
+                            className="mds-calendar-delete"
+                            aria-label="Supprimer ce rendez-vous du planning"
+                            disabled={deleteAppt.isPending}
+                            onClick={() => {
+                              if (window.confirm("Supprimer ce rendez-vous du planning ?")) deleteAppt.mutate({ id: a.id });
+                            }}
+                          >
+                            <Trash2 size={14} aria-hidden="true" />
+                          </button>
                         </div>
-                        <ActionButton onClick={() => onOpen(a.requestId)}>
-                          Ouvrir le dossier
-                        </ActionButton>
-                        <ActionButton
-                          className="destructive"
-                          aria-label="Supprimer ce rendez-vous du planning"
-                          disabled={deleteAppt.isPending}
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                "Supprimer ce rendez-vous du planning ?"
-                              )
-                            )
-                              deleteAppt.mutate({ id: a.id });
-                          }}
-                        >
-                          <Trash2 size={16} aria-hidden="true" />
-                        </ActionButton>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </section>
                 );
               })}

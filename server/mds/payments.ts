@@ -215,6 +215,12 @@ function completeParameters(
 export function providerId(value: string | { id: string } | null | undefined) {
   return typeof value === "string" ? value : value?.id || null;
 }
+const subscriptionPlans = {
+  artisan_monthly: "price_1Ua2TdRsH5ZKkWjnwsHEPsFd",
+  artisan_yearly: "price_1Ua2TdRsH5ZKkWjnUa66UHZH",
+  property_monthly: "price_1Ua2TdRsH5ZKkWjnJv53dJxV",
+  property_yearly: "price_1Ua2TdRsH5ZKkWjniQULXnmY",
+} as const;
 function validSession(
   session: Stripe.Checkout.Session,
   payment: Payment,
@@ -286,6 +292,49 @@ export const paymentsRouter = router({
       .where(await requestFilter(db, ctx.user))
       .orderBy(desc(s.payments.createdAt), desc(s.payments.id));
   }),
+  subscriptionCheckout: authenticated
+    .input(
+      z.object({
+        plan: z.enum([
+          "artisan_monthly",
+          "artisan_yearly",
+          "property_monthly",
+          "property_yearly",
+        ]),
+        origin: z.string().url().max(2048),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      if (ctx.user.role !== "admin" && ctx.user.accountType !== "professional")
+        fail("Créez ou utilisez un compte professionnel avant de souscrire.", "FORBIDDEN");
+      if (!ctx.user.email) fail("Ajoutez une adresse e-mail à votre compte avant de souscrire.");
+      const origin = validateCheckoutOrigin(input.origin, ctx.req);
+      const { stripe, mode } = stripeRequired();
+      if (mode !== "live") fail("Les abonnements sont disponibles uniquement en mode LIVE.", "CONFLICT");
+      const db = await dbRequired();
+      const metadata = {
+        mds_plan: input.plan,
+        user_id: String(ctx.user.id),
+        customer_email: bounded(ctx.user.email),
+      };
+      const session = await stripe.checkout.sessions.create(
+        {
+          mode: "subscription",
+          line_items: [{ price: subscriptionPlans[input.plan], quantity: 1 }],
+          customer_email: ctx.user.email,
+          success_url: `${origin}/professionnels?subscription=success&plan=${encodeURIComponent(input.plan)}`,
+          cancel_url: `${origin}/professionnels?subscription=annule`,
+          client_reference_id: `mds-${ctx.user.id}-${input.plan}`,
+          metadata,
+          subscription_data: { metadata },
+          allow_promotion_codes: true,
+        },
+        { idempotencyKey: `mds-subscription-${ctx.user.id}-${input.plan}-${randomUUID()}` }
+      );
+      if (!session.url) fail("Stripe n’a pas fourni de lien de souscription.", "CONFLICT");
+      await recordAudit(db, ctx.user.id, `subscription.checkout.${mode}`, "user", ctx.user.id);
+      return { url: session.url, plan: input.plan };
+    }),
   checkout: procedure
     .input(
       trackSchema.extend({

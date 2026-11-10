@@ -241,6 +241,7 @@ export default function Professional() {
 function ProfessionalOffer({ onGoWorkspace }: { onGoWorkspace: () => void }) {
   const { user } = useAuth();
   const [formula, setFormula] = useState<Formula>("annual");
+  const [billingProfile, setBillingProfile] = useState<"artisan" | "property">("property");
   const [sector, setSector] = useState("");
   const [sent, setSent] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -256,6 +257,32 @@ function ProfessionalOffer({ onGoWorkspace }: { onGoWorkspace: () => void }) {
   const [message, setMessage] = useState("");
   const [consent, setConsent] = useState(false);
   const create = trpc.mds.requests.create.useMutation();
+  const subscription = trpc.mds.payments.subscriptionCheckout.useMutation();
+  async function subscribe(selectedFormula: Formula = formula) {
+    setSubmitError(null);
+    if (!user) {
+      setSubmitError("Connectez-vous avec un compte professionnel avant de souscrire.");
+      return;
+    }
+    if (selectedFormula === "custom") {
+      setSubmitError("La formule grands comptes nécessite une proposition sur mesure.");
+      selectFormula(selectedFormula);
+      return;
+    }
+    try {
+      const result = await subscription.mutateAsync({
+        plan: `${billingProfile}_${selectedFormula === "annual" ? "yearly" : "monthly"}` as
+          | "artisan_monthly"
+          | "artisan_yearly"
+          | "property_monthly"
+          | "property_yearly",
+        origin: window.location.origin,
+      });
+      window.location.assign(result.url);
+    } catch (err: unknown) {
+      setSubmitError(err instanceof Error ? err.message : "Impossible d’ouvrir le paiement Stripe.");
+    }
+  }
 
   function selectFormula(f: Formula) {
     setFormula(f);
@@ -407,21 +434,29 @@ function ProfessionalOffer({ onGoWorkspace }: { onGoWorkspace: () => void }) {
             Contrats d'entretien : formules d'abonnement adaptées
           </h2>
           <span className="muted small-text">
-            Cliquez une formule pour passer directement à la souscription
+            Choisissez votre profil puis ouvrez le paiement sécurisé Stripe
           </span>
         </div>
+        <Field label="Profil de facturation">
+          <select
+            value={billingProfile}
+            onChange={event =>
+              setBillingProfile(event.target.value as "artisan" | "property")
+            }
+          >
+            <option value="property">Gestionnaire immobilier / organisation</option>
+            <option value="artisan">Artisan MDS</option>
+          </select>
+        </Field>
         <div className="pro-plans-grid">
           {plans.map(p => {
             const isSelected = formula === (p.id as Formula);
             return (
-              <button
+              <article
                 key={p.id}
-                type="button"
                 className={`panel pro-plan-card pro-plan-clickable stack ${
                   p.highlight ? "pro-plan-highlight" : ""
                 } ${isSelected ? "pro-plan-selected" : ""}`}
-                onClick={() => selectFormula(p.id as Formula)}
-                aria-pressed={isSelected}
               >
                 <div
                   className="row"
@@ -450,10 +485,26 @@ function ProfessionalOffer({ onGoWorkspace }: { onGoWorkspace: () => void }) {
                     </li>
                   ))}
                 </ul>
-                <span className="btn primary pro-plan-cta">
-                  Choisir cette formule →
-                </span>
-              </button>
+                {p.id === "custom" ? (
+                  <ActionButton
+                    className="primary pro-plan-cta"
+                    onClick={() => selectFormula(p.id as Formula)}
+                  >
+                    Choisir cette formule — demander une offre sur mesure →
+                  </ActionButton>
+                ) : (
+                  <ActionButton
+                    className="primary pro-plan-cta"
+                    disabled={subscription.isPending}
+                    onClick={() => {
+                      setFormula(p.id as Formula);
+                      void subscribe();
+                    }}
+                  >
+                    {subscription.isPending ? "Ouverture de Stripe…" : "Choisir cette formule — souscrire avec Stripe →"}
+                  </ActionButton>
+                )}
+              </article>
             );
           })}
         </div>

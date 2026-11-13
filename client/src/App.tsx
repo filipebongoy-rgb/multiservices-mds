@@ -19,6 +19,7 @@ const Artisan = lazy(() => import("./pages/Artisan"));
 const Professional = lazy(() => import("./pages/Professional"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const Network = lazy(() => import("./pages/Network"));
+const LocalService = lazy(() => import("./pages/LocalService").then(m => ({ default: m.LocalServicePage })));
 const Profile = lazy(() => import("./pages/Profile"));
 const Auth = lazy(() => import("./pages/Auth"));
 import { Privacy, LegalNotice } from "./pages/Legal";
@@ -32,6 +33,11 @@ const titles: Record<string, string> = {
   "/professionnels": "Espace professionnel",
   "/portfolio": "Réalisations MDS",
   "/reseau": "Réseau MDS",
+  "/plombier-rennes": "Plombier à Rennes",
+  "/electricien-rennes": "Électricien à Rennes",
+  "/chauffagiste-rennes": "Chauffagiste à Rennes",
+  "/peintre-rennes": "Peintre à Rennes",
+  "/petits-travaux-rennes": "Petits travaux à Rennes",
   "/artisan": "Espace artisan",
   "/artisan/assistant": "Assistant artisan",
   "/artisan/demandes": "Demandes artisan",
@@ -98,6 +104,11 @@ function Routes() {
           <Route path="/professionnels" component={Professional} />
           <Route path="/portfolio" component={Portfolio} />
           <Route path="/reseau" component={Network} />
+          <Route path="/plombier-rennes" component={() => <LocalService slug="plombier-rennes" />} />
+          <Route path="/electricien-rennes" component={() => <LocalService slug="electricien-rennes" />} />
+          <Route path="/chauffagiste-rennes" component={() => <LocalService slug="chauffagiste-rennes" />} />
+          <Route path="/peintre-rennes" component={() => <LocalService slug="peintre-rennes" />} />
+          <Route path="/petits-travaux-rennes" component={() => <LocalService slug="petits-travaux-rennes" />} />
           <Route path="/artisan/:section/:id" component={Artisan} />
           <Route path="/artisan/:section" component={Artisan} />
           <Route path="/artisan" component={Artisan} />

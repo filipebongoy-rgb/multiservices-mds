@@ -427,6 +427,26 @@
 .simple-home-intro {
   max-width: 800px;
 }
+.home-local-links { margin: 28px 0 0; padding: 18px 20px; border: 1px solid #e5e2de; background: #fff; }
+.home-local-links h2 { margin: 0; color: #172a38; font-size: 20px; }
+.home-local-link-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.home-local-link-grid a { display: inline-flex; min-height: 42px; align-items: center; padding: 9px 13px; border: 1px solid #e5e2de; border-radius: 7px; color: #8b3d1e; font-weight: 700; text-decoration: none; }
+.home-local-link-grid a:hover, .home-local-link-grid a:focus-visible { border-color: #bc4c23; background: #fff5eb; }
+.local-service-page { max-width: 900px; }
+.local-service-page .lead { max-width: 760px; }
+.local-service-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0; }
+.local-service-panel { margin-top: 18px; padding: 22px; border: 1px solid #e5e2de; background: #fff; }
+.local-service-panel h2, .local-service-searches h2 { margin-top: 0; color: #172a38; font-size: 22px; }
+.local-service-panel p { color: #4f514c; line-height: 1.6; }
+.local-service-panel ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; padding-left: 22px; }
+.local-service-panel li { color: #303631; line-height: 1.45; }
+.local-service-facts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.local-service-facts span { display: inline-flex; align-items: center; gap: 6px; padding: 9px 11px; background: #f7f5f2; color: #59616a; font-size: 13px; }
+.local-service-searches { margin-top: 18px; padding: 20px; background: #f7f5f2; }
+.local-service-searches > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.local-service-searches span { padding: 8px 10px; border-radius: 5px; background: #fff; color: #59616a; font-size: 13px; }
+.local-service-links { margin: 22px 0; }
+@media (max-width: 720px) { .local-service-panel ul { grid-template-columns: 1fr; } .local-service-actions .btn { width: 100%; justify-content: center; } }
 .simple-home h1 {
   font-family: "Trebuchet MS", Arial, sans-serif;
   font-size: clamp(32px, 4vw, 48px);

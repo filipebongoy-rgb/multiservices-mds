@@ -197,6 +197,20 @@ export default function Home() {
         <Link href="/reseau"><strong>Partager MDS</strong><span>Recommander l’artisan à un proche</span><ArrowRight size={17} aria-hidden="true" /></Link>
       </section>
 
+      <section className="home-local-links" aria-labelledby="home-local-title">
+        <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
+          <h2 id="home-local-title">Trouver un artisan à Rennes</h2>
+          <span className="muted small-text">Rennes et alentours</span>
+        </div>
+        <div className="home-local-link-grid">
+          <Link href="/plombier-rennes">Plombier à Rennes</Link>
+          <Link href="/electricien-rennes">Électricien à Rennes</Link>
+          <Link href="/chauffagiste-rennes">Chauffagiste à Rennes</Link>
+          <Link href="/peintre-rennes">Peintre à Rennes</Link>
+          <Link href="/petits-travaux-rennes">Petits travaux à Rennes</Link>
+        </div>
+      </section>
+
       {/* Catégories populaires façon Uber Eats */}
       <section
         className="simple-services"

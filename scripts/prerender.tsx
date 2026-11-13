@@ -5,6 +5,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import Home from "../client/src/pages/Home";
 import { Privacy } from "../client/src/pages/Legal";
 import { trades } from "../shared/mds";
+import { LocalServicePage, localServices, type LocalServiceSlug } from "../client/src/pages/LocalService";
 const pages: Record<string, string> = {
   "/": renderToString(
     <Router ssrPath="/">
@@ -57,6 +58,13 @@ const pages: Record<string, string> = {
     </main>
   ),
 };
+for (const slug of Object.keys(localServices) as LocalServiceSlug[]) {
+  pages[`/${slug}`] = renderToString(
+    <Router ssrPath={`/${slug}`}>
+      <LocalServicePage slug={slug} />
+    </Router>
+  );
+}
 mkdirSync("client/public", { recursive: true });
 writeFileSync("client/public/prerender.json", JSON.stringify(pages));
 console.log("Rendu initial préparé pour " + Object.keys(pages).join(", "));

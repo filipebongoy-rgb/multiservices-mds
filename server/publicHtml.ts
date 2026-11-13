@@ -9,6 +9,11 @@ const titles: Record<string, string> = {
   "/professionnels": "Espace professionnel",
   "/portfolio": "Réalisations MDS",
   "/reseau": "Réseau MDS",
+  "/plombier-rennes": "Plombier à Rennes — dépannage et travaux à domicile",
+  "/electricien-rennes": "Électricien à Rennes — dépannage et installation",
+  "/chauffagiste-rennes": "Chauffagiste à Rennes — chauffage et radiateurs",
+  "/peintre-rennes": "Peintre à Rennes — peinture intérieure et rénovation",
+  "/petits-travaux-rennes": "Petits travaux à Rennes — artisan multiservices",
   "/artisan": "Espace artisan",
   "/profil": "Mon profil",
   "/connexion": "Connexion",
@@ -31,6 +36,11 @@ const descriptions: Record<string, string> = {
     "Découvrez les réalisations MDS, les photos avant et après disponibles avec accord client et les avis vérifiés à Rennes.",
   "/reseau":
     "Partagez MULTISERVICES MDS à Rennes, envoyez une demande et recommandez un artisan local sans exposer les dossiers privés.",
+  "/plombier-rennes": "Plombier à Rennes pour fuite d’eau, débouchage, robinet, lavabo, douche et chauffe-eau. Demande simple à domicile avec MULTISERVICES MDS.",
+  "/electricien-rennes": "Électricien à Rennes pour panne, prises, éclairage, tableau électrique, disjoncteur et VMC. Décrivez votre besoin à MULTISERVICES MDS.",
+  "/chauffagiste-rennes": "Chauffagiste à Rennes pour radiateur en panne, chaudière, thermostat et entretien du chauffage. Demande rapide avec MULTISERVICES MDS.",
+  "/peintre-rennes": "Peintre à Rennes pour murs, plafonds, rebouchage, ponçage et rénovation intérieure. Demandez un devis peinture avec MULTISERVICES MDS.",
+  "/petits-travaux-rennes": "Petits travaux à Rennes : montage de meubles, fixation d’étagère, pose de tringle, réparation de porte et bricolage à domicile.",
   "/confidentialite":
     "Découvrez quelles informations sont conservées par MULTISERVICES MDS et comment sont protégés vos dossiers et vos pièces jointes.",
 };
@@ -75,6 +85,7 @@ export function publicPageHtml(
     pathname === "/prestations" ||
     pathname === "/portfolio" ||
     pathname === "/reseau" ||
+    pathname.endsWith("-rennes") ||
     pathname === "/confidentialite" ||
     pathname === "/mentions-legales";
   let body = "";
@@ -84,6 +95,15 @@ export function publicPageHtml(
         pathname
       ] || "";
   } catch {}
+  const origin = "https://mdsservices-73dc9ex8.manus.space";
+  const canonical = origin + (pathname === "/" ? "/" : pathname);
+  const keywords: Record<string, string> = {
+    "/plombier-rennes": "plombier Rennes, dépannage plomberie, fuite d’eau, débouchage WC, robinet, chauffe-eau",
+    "/electricien-rennes": "électricien Rennes, dépannage électrique, panne électrique, prise, luminaire, VMC",
+    "/chauffagiste-rennes": "chauffagiste Rennes, radiateur en panne, chaudière, thermostat, entretien chauffage",
+    "/peintre-rennes": "peintre Rennes, peinture intérieure, peinture plafond, enduit mural, rénovation appartement",
+    "/petits-travaux-rennes": "petits travaux Rennes, bricoleur à domicile, montage meubles, fixation étagère, artisan multiservices",
+  };
   return template
     .replace(/<title>[^<]*<\/title>/, "<title>" + escape(title) + "</title>")
     .replace(
@@ -98,7 +118,19 @@ export function publicPageHtml(
         escape(title) +
         '" /><meta property="og:description" content="' +
         escape(description) +
-        '" /><meta name="twitter:card" content="summary" /></head>'
+        '" /><meta name="keywords" content="' +
+        escape(keywords[pathname] || "artisan Rennes, dépannage à domicile, petits travaux, devis travaux") +
+        '" /><link rel="canonical" href="' +
+        escape(canonical) +
+        '" /><meta property="og:url" content="' +
+        escape(canonical) +
+        '" /><meta property="og:image" content="' +
+        escape(origin + "/mds-logo-320.png") +
+        '" /><meta name="twitter:card" content="summary" /><meta name="twitter:title" content="' +
+        escape(title) +
+        '" /><meta name="twitter:description" content="' +
+        escape(description) +
+        '" /></head>'
     )
     .replace('<div id="root"></div>', '<div id="root">' + body + "</div>");
 }

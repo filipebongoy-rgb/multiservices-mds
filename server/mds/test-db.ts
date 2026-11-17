@@ -9,6 +9,16 @@ import { MySqlDialect } from "drizzle-orm/mysql-core";
 type Row = Record<string, any>;
 type Store = Record<string, Row[]>;
 const dialect = new MySqlDialect();
+// Drizzle serialises MySQL timestamps as UTC without a zone suffix
+// ("2026-11-17 17:02:00.000"). Parsing that with new Date() reads it as local
+// time and shifts comparisons by the machine's UTC offset, so read it as UTC.
+const zonelessTimestamp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?$/;
+function parameterTime(value: unknown) {
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === "string" && zonelessTimestamp.test(value))
+    return new Date(value.replace(" ", "T") + "Z").getTime();
+  return new Date(value as any).getTime();
+}
 function condition(sql: SQL | undefined, row: Row) {
   if (!sql) return true;
   const query = dialect.sqlToQuery(sql);
@@ -64,7 +74,7 @@ function condition(sql: SQL | undefined, row: Row) {
     }
     const b = value();
     const left = a instanceof Date ? a.getTime() : a;
-    const right = a instanceof Date ? new Date(b).getTime() : b;
+    const right = a instanceof Date ? parameterTime(b) : b;
     switch (op) {
       case "=":
         return left === right;

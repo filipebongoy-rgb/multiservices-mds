@@ -65,6 +65,21 @@ const actionForTask = (task: Task): ActionType => {
   return "follow_up";
 };
 
+const statusLabel: Record<string, string> = {
+  proposed: "À valider",
+  scheduled: "Programmée",
+  approved: "En cours d’envoi",
+  sent: "Envoyée",
+  failed: "Échec",
+  cancelled: "Annulée",
+};
+// Le serveur calcule l’heure : toujours 9 h, à Paris.
+const scheduleChoices = [
+  { when: "tomorrow", label: "Demain 9 h" },
+  { when: "three_days", label: "Dans 3 jours" },
+  { when: "one_week", label: "Dans 1 semaine" },
+] as const;
+
 function taskIcon(task: Task) {
   if (task.priority === "urgent") return <AlertTriangle size={19} aria-hidden="true" />;
   if (task.kind === "appointment") return <CalendarClock size={19} aria-hidden="true" />;
@@ -84,12 +99,15 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
   const prepareQuoteMutation = trpc.mds.assistant.prepareQuote.useMutation();
   const autoValidateMutation = trpc.mds.assistant.autoValidate.useMutation();
   const cancelMutation = trpc.mds.assistant.cancel.useMutation();
+  const scheduleMutation = trpc.mds.assistant.schedule.useMutation();
+  const unscheduleMutation = trpc.mds.assistant.unschedule.useMutation();
   const utils = trpc.useUtils();
   const [draft, setDraft] = useState<{
     id: number;
     subject: string;
     body: string;
     recipient: string;
+    actionType: ActionType;
     channel: Channel;
     note: string;
     status: string;
@@ -156,6 +174,19 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
       await utils.mds.assistant.overview.invalidate();
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Le brouillon n’a pas pu être préparé.");
+    }
+  };
+
+  const scheduleDraft = async (when: (typeof scheduleChoices)[number]["when"]) => {
+    if (!draft) return;
+    if (!window.confirm("Programmer cette relance ? Rien ne sera envoyé avant l’heure choisie, et vous pourrez l’annuler d’ici là.")) return;
+    try {
+      const result = await scheduleMutation.mutateAsync({ actionId: draft.id, when, subject: draft.subject, body: draft.body });
+      setNotice(result.note);
+      setDraft(null);
+      await utils.mds.assistant.overview.invalidate();
+    } catch {
+      /* ErrorNotice displays the mutation error. */
     }
   };
 
@@ -266,7 +297,7 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
         </div>
       </header>
 
-      <ErrorNotice error={draftMutation.error || approveMutation.error || cancelMutation.error || autoConfirmMutation.error || prepareQuoteMutation.error || autoValidateMutation.error} />
+      <ErrorNotice error={draftMutation.error || approveMutation.error || cancelMutation.error || scheduleMutation.error || unscheduleMutation.error || autoConfirmMutation.error || prepareQuoteMutation.error || autoValidateMutation.error} />
       {notice && <p className="notice" role="status">{notice}</p>}
 
       <section className="panel assistant-voice-panel" aria-labelledby="assistant-voice-title" aria-label="Actions rapides">
@@ -376,20 +407,61 @@ export function ArtisanAssistant({ onOpenRequest }: { onOpenRequest: (id: number
                 {draft.channel === "call" ? (
                   <ActionButton className="primary" disabled={approveMutation.isPending} onClick={async () => { if (!data.voice.configured) { setNotice("L’appel est préparé mais reste désactivé tant que le fournisseur Voice n’est pas configuré."); return; } if (!window.confirm(`Lancer l’appel vers ${draft.recipient} ?`)) return; try { const result = await approveMutation.mutateAsync({ actionId: draft.id }); setNotice(result.note); setDraft({ ...draft, status: result.status }); await utils.mds.assistant.overview.invalidate(); } catch { /* ErrorNotice displays the mutation error. */ } }}><Phone size={16} aria-hidden="true" /> {approveMutation.isPending ? "Appel…" : "Lancer l’appel"}</ActionButton>
                 ) : (
-                  <ActionButton className="primary" disabled={approveMutation.isPending} onClick={async () => { if (!window.confirm(`Envoyer ce ${draft.channel === "email" ? "e-mail" : "SMS"} à ${draft.recipient} ?`)) return; try { const result = await approveMutation.mutateAsync({ actionId: draft.id }); setNotice(result.note); setDraft({ ...draft, status: result.status }); await utils.mds.assistant.overview.invalidate(); } catch { /* ErrorNotice displays the mutation error. */ } }}><Send size={16} aria-hidden="true" /> {approveMutation.isPending ? "Envoi…" : "Valider et envoyer"}</ActionButton>
+                  <ActionButton className="primary" disabled={approveMutation.isPending} onClick={async () => { if (!window.confirm(`Envoyer ce ${draft.channel === "email" ? "e-mail" : "SMS"} à ${draft.recipient} ?`)) return; try { const result = await approveMutation.mutateAsync({ actionId: draft.id, subject: draft.subject, body: draft.body }); setNotice(result.note); setDraft({ ...draft, status: result.status }); await utils.mds.assistant.overview.invalidate(); } catch { /* ErrorNotice displays the mutation error. */ } }}><Send size={16} aria-hidden="true" /> {approveMutation.isPending ? "Envoi…" : "Valider et envoyer"}</ActionButton>
                 )}
                 <ActionButton disabled={cancelMutation.isPending} onClick={async () => { try { await cancelMutation.mutateAsync({ actionId: draft.id }); setDraft(null); await utils.mds.assistant.overview.invalidate(); } catch { /* ErrorNotice displays the mutation error. */ } }}><X size={16} aria-hidden="true" /> Annuler</ActionButton>
               </div>
-              {draft.status !== "proposed" && <p className="assistant-status"><Check size={16} aria-hidden="true" /> Statut : {draft.status}</p>}
+              {draft.channel !== "call" && draft.actionType === "follow_up" && draft.status === "proposed" && (
+                <div className="stack assistant-schedule">
+                  <span className="muted small-text">Ou programmer l’envoi :</span>
+                  <div className="row" style={{ flexWrap: "wrap" }}>
+                    {scheduleChoices.map(choice => (
+                      <ActionButton key={choice.when} disabled={scheduleMutation.isPending} onClick={() => void scheduleDraft(choice.when)}>
+                        <CalendarClock size={16} aria-hidden="true" /> {choice.label}
+                      </ActionButton>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {draft.status !== "proposed" && <p className="assistant-status"><Check size={16} aria-hidden="true" /> Statut : {statusLabel[draft.status] ?? draft.status}</p>}
             </div>
           )}
         </div>}
       </div>
 
+      {data.scheduledActions.length > 0 && <section className="panel stack assistant-scheduled" aria-labelledby="assistant-scheduled-title">
+        <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
+          <div><span className="eyebrow">Envois à venir</span><h3 id="assistant-scheduled-title" style={{ margin: "4px 0 0" }}>Relances programmées</h3></div>
+          <span className="badge">{data.scheduledActions.length}</span>
+        </div>
+        <div className="assistant-history">
+          {data.scheduledActions.map(action => (
+            <div className="assistant-history-row" key={action.id}>
+              <div>
+                <strong>{action.reference ?? "Dossier"} · {action.recipient}</strong>
+                <span>{action.channel === "email" ? "E-mail" : "SMS"} · {action.scheduledFor ? dateTime(action.scheduledFor) : "date à confirmer"}</span>
+              </div>
+              <div className="assistant-task-actions">
+                {action.requestId && <ActionButton onClick={() => onOpenRequest(action.requestId!)}>Ouvrir le dossier</ActionButton>}
+                <ActionButton disabled={unscheduleMutation.isPending} onClick={async () => {
+                  if (!window.confirm("Annuler cette relance programmée ? Rien ne sera envoyé.")) return;
+                  try {
+                    const result = await unscheduleMutation.mutateAsync({ actionId: action.id });
+                    setNotice(result.note);
+                    await utils.mds.assistant.overview.invalidate();
+                  } catch { /* ErrorNotice displays the mutation error. */ }
+                }}><X size={16} aria-hidden="true" /> Annuler</ActionButton>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="muted small-text">Rien n’est envoyé avant l’heure prévue. Si le dossier est terminé entre-temps, la relance est annulée automatiquement.</p>
+      </section>}
+
       {data.recentActions.length > 0 && <details className="panel assistant-history-details">
         <summary>Voir l’historique des brouillons ({data.recentActions.length})</summary>
         <div className="row" style={{ justifyContent: "space-between" }}><div><span className="eyebrow">Historique assistant</span><h3 style={{ margin: "4px 0 0" }}>Dernières propositions</h3></div><span className="muted small-text">Modèle : {data.assistantModel}</span></div>
-        <div className="assistant-history">{data.recentActions.map(action => <div className="assistant-history-row" key={action.id}><div><strong>{action.subject}</strong><span>{action.channel.toUpperCase()} · {action.status}</span></div><small>{dateTime(action.createdAt)}</small></div>)}</div>
+        <div className="assistant-history">{data.recentActions.map(action => <div className="assistant-history-row" key={action.id}><div><strong>{action.subject}</strong><span>{action.channel.toUpperCase()} · {statusLabel[action.status] ?? action.status}{action.status === "scheduled" && action.scheduledFor ? ` pour le ${dateTime(action.scheduledFor)}` : ""}</span>{(action.status === "failed" || action.status === "cancelled") && action.lastError && <small>{action.lastError}</small>}</div><small>{dateTime(action.createdAt)}</small></div>)}</div>
       </details>}
     </section>
   );

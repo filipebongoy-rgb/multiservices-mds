@@ -5,7 +5,7 @@
 - [ ] Un poste de pilotage unique affiche immédiatement les demandes prioritaires, rendez-vous du jour, urgences, relances en retard, devis à valider, factures à contrôler et appels à rappeler.
 - [ ] L’assistante prépare des brouillons de devis, contrats, e-mails, SMS et scripts d’appel à partir des données réelles du dossier ; elle n’invente aucun prix, aucune disponibilité et aucune information client.
 - [ ] Tout envoi de contrat, devis, facture, SMS, e-mail ou appel nécessite une validation explicite de l’artisan ; les états proposé, à valider, envoyé, échec et annulé sont visibles et historisés.
-- [ ] Les relances sont planifiables, dédoublonnées, annulables et réutilisent la file MDS existante sans prétendre à un envoi si le fournisseur n’est pas configuré.
+- [x] Les relances sont planifiables, dédoublonnées, annulables et réutilisent la file MDS existante sans prétendre à un envoi si le fournisseur n’est pas configuré. (livré le 18 novembre 2026, voir plus bas)
 - [ ] Les factures restent soumises aux contrôles métier existants : preuve photo obligatoire, signature client, validation du dossier et règles de paiement différé ; l’assistante ne débloque ni paiement ni transfert seule.
 - [ ] Les appels réels restent désactivés jusqu’à configuration explicite d’un numéro, d’un fournisseur et des règles de consentement ; l’interface fournit d’abord une fiche d’appel et un script de rappel.
 - [ ] L’artisan conserve une action terrain simple et prioritaire : démarrer, arriver, commencer, photos avant/après, signature et terminer.
@@ -17,7 +17,7 @@
 - [x] Les brouillons de relance e-mail, SMS et scripts d’appel sont enregistrés dans `mds_assistant_actions`, affichés avant action et bornés par les données du dossier ; un repli manuel est utilisé si l’IA est indisponible.
 - [x] L’artisan doit relire et valider explicitement un brouillon avant son passage dans la file e-mail/SMS. Le canal non configuré est affiché comme un échec contrôlé, jamais comme un envoi réussi.
 - [x] L’assistante n’altère pas les prix, créneaux, paiements, preuves photo ou signatures et ne déclenche pas d’appel réel.
-- [ ] La planification avancée de relances, la génération de contrats/devis complets et l’intégration d’un fournisseur téléphonique restent une étape distincte ; elles ne sont pas simulées dans cette version.
+- [ ] La génération de contrats/devis complets et l’intégration d’un fournisseur téléphonique restent une étape distincte ; elles ne sont pas simulées dans cette version. (La planification des relances est livrée : voir « Relances programmées ».)
 
 ## Agent vocal propriétaire MDS sans Retell
 
@@ -118,3 +118,15 @@
 - [x] Les routes dynamiques de fiches sont déclarées dans le manifeste public `/manus-routes.json`.
 - [x] La barre de navigation publique et le pied de page restent masqués sur toutes les sous-pages artisan.
 - [x] La suite de non-régression (336 tests) valide le routage de chaque espace artisan et la cohérence des libellés de retour.
+
+## Relances programmées — 18 novembre 2026
+
+- [x] Une relance client (e-mail ou SMS) relue par l’artisan peut être programmée en un clic : « Demain 9 h », « Dans 3 jours » ou « Dans 1 semaine ». L’heure est calculée côté serveur à Paris, heure d’été et d’hiver comprises.
+- [x] Rien n’est envoyé avant l’heure prévue. L’action passe par le statut `scheduled` (colonne `scheduledFor`, migration `0022_relances_planifiees`, purement additive) et reste annulable depuis la liste « Relances programmées ».
+- [x] Une seule relance programmée par dossier et par canal. Les appels, les devis et les factures ne se programment pas : les appels réels restent désactivés.
+- [x] L’exécution réutilise l’automatisation existante : les relances échues rejoignent `mds_message_outbox` avant `processOutbox`, avec la clé `assistant-action:<id>` qui empêche tout doublon, y compris entre une exécution planifiée et une exécution manuelle.
+- [x] Au moment de l’envoi, la relance est annulée si le dossier est devenu refusé, annulé, payé ou clos, ou si l’heure prévue est dépassée de plus de 24 h. Un dossier facturé mais impayé reste relançable.
+- [x] Canal non configuré : la relance passe en « Échec » avec le motif, jamais en « Envoyée ». Une action n’est « Envoyée » que lorsque le fournisseur a accepté le message ; un envoi incertain est signalé comme tel.
+- [x] Le texte relu et retouché à l’écran est celui qui est programmé ou envoyé. Avant ce correctif, les retouches faites dans le panneau de brouillon étaient perdues et le texte d’origine partait.
+- [x] La programmation et l’annulation sont réservées à l’administrateur MDS (un collaborateur est refusé). Chaque étape est auditée.
+- [ ] Les actions `draft`, `approve` et `cancel` de l’assistante n’appellent pas `requireAdmin`, contrairement à `overview`, `schedule` et `unschedule` : un collaborateur actif peut aujourd’hui les appeler. À trancher avec le propriétaire avant de resserrer l’accès.

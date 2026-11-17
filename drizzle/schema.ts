@@ -847,17 +847,22 @@ export const assistantActions = mysqlTable("mds_assistant_actions", {
     "sent",
     "failed",
     "cancelled",
+    // Validated by the artisan, waiting for scheduledFor. Appended last so the
+    // existing enum values keep their position in MySQL.
+    "scheduled",
   ])
     .default("proposed")
     .notNull(),
   dedupeKey: varchar("dedupeKey", { length: 180 }).notNull().unique(),
   lastError: varchar("lastError", { length: 500 }),
+  scheduledFor: timestamp("scheduledFor"),
   approvedAt: timestamp("approvedAt"),
   completedAt: timestamp("completedAt"),
   ...dates(),
 }, table => [
   index("assistant_actions_request").on(table.requestId),
   index("assistant_actions_status").on(table.status),
+  index("assistant_actions_due").on(table.status, table.scheduledFor),
 ]);
 export const voiceCallLogs = mysqlTable(
   "mds_voice_call_logs",

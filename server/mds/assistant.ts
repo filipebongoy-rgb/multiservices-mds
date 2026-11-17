@@ -7,6 +7,12 @@ import { artisan, dbRequired, event, principal, recordAudit, requireAdmin } from
 import { fail } from "./workflow";
 import { processOutbox, providerReadiness } from "./outbox";
 import { createOutboundVoiceCall, voiceProviderReadiness } from "./voice-agent";
+import {
+  followUpDate,
+  followUpPresets,
+  scheduleFollowUp,
+  unscheduleFollowUp,
+} from "./followups";
 import { autoConfirmRequest } from "./requests";
 import { quoteContentSchema, quoteTotals } from "../../shared/operations";
 
@@ -184,7 +190,7 @@ export const assistantRouter = router({
   overview: artisan.query(async ({ ctx }) => {
     const db = await dbRequired();
     await requireAdmin(db, ctx.user);
-    const [requests, appointments, quoteDrafts, invoices, payments, messages, incidents, actions] =
+    const [requests, appointments, quoteDrafts, invoices, payments, messages, incidents, actions, scheduledActions] =
       await Promise.all([
         db
           .select({
@@ -303,11 +309,28 @@ export const assistantRouter = router({
             channel: s.assistantActions.channel,
             subject: s.assistantActions.subject,
             status: s.assistantActions.status,
+            scheduledFor: s.assistantActions.scheduledFor,
+            lastError: s.assistantActions.lastError,
             createdAt: s.assistantActions.createdAt,
           })
           .from(s.assistantActions)
           .orderBy(desc(s.assistantActions.id))
           .limit(12),
+        db
+          .select({
+            id: s.assistantActions.id,
+            requestId: s.assistantActions.requestId,
+            channel: s.assistantActions.channel,
+            recipient: s.assistantActions.recipient,
+            subject: s.assistantActions.subject,
+            scheduledFor: s.assistantActions.scheduledFor,
+            reference: s.requests.reference,
+          })
+          .from(s.assistantActions)
+          .leftJoin(s.requests, eq(s.requests.id, s.assistantActions.requestId))
+          .where(eq(s.assistantActions.status, "scheduled"))
+          .orderBy(s.assistantActions.scheduledFor)
+          .limit(20),
       ]);
 
     const tasks: AssistantTask[] = [];
@@ -472,9 +495,11 @@ export const assistantRouter = router({
         today: tasks.filter(task => task.priority === "today").length,
         followUp: tasks.filter(task => task.priority === "follow_up").length,
         draftActions: actions.filter(action => action.status === "proposed").length,
+        scheduledFollowUps: scheduledActions.length,
         unpaidInvoices: invoices.filter(invoice => !invoice.paidAt).length,
       },
       recentActions: actions,
+      scheduledActions,
       channels: providerReadiness(),
       voice: voiceProviderReadiness(),
       assistantModel,
@@ -614,11 +639,24 @@ export const assistantRouter = router({
       note: draft.generatedBy === "fallback" ? "Brouillon de secours utilisé : l’IA était indisponible. Relisez-le avant toute action." : "Brouillon IA créé. Rien ne sera envoyé sans votre validation.",
     };
   }),
-  approve: artisan.input(z.object({ actionId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+  approve: artisan.input(z.object({
+    actionId: z.number().int().positive(),
+    // Texte relu à l’écran : s’il a été retouché, c’est lui qui est envoyé.
+    subject: draftSchema.shape.subject.optional(),
+    body: draftSchema.shape.body.optional(),
+  })).mutation(async ({ input, ctx }) => {
     const db = await dbRequired();
     const [action] = await db.select().from(s.assistantActions).where(eq(s.assistantActions.id, input.actionId)).limit(1);
     if (!action) fail("Cette proposition n’existe plus.", "NOT_FOUND");
     if (action.status !== "proposed") fail("Cette proposition a déjà été traitée.", "CONFLICT");
+    if ((input.subject && input.subject !== action.subject) || (input.body && input.body !== action.body)) {
+      const subject = input.subject ?? action.subject;
+      const body = input.body ?? action.body;
+      const [edited] = await db.update(s.assistantActions).set({ subject, body }).where(and(eq(s.assistantActions.id, action.id), eq(s.assistantActions.status, "proposed")));
+      if (edited.affectedRows !== 1) fail("Cette proposition a déjà été traitée.", "CONFLICT");
+      action.subject = subject;
+      action.body = body;
+    }
     const channel = action.channel;
     if (channel === "call") {
       try {
@@ -682,4 +720,46 @@ export const assistantRouter = router({
     await recordAudit(db, ctx.user.id, "assistant.cancel", "assistant_action", input.actionId);
     return { success: true as const };
   }),
+  // Programmer une relance déjà relue : elle partira à l’heure choisie, sans
+  // nouvelle intervention, et seulement si le dossier est toujours actif.
+  schedule: artisan
+    .input(
+      z.object({
+        actionId: z.number().int().positive(),
+        when: z.enum(followUpPresets),
+        subject: draftSchema.shape.subject.optional(),
+        body: draftSchema.shape.body.optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const db = await dbRequired();
+      await requireAdmin(db, ctx.user);
+      const result = await scheduleFollowUp(db, {
+        actionId: input.actionId,
+        sendAt: followUpDate(input.when),
+        actorId: ctx.user.id,
+        subject: input.subject,
+        body: input.body,
+      });
+      const when = new Intl.DateTimeFormat("fr-FR", {
+        timeZone: "Europe/Paris",
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(result.scheduledFor);
+      return {
+        ...result,
+        note: `Relance programmée pour ${when}. Rien n’est envoyé avant, et vous pouvez l’annuler jusque-là.`,
+      };
+    }),
+  unschedule: artisan
+    .input(z.object({ actionId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await dbRequired();
+      await requireAdmin(db, ctx.user);
+      await unscheduleFollowUp(db, { actionId: input.actionId, actorId: ctx.user.id });
+      return { status: "cancelled" as const, note: "La relance programmée est annulée. Rien n’a été envoyé." };
+    }),
 });

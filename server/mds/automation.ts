@@ -16,6 +16,7 @@ import {
 } from "./common";
 import { fail, proposalStates } from "./workflow";
 import { autoConfirmRequest, expireRequest } from "./requests";
+import { dispatchDueFollowUps, syncAssistantActions } from "./followups";
 import {
   processOutbox,
   providerReadiness,
@@ -121,6 +122,9 @@ export async function runAutomation(
       reminders: 0,
       appointmentsConfirmed: 0,
       requestsClosed: 0,
+      followUpsQueued: 0,
+      followUpsFailed: 0,
+      followUpsCancelled: 0,
       messagesAccepted: 0,
       messagesFailed: 0,
       messagesUncertain: 0,
@@ -323,8 +327,20 @@ export async function runAutomation(
         /* Preserve the last verified state without a false failure or resend. */
       }
     }
+    // Les relances programmées échues rejoignent la file d’envoi avant son traitement.
+    const followUps = await dispatchDueFollowUps(db, now, actor);
     const external = await processOutbox(db, await principal(db), 10);
-    const result = { ...summary, appointmentsConfirmed, requestsClosed, ...external };
+    // L’action de l’assistante ne devient « envoyée » que si le fournisseur a accepté le message.
+    await syncAssistantActions(db, now);
+    const result = {
+      ...summary,
+      appointmentsConfirmed,
+      requestsClosed,
+      followUpsQueued: followUps.queued,
+      followUpsFailed: followUps.failed,
+      followUpsCancelled: followUps.cancelled,
+      ...external,
+    };
     await db
       .update(s.automationRuns)
       .set({ status: "succeeded", summary: result, finishedAt: new Date() })

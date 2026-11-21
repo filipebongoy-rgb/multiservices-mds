@@ -5,13 +5,12 @@ import {
   type AnyColumn,
   type SQL,
 } from "drizzle-orm";
-import { MySqlDialect } from "drizzle-orm/mysql-core";
+import { PgDialect } from "drizzle-orm/pg-core";
 type Row = Record<string, any>;
 type Store = Record<string, Row[]>;
-const dialect = new MySqlDialect();
-// Drizzle serialises MySQL timestamps as UTC without a zone suffix
-// ("2026-11-17 17:02:00.000"). Parsing that with new Date() reads it as local
-// time and shifts comparisons by the machine's UTC offset, so read it as UTC.
+const dialect = new PgDialect();
+// Drizzle sérialise les timestamps en ISO (UTC) ; une chaîne sans fuseau
+// ("2026-11-17 17:02:00.000") serait lue en heure locale : on la lit en UTC.
 const zonelessTimestamp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?$/;
 function parameterTime(value: unknown) {
   if (value instanceof Date) return value.getTime();
@@ -24,18 +23,17 @@ function condition(sql: SQL | undefined, row: Row) {
   const query = dialect.sqlToQuery(sql);
   const tokens =
     query.sql.match(
-      /`[^`]+`(?:\.`[^`]+`)?|\(|\)|,|<=|>=|<>|!=|=|<|>|\?|\b\w+\b/g
+      /"[^"]+"(?:\."[^"]+")?|\(|\)|,|<=|>=|<>|!=|=|<|>|\$\d+|\b\w+\b/g
     ) || [];
   let pos = 0;
-  let parameter = 0;
   function value(): any {
     const t = tokens[pos++];
-    if (t === "?") return query.params[parameter++];
-    if (t.startsWith("`")) {
-      const qualified = t.replace(/`/g, "");
+    if (/^\$\d+$/.test(t)) return query.params[Number(t.slice(1)) - 1];
+    if (t.startsWith('"')) {
+      const qualified = t.replace(/"/g, "");
       return qualified in row
         ? row[qualified]
-        : row[t.split("`").filter(Boolean).at(-1)!];
+        : row[t.split('"').filter(Boolean).at(-1)!];
     }
     if (t === "true") return true;
     if (t === "false") return false;
@@ -182,7 +180,8 @@ export class MockDatabase {
     let locked = false;
     let data: Row = {};
     let maximum: number | undefined;
-    let duplicate: Row | undefined;
+    let conflict: { set?: Row } | undefined;
+    let returning: { fields?: Row } | undefined;
     const joins: { table: any; on: SQL }[] = [];
     const query: any = {
       from(t: any) {
@@ -216,16 +215,34 @@ export class MockDatabase {
         data = v;
         return query;
       },
-      onDuplicateKeyUpdate(o: { set: Row }) {
-        duplicate = o.set;
+      onConflictDoNothing() {
+        conflict = {};
         return query;
       },
-      $returningId: async () => {
-        const result = await execute();
-        return [{ id: result[0].insertId }];
+      onConflictDoUpdate(o: { set: Row }) {
+        conflict = { set: o.set };
+        return query;
+      },
+      returning(fields?: Row) {
+        returning = { fields };
+        return query;
       },
       then: (yes: any, no: any) => execute().then(yes, no),
     };
+    // PostgreSQL ne renvoie des lignes que si `returning` est demandé.
+    const project = (rows: Row[]) =>
+      returning
+        ? rows.map(r =>
+            returning!.fields
+              ? Object.fromEntries(
+                  Object.entries(returning!.fields).map(([key, col]) => [
+                    key,
+                    r[(col as AnyColumn).name],
+                  ])
+                )
+              : structuredClone(r)
+          )
+        : [];
     async function execute(): Promise<any> {
       const name = getTableName(table);
       if (locked && name === "mds_settings") await acquire();
@@ -284,27 +301,28 @@ export class MockDatabase {
                   r.userId === data.userId
               )
             : undefined;
-        if (duplicate && existing) {
-          Object.assign(existing, duplicate);
-          return [{ insertId: existing.id, affectedRows: 1 }];
+        if (conflict && existing) {
+          if (conflict.set) Object.assign(existing, conflict.set);
+          return conflict.set ? project([existing]) : [];
         }
         const newId = Math.max(0, ...rows.map(r => Number(r.id) || 0)) + 1;
-        rows.push({
+        const inserted = {
           ...defaults,
           id: newId,
           createdAt: new Date(),
           updatedAt: new Date(),
           ...structuredClone(data),
-        });
-        return [{ insertId: newId, affectedRows: 1 }];
+        };
+        rows.push(inserted);
+        return project([inserted]);
       }
       if (operation === "update") {
         for (const row of matches) Object.assign(row, structuredClone(data));
-        return [{ affectedRows: matches.length }];
+        return project(matches);
       }
       if (operation === "delete") {
         self.tables[name] = rows.filter(r => !condition(where, r));
-        return [{ affectedRows: matches.length }];
+        return project(matches);
       }
       throw new Error(`Unsupported test operation ${operation}`);
     }

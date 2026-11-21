@@ -10,10 +10,11 @@ import type {
   TravelRule,
 } from "../shared/pricing";
 import {
-  int,
+  integer,
+  serial,
   date,
-  mysqlEnum,
-  mysqlTable,
+  pgEnum,
+  pgTable,
   text,
   timestamp,
   varchar,
@@ -21,10 +22,16 @@ import {
   json,
   uniqueIndex,
   index,
-} from "drizzle-orm/mysql-core";
+} from "drizzle-orm/pg-core";
 
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
+export const usersAccountTypeEnum = pgEnum("users_accountType", [
+  "particular",
+  "professional",
+]);
+export const usersRoleEnum = pgEnum("users_role", ["user", "admin"]);
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -34,34 +41,40 @@ export const users = mysqlTable("users", {
   city: varchar("city", { length: 120 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   localLoginKey: varchar("localLoginKey", { length: 180 }).unique(),
-  accountType: mysqlEnum("accountType", ["particular", "professional"])
+  accountType: usersAccountTypeEnum("accountType")
     .default("particular")
     .notNull(),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: usersRoleEnum("role").default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-export const localCredentials = mysqlTable("mds_local_credentials", {
-  userId: int("userId")
+export const localCredentials = pgTable("mds_local_credentials", {
+  userId: integer("userId")
     .primaryKey()
     .references(() => users.id),
   passwordHash: varchar("passwordHash", { length: 128 }).notNull(),
   passwordSalt: varchar("passwordSalt", { length: 64 }).notNull(),
-  failedAttempts: int("failedAttempts").default(0).notNull(),
+  failedAttempts: integer("failedAttempts").default(0).notNull(),
   lockedUntil: timestamp("lockedUntil"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
 
-export const localSessions = mysqlTable(
+export const localSessions = pgTable(
   "mds_local_sessions",
   {
     tokenHash: varchar("tokenHash", { length: 64 }).primaryKey(),
-    userId: int("userId")
+    userId: integer("userId")
       .notNull()
       .references(() => users.id),
     expiresAt: timestamp("expiresAt").notNull(),
@@ -71,11 +84,11 @@ export const localSessions = mysqlTable(
   table => [index("local_sessions_user_idx").on(table.userId)]
 );
 
-export const localPasswordResets = mysqlTable(
+export const localPasswordResets = pgTable(
   "mds_local_password_resets",
   {
     tokenHash: varchar("tokenHash", { length: 64 }).primaryKey(),
-    userId: int("userId")
+    userId: integer("userId")
       .notNull()
       .references(() => users.id),
     expiresAt: timestamp("expiresAt").notNull(),
@@ -86,58 +99,84 @@ export const localPasswordResets = mysqlTable(
 );
 const dates = () => ({
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
-const id = () => int("id").autoincrement().primaryKey();
+const id = () => serial("id").primaryKey();
 
-export const adminInvites = mysqlTable("mds_admin_invites", {
+export const adminInvitesStatusEnum = pgEnum("mds_admin_invites_status", [
+  "pending",
+  "active",
+  "revoked",
+]);
+
+export const adminInvites = pgTable("mds_admin_invites", {
   id: id(),
   email: varchar("email", { length: 320 }).notNull().unique(),
-  status: mysqlEnum("status", ["pending", "active", "revoked"])
-    .default("active")
-    .notNull(),
-  invitedBy: int("invitedBy").references(() => users.id),
-  acceptedBy: int("acceptedBy").references(() => users.id),
+  status: adminInvitesStatusEnum("status").default("active").notNull(),
+  invitedBy: integer("invitedBy").references(() => users.id),
+  acceptedBy: integer("acceptedBy").references(() => users.id),
   acceptedAt: timestamp("acceptedAt"),
   ...dates(),
 });
 
-export const artisanTeam = mysqlTable(
+export const artisanTeamRoleEnum = pgEnum("mds_artisan_team_role", [
+  "technician",
+  "assistant",
+]);
+export const artisanTeamStatusEnum = pgEnum("mds_artisan_team_status", [
+  "pending",
+  "active",
+  "revoked",
+]);
+
+export const artisanTeam = pgTable(
   "mds_artisan_team",
   {
     id: id(),
-    ownerUserId: int("ownerUserId")
+    ownerUserId: integer("ownerUserId")
       .notNull()
       .references(() => users.id),
-    userId: int("userId").references(() => users.id),
+    userId: integer("userId").references(() => users.id),
     email: varchar("email", { length: 320 }).notNull(),
     displayName: varchar("displayName", { length: 200 }).notNull(),
-    role: mysqlEnum("role", ["technician", "assistant"]).default("technician").notNull(),
-    status: mysqlEnum("status", ["pending", "active", "revoked"]).default("pending").notNull(),
+    role: artisanTeamRoleEnum("role").default("technician").notNull(),
+    status: artisanTeamStatusEnum("status").default("pending").notNull(),
     ...dates(),
   },
-  table => [uniqueIndex("artisan_team_owner_email").on(table.ownerUserId, table.email)]
+  table => [
+    uniqueIndex("artisan_team_owner_email").on(table.ownerUserId, table.email),
+  ]
 );
 
-export const artisanAssignments = mysqlTable(
+export const artisanAssignmentsStatusEnum = pgEnum(
+  "mds_artisan_assignments_status",
+  ["assigned", "completed", "cancelled"]
+);
+
+export const artisanAssignments = pgTable(
   "mds_artisan_assignments",
   {
     id: id(),
-    requestId: int("requestId")
+    requestId: integer("requestId")
       .notNull()
       .references(() => requests.id),
-    teamMemberId: int("teamMemberId")
+    teamMemberId: integer("teamMemberId")
       .notNull()
       .references(() => artisanTeam.id),
-    assignedBy: int("assignedBy").references(() => users.id),
-    status: mysqlEnum("status", ["assigned", "completed", "cancelled"]).default("assigned").notNull(),
+    assignedBy: integer("assignedBy").references(() => users.id),
+    status: artisanAssignmentsStatusEnum("status")
+      .default("assigned")
+      .notNull(),
     ...dates(),
   },
   table => [uniqueIndex("artisan_assignment_request").on(table.requestId)]
 );
 
-export const settings = mysqlTable("mds_settings", {
-  id: int("id").primaryKey(),
+export const settings = pgTable("mds_settings", {
+  id: integer("id").primaryKey(),
   zone: varchar("zone", { length: 300 }).default("").notNull(),
   contactEmail: varchar("contactEmail", { length: 320 }).default("").notNull(),
   contactPhone: varchar("contactPhone", { length: 30 }).default("").notNull(),
@@ -146,8 +185,8 @@ export const settings = mysqlTable("mds_settings", {
     .notNull(),
   legalName: varchar("legalName", { length: 200 }).default("").notNull(),
   legalNotice: text("legalNotice").notNull(),
-  proposalExpiryHours: int("proposalExpiryHours").default(72).notNull(),
-  artisanUserId: int("artisanUserId").references(() => users.id),
+  proposalExpiryHours: integer("proposalExpiryHours").default(72).notNull(),
+  artisanUserId: integer("artisanUserId").references(() => users.id),
   activationHash: varchar("activationHash", { length: 64 }),
   trackingSecret: varchar("trackingSecret", { length: 64 }),
   activationUsedAt: timestamp("activationUsedAt"),
@@ -157,11 +196,11 @@ export const settings = mysqlTable("mds_settings", {
     .notNull(),
   weeklyWindows: json("weeklyWindows").$type<WeeklyWindow[]>(),
   travelZones: json("travelZones").$type<TravelZone[]>(),
-  bufferMinutes: int("bufferMinutes").default(0).notNull(),
-  horizonDays: int("horizonDays").default(90).notNull(),
+  bufferMinutes: integer("bufferMinutes").default(0).notNull(),
+  horizonDays: integer("horizonDays").default(90).notNull(),
   remindersEnabled: boolean("remindersEnabled").default(false).notNull(),
-  reminderHours: int("reminderHours").default(24).notNull(),
-  proposalReminderHours: int("proposalReminderHours").default(6).notNull(),
+  reminderHours: integer("reminderHours").default(24).notNull(),
+  proposalReminderHours: integer("proposalReminderHours").default(6).notNull(),
   emailEnabled: boolean("emailEnabled").default(false).notNull(),
   smsEnabled: boolean("smsEnabled").default(false).notNull(),
   publicOrigin: varchar("publicOrigin", { length: 1000 }).default("").notNull(),
@@ -169,41 +208,48 @@ export const settings = mysqlTable("mds_settings", {
   smsFrom: varchar("smsFrom", { length: 80 }).default("").notNull(),
   ...dates(),
 });
-export const seedVersions = mysqlTable("mds_seed_versions", {
+export const seedVersions = pgTable("mds_seed_versions", {
   version: varchar("version", { length: 100 }).primaryKey(),
   appliedAt: timestamp("appliedAt").defaultNow().notNull(),
 });
-export const services = mysqlTable("mds_services", {
+export const servicesTradeEnum = pgEnum("mds_services_trade", [
+  "plomberie",
+  "electricite",
+  "chauffage",
+  "peinture",
+  "maintenance",
+]);
+export const servicesPricingModeEnum = pgEnum("mds_services_pricingMode", [
+  "fixed",
+  "quote",
+]);
+export const servicesTravelModeEnum = pgEnum("mds_services_travelMode", [
+  "unconfigured",
+  "included",
+  "fixed",
+  "postcode",
+]);
+
+export const services = pgTable("mds_services", {
   id: id(),
   seedKey: varchar("seedKey", { length: 150 }).unique(),
-  trade: mysqlEnum("trade", [
-    "plomberie",
-    "electricite",
-    "chauffage",
-    "peinture",
-    "maintenance",
-  ]).notNull(),
+  trade: servicesTradeEnum("trade").notNull(),
   name: varchar("name", { length: 120 }).notNull(),
   description: text("description").notNull(),
   photoUrl: varchar("photoUrl", { length: 1000 }).default("").notNull(),
-  priceCents: int("priceCents"),
+  priceCents: integer("priceCents"),
   pricingRule: varchar("pricingRule", { length: 500 }).notNull(),
-  durationMinutes: int("durationMinutes").default(60).notNull(),
-  pricingMode: mysqlEnum("pricingMode", ["fixed", "quote"])
+  durationMinutes: integer("durationMinutes").default(60).notNull(),
+  pricingMode: servicesPricingModeEnum("pricingMode")
     .default("quote")
     .notNull(),
-  pricingVersion: int("pricingVersion").default(0).notNull(),
+  pricingVersion: integer("pricingVersion").default(0).notNull(),
   included: text("included"),
   excluded: text("excluded"),
-  travelMode: mysqlEnum("travelMode", [
-    "unconfigured",
-    "included",
-    "fixed",
-    "postcode",
-  ])
+  travelMode: servicesTravelModeEnum("travelMode")
     .default("unconfigured")
     .notNull(),
-  travelFeeCents: int("travelFeeCents"),
+  travelFeeCents: integer("travelFeeCents"),
   travelRules: json("travelRules").$type<TravelRule[]>(),
   questions: json("questions").$type<string[]>().notNull(),
   problemTypes: json("problemTypes").$type<string[]>().notNull(),
@@ -213,68 +259,81 @@ export const services = mysqlTable("mds_services", {
   deletedAt: timestamp("deletedAt"),
   ...dates(),
 });
-export const tariffs = mysqlTable("mds_tariffs", {
+export const tariffs = pgTable("mds_tariffs", {
   id: id(),
-  serviceId: int("serviceId")
+  serviceId: integer("serviceId")
     .notNull()
     .references(() => services.id),
-  priceCents: int("priceCents"),
+  priceCents: integer("priceCents"),
   rule: text("rule").notNull(),
   configuration: json("configuration").$type<PricingRules>(),
   validFrom: timestamp("validFrom").defaultNow().notNull(),
   validUntil: timestamp("validUntil"),
   ...dates(),
 });
-export const organizations = mysqlTable("mds_organizations", {
+export const organizationsTypeEnum = pgEnum("mds_organizations_type", [
+  "entreprise",
+  "syndic",
+  "bailleur",
+  "gestionnaire",
+  "association",
+  "collectivite",
+]);
+
+export const organizations = pgTable("mds_organizations", {
   id: id(),
   name: varchar("name", { length: 200 }).notNull(),
-  type: mysqlEnum("type", [
-    "entreprise",
-    "syndic",
-    "bailleur",
-    "gestionnaire",
-    "association",
-    "collectivite",
-  ]).notNull(),
-  ownerUserId: int("ownerUserId")
+  type: organizationsTypeEnum("type").notNull(),
+  ownerUserId: integer("ownerUserId")
     .notNull()
     .references(() => users.id),
   ...dates(),
 });
-export const members = mysqlTable(
+export const membersRoleEnum = pgEnum("mds_members_role", [
+  "owner",
+  "manager",
+  "member",
+]);
+
+export const members = pgTable(
   "mds_members",
   {
     id: id(),
-    organizationId: int("organizationId")
+    organizationId: integer("organizationId")
       .notNull()
       .references(() => organizations.id),
-    userId: int("userId")
+    userId: integer("userId")
       .notNull()
       .references(() => users.id),
-    role: mysqlEnum("role", ["owner", "manager", "member"]).notNull(),
+    role: membersRoleEnum("role").notNull(),
     ...dates(),
   },
   t => [uniqueIndex("member_org_user").on(t.organizationId, t.userId)]
 );
-export const invitations = mysqlTable("mds_invitations", {
+export const invitationsRoleEnum = pgEnum("mds_invitations_role", [
+  "manager",
+  "member",
+]);
+
+export const invitations = pgTable("mds_invitations", {
   id: id(),
-  organizationId: int("organizationId")
+  organizationId: integer("organizationId")
     .notNull()
     .references(() => organizations.id),
   email: varchar("email", { length: 320 }).notNull(),
-  role: mysqlEnum("role", ["manager", "member"]).notNull(),
+  role: invitationsRoleEnum("role").notNull(),
   codeHash: varchar("codeHash", { length: 64 }).notNull().unique(),
-  invitedBy: int("invitedBy")
+  invitedBy: integer("invitedBy")
     .notNull()
     .references(() => users.id),
-  acceptedBy: int("acceptedBy").references(() => users.id),
+  acceptedBy: integer("acceptedBy").references(() => users.id),
   acceptedAt: timestamp("acceptedAt"),
   expiresAt: timestamp("expiresAt").notNull(),
   ...dates(),
 });
-export const sites = mysqlTable("mds_sites", {
+export const sites = pgTable("mds_sites", {
   id: id(),
-  organizationId: int("organizationId")
+  organizationId: integer("organizationId")
     .notNull()
     .references(() => organizations.id),
   name: varchar("name", { length: 150 }).notNull(),
@@ -285,16 +344,47 @@ export const sites = mysqlTable("mds_sites", {
   contactPhone: varchar("contactPhone", { length: 30 }).notNull(),
   ...dates(),
 });
-export const clients = mysqlTable("mds_clients", {
+export const clients = pgTable("mds_clients", {
   id: id(),
-  userId: int("userId").references(() => users.id),
-  organizationId: int("organizationId").references(() => organizations.id),
+  userId: integer("userId").references(() => users.id),
+  organizationId: integer("organizationId").references(() => organizations.id),
   name: varchar("name", { length: 120 }).notNull(),
   email: varchar("email", { length: 320 }).notNull(),
   phone: varchar("phone", { length: 30 }).notNull(),
   ...dates(),
 });
-export const requests = mysqlTable(
+export const requestsStatusEnum = pgEnum("mds_requests_status", [
+  "draft",
+  "sent",
+  "awaiting_mds",
+  "to_analyze",
+  "accepted_mds",
+  "proposed_slot",
+  "needs_information",
+  "awaiting_client",
+  "confirmed",
+  "refused",
+  "cancelled",
+  "planned",
+  "en_route",
+  "in_progress",
+  "completed",
+  "invoiced",
+  "paid",
+  "closed",
+  "expired",
+  "quote_pending",
+  "quote_accepted",
+  "quote_refused",
+]);
+export const requestsQuoteStatusEnum = pgEnum("mds_requests_quoteStatus", [
+  "none",
+  "pending",
+  "accepted",
+  "refused",
+]);
+
+export const requests = pgTable(
   "mds_requests",
   {
     id: id(),
@@ -304,11 +394,11 @@ export const requests = mysqlTable(
       .notNull()
       .unique(),
     payloadHash: varchar("payloadHash", { length: 64 }).notNull(),
-    userId: int("userId").references(() => users.id),
-    clientId: int("clientId")
+    userId: integer("userId").references(() => users.id),
+    clientId: integer("clientId")
       .notNull()
       .references(() => clients.id),
-    serviceId: int("serviceId").references(() => services.id),
+    serviceId: integer("serviceId").references(() => services.id),
     serviceName: varchar("serviceName", { length: 120 }),
     description: text("description").notNull(),
     problemType: varchar("problemType", { length: 120 }).notNull(),
@@ -319,53 +409,27 @@ export const requests = mysqlTable(
     postcode: varchar("postcode", { length: 5 }).notNull(),
     city: varchar("city", { length: 100 }).notNull(),
     desiredStart: timestamp("desiredStart"),
-    organizationId: int("organizationId").references(() => organizations.id),
-    siteId: int("siteId").references(() => sites.id),
+    organizationId: integer("organizationId").references(
+      () => organizations.id
+    ),
+    siteId: integer("siteId").references(() => sites.id),
     pricingSnapshot: json("pricingSnapshot").$type<PricingSnapshot>(),
     alternatives: json("alternatives").$type<AlternativeSlot[]>(),
     departedAt: timestamp("departedAt"),
     answers: json("answers").$type<Record<string, string>>().notNull(),
     consentAt: timestamp("consentAt").notNull(),
-    status: mysqlEnum("status", [
-      "draft",
-      "sent",
-      "awaiting_mds",
-      "to_analyze",
-      "accepted_mds",
-      "proposed_slot",
-      "needs_information",
-      "awaiting_client",
-      "confirmed",
-      "refused",
-      "cancelled",
-      "planned",
-      "en_route",
-      "in_progress",
-      "completed",
-      "invoiced",
-      "paid",
-      "closed",
-      "expired",
-      "quote_pending",
-      "quote_accepted",
-      "quote_refused",
-    ]).notNull(),
-    version: int("version").default(0).notNull(),
+    status: requestsStatusEnum("status").notNull(),
+    version: integer("version").default(0).notNull(),
     proposedStart: timestamp("proposedStart"),
-    proposedPriceCents: int("proposedPriceCents"),
-    durationMinutes: int("durationMinutes").default(60).notNull(),
+    proposedPriceCents: integer("proposedPriceCents"),
+    durationMinutes: integer("durationMinutes").default(60).notNull(),
     proposalMessage: text("proposalMessage"),
     expiresAt: timestamp("expiresAt"),
-    quoteStatus: mysqlEnum("quoteStatus", [
-      "none",
-      "pending",
-      "accepted",
-      "refused",
-    ])
+    quoteStatus: requestsQuoteStatusEnum("quoteStatus")
       .default("none")
       .notNull(),
     lastAction: varchar("lastAction", { length: 40 }),
-    lastActionVersion: int("lastActionVersion"),
+    lastActionVersion: integer("lastActionVersion"),
     deletedAt: timestamp("deletedAt"),
     ...dates(),
   },
@@ -376,25 +440,28 @@ export const requests = mysqlTable(
   ]
 );
 export type MdsRequest = typeof requests.$inferSelect;
-export const waitlistEntries = mysqlTable(
+export const waitlistEntriesReasonEnum = pgEnum("mds_waitlist_entries_reason", [
+  "no_slot",
+  "client_preference",
+  "capacity",
+]);
+export const waitlistEntriesStatusEnum = pgEnum("mds_waitlist_entries_status", [
+  "waiting",
+  "contacted",
+  "converted",
+  "cancelled",
+]);
+
+export const waitlistEntries = pgTable(
   "mds_waitlist_entries",
   {
     id: id(),
-    requestId: int("requestId")
+    requestId: integer("requestId")
       .notNull()
       .unique()
       .references(() => requests.id),
-    reason: mysqlEnum("reason", ["no_slot", "client_preference", "capacity"])
-      .notNull()
-      .default("no_slot"),
-    status: mysqlEnum("status", [
-      "waiting",
-      "contacted",
-      "converted",
-      "cancelled",
-    ])
-      .notNull()
-      .default("waiting"),
+    reason: waitlistEntriesReasonEnum("reason").notNull().default("no_slot"),
+    status: waitlistEntriesStatusEnum("status").notNull().default("waiting"),
     requestedStart: timestamp("requestedStart"),
     contactedAt: timestamp("contactedAt"),
     convertedAt: timestamp("convertedAt"),
@@ -402,234 +469,278 @@ export const waitlistEntries = mysqlTable(
   },
   t => [index("waitlist_status_created").on(t.status, t.createdAt)]
 );
-export const events = mysqlTable("mds_events", {
+export const eventsActorTypeEnum = pgEnum("mds_events_actorType", [
+  "client",
+  "artisan",
+  "system",
+]);
+
+export const events = pgTable("mds_events", {
   id: id(),
-  requestId: int("requestId")
+  requestId: integer("requestId")
     .notNull()
     .references(() => requests.id),
   status: varchar("status", { length: 40 }).notNull(),
   message: text("message").notNull(),
-  actorType: mysqlEnum("actorType", ["client", "artisan", "system"]).notNull(),
-  actorUserId: int("actorUserId").references(() => users.id),
+  actorType: eventsActorTypeEnum("actorType").notNull(),
+  actorUserId: integer("actorUserId").references(() => users.id),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
-export const appointments = mysqlTable(
+export const appointmentsStatusEnum = pgEnum("mds_appointments_status", [
+  "confirmed",
+  "in_progress",
+  "completed",
+  "cancelled",
+]);
+
+export const appointments = pgTable(
   "mds_appointments",
   {
     id: id(),
-    requestId: int("requestId")
+    requestId: integer("requestId")
       .notNull()
       .unique()
       .references(() => requests.id),
     startAt: timestamp("startAt").notNull(),
     endAt: timestamp("endAt").notNull(),
-    status: mysqlEnum("status", [
-      "confirmed",
-      "in_progress",
-      "completed",
-      "cancelled",
-    ]).notNull(),
-    travelMinutes: int("travelMinutes").default(0).notNull(),
-    bufferMinutes: int("bufferMinutes").default(0).notNull(),
+    status: appointmentsStatusEnum("status").notNull(),
+    travelMinutes: integer("travelMinutes").default(0).notNull(),
+    bufferMinutes: integer("bufferMinutes").default(0).notNull(),
     ...dates(),
   },
   t => [index("appointments_start").on(t.startAt)]
 );
-export const interventions = mysqlTable("mds_interventions", {
+export const interventions = pgTable("mds_interventions", {
   id: id(),
-  requestId: int("requestId")
+  requestId: integer("requestId")
     .notNull()
     .unique()
     .references(() => requests.id),
-  appointmentId: int("appointmentId")
+  appointmentId: integer("appointmentId")
     .notNull()
     .unique()
     .references(() => appointments.id),
   startedAt: timestamp("startedAt"),
   arrivedAt: timestamp("arrivedAt"),
   // Destination géocodée une seule fois au premier point GPS du trajet.
-  destinationLatE6: int("destinationLatE6"),
-  destinationLngE6: int("destinationLngE6"),
+  destinationLatE6: integer("destinationLatE6"),
+  destinationLngE6: integer("destinationLngE6"),
   approachNotifiedAt: timestamp("approachNotifiedAt"),
   completedAt: timestamp("completedAt"),
   summary: text("summary"),
   clientConfirmedAt: timestamp("clientConfirmedAt"),
   clientConfirmationMessage: text("clientConfirmationMessage"),
   clientSignedAt: timestamp("clientSignedAt"),
-  clientSignatureDocumentId: int("clientSignatureDocumentId").references(
+  clientSignatureDocumentId: integer("clientSignatureDocumentId").references(
     () => documents.id
   ),
   ...dates(),
 });
-export const availability = mysqlTable("mds_availability", {
+export const availabilityKindEnum = pgEnum("mds_availability_kind", [
+  "available",
+  "blocked",
+]);
+
+export const availability = pgTable("mds_availability", {
   id: id(),
-  artisanUserId: int("artisanUserId")
+  artisanUserId: integer("artisanUserId")
     .notNull()
     .references(() => users.id),
   startAt: timestamp("startAt").notNull(),
   endAt: timestamp("endAt").notNull(),
-  kind: mysqlEnum("kind", ["available", "blocked"]).notNull(),
+  kind: availabilityKindEnum("kind").notNull(),
   note: text("note"),
   ...dates(),
 });
-export const documents = mysqlTable("mds_documents", {
+export const documentsKindEnum = pgEnum("mds_documents_kind", [
+  "photo",
+  "quote",
+  "invoice",
+  "contract",
+  "other",
+  "signature",
+]);
+export const documentsPhotoStageEnum = pgEnum("mds_documents_photoStage", [
+  "before",
+  "after",
+  "other",
+]);
+export const documentsPhotoAuthorEnum = pgEnum("mds_documents_photoAuthor", [
+  "client",
+  "artisan",
+  "other",
+]);
+
+export const documents = pgTable("mds_documents", {
   id: id(),
-  requestId: int("requestId").references(() => requests.id),
-  organizationId: int("organizationId").references(() => organizations.id),
-  uploadedBy: int("uploadedBy").references(() => users.id),
+  requestId: integer("requestId").references(() => requests.id),
+  organizationId: integer("organizationId").references(() => organizations.id),
+  uploadedBy: integer("uploadedBy").references(() => users.id),
   name: varchar("name", { length: 200 }).notNull(),
   mimeType: varchar("mimeType", { length: 100 }).notNull(),
-  kind: mysqlEnum("kind", [
-    "photo",
-    "quote",
-    "invoice",
-    "contract",
-    "other",
-    "signature",
-  ]).notNull(),
-  photoStage: mysqlEnum("photoStage", ["before", "after", "other"])
-    .default("other")
-    .notNull(),
-  photoAuthor: mysqlEnum("photoAuthor", ["client", "artisan", "other"])
+  kind: documentsKindEnum("kind").notNull(),
+  photoStage: documentsPhotoStageEnum("photoStage").default("other").notNull(),
+  photoAuthor: documentsPhotoAuthorEnum("photoAuthor")
     .default("other")
     .notNull(),
   description: varchar("description", { length: 500 }),
-  byteSize: int("byteSize").notNull(),
+  byteSize: integer("byteSize").notNull(),
   storageKey: varchar("storageKey", { length: 500 }).notNull(),
   encryptionKey: varchar("encryptionKey", { length: 64 }).notNull(),
   iv: varchar("iv", { length: 32 }).notNull(),
   authTag: varchar("authTag", { length: 32 }).notNull(),
   ...dates(),
 });
-export const quotes = mysqlTable("mds_quotes", {
+export const quotesStatusEnum = pgEnum("mds_quotes_status", [
+  "pending",
+  "accepted",
+  "refused",
+  "superseded",
+]);
+
+export const quotes = pgTable("mds_quotes", {
   id: id(),
-  requestId: int("requestId")
+  requestId: integer("requestId")
     .notNull()
     .references(() => requests.id),
-  documentId: int("documentId")
+  documentId: integer("documentId")
     .notNull()
     .unique()
     .references(() => documents.id),
-  status: mysqlEnum("status", [
-    "pending",
-    "accepted",
-    "refused",
-    "superseded",
-  ]).notNull(),
+  status: quotesStatusEnum("status").notNull(),
   acceptedAt: timestamp("acceptedAt"),
   content: json("content").$type<QuoteContent>(),
-  amountCents: int("amountCents"),
+  amountCents: integer("amountCents"),
   issuedAt: timestamp("issuedAt"),
   ...dates(),
 });
-export const contracts = mysqlTable("mds_contracts", {
+export const contractsStatusEnum = pgEnum("mds_contracts_status", [
+  "indexed",
+  "active",
+  "ended",
+]);
+
+export const contracts = pgTable("mds_contracts", {
   id: id(),
-  organizationId: int("organizationId")
+  organizationId: integer("organizationId")
     .notNull()
     .references(() => organizations.id),
-  documentId: int("documentId")
+  documentId: integer("documentId")
     .notNull()
     .unique()
     .references(() => documents.id),
   name: varchar("name", { length: 200 }).notNull(),
-  status: mysqlEnum("status", ["indexed", "active", "ended"])
-    .default("indexed")
-    .notNull(),
+  status: contractsStatusEnum("status").default("indexed").notNull(),
   startAt: timestamp("startAt"),
   endAt: timestamp("endAt"),
   ...dates(),
 });
-export const invoices = mysqlTable("mds_invoices", {
+export const invoices = pgTable("mds_invoices", {
   id: id(),
-  requestId: int("requestId")
+  requestId: integer("requestId")
     .notNull()
     .unique()
     .references(() => requests.id),
-  documentId: int("documentId")
+  documentId: integer("documentId")
     .notNull()
     .unique()
     .references(() => documents.id),
-  amountCents: int("amountCents"),
+  amountCents: integer("amountCents"),
   currency: varchar("currency", { length: 3 }).default("EUR").notNull(),
   issuedAt: timestamp("issuedAt").defaultNow().notNull(),
   paidAt: timestamp("paidAt"),
-  paymentVerifiedBy: int("paymentVerifiedBy").references(() => users.id),
+  paymentVerifiedBy: integer("paymentVerifiedBy").references(() => users.id),
   verificationNote: text("verificationNote"),
 });
-export const notifications = mysqlTable("mds_notifications", {
+export const notificationsAudienceEnum = pgEnum("mds_notifications_audience", [
+  "artisan",
+  "client",
+]);
+
+export const notifications = pgTable("mds_notifications", {
   id: id(),
-  userId: int("userId").references(() => users.id),
-  organizationId: int("organizationId").references(() => organizations.id),
-  requestId: int("requestId").references(() => requests.id),
-  audience: mysqlEnum("audience", ["artisan", "client"]).notNull(),
+  userId: integer("userId").references(() => users.id),
+  organizationId: integer("organizationId").references(() => organizations.id),
+  requestId: integer("requestId").references(() => requests.id),
+  audience: notificationsAudienceEnum("audience").notNull(),
   title: varchar("title", { length: 200 }).notNull(),
   message: text("message").notNull(),
   readAt: timestamp("readAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
-export const locationUpdates = mysqlTable(
+export const locationUpdates = pgTable(
   "mds_location_updates",
   {
     id: id(),
-    requestId: int("requestId")
+    requestId: integer("requestId")
       .notNull()
       .references(() => requests.id),
-    artisanUserId: int("artisanUserId")
+    artisanUserId: integer("artisanUserId")
       .notNull()
       .references(() => users.id),
-    latitudeE6: int("latitudeE6").notNull(),
-    longitudeE6: int("longitudeE6").notNull(),
-    accuracyM: int("accuracyM"),
+    latitudeE6: integer("latitudeE6").notNull(),
+    longitudeE6: integer("longitudeE6").notNull(),
+    accuracyM: integer("accuracyM"),
     recordedAt: timestamp("recordedAt").defaultNow().notNull(),
   },
   t => [index("location_request_time").on(t.requestId, t.recordedAt)]
 );
-export const notificationReads = mysqlTable(
+export const notificationReads = pgTable(
   "mds_notification_reads",
   {
     id: id(),
-    notificationId: int("notificationId")
+    notificationId: integer("notificationId")
       .notNull()
       .references(() => notifications.id),
-    userId: int("userId")
+    userId: integer("userId")
       .notNull()
       .references(() => users.id),
     readAt: timestamp("readAt").defaultNow().notNull(),
   },
   t => [uniqueIndex("notification_read_user").on(t.notificationId, t.userId)]
 );
-export const reviews = mysqlTable(
+export const reviewsAuthorTypeEnum = pgEnum("mds_reviews_authorType", [
+  "artisan",
+  "client",
+]);
+export const reviewsModerationEnum = pgEnum("mds_reviews_moderation", [
+  "pending",
+  "approved",
+  "hidden",
+]);
+
+export const reviews = pgTable(
   "mds_reviews",
   {
     id: id(),
-    requestId: int("requestId")
+    requestId: integer("requestId")
       .notNull()
       .references(() => requests.id),
-    interventionId: int("interventionId")
+    interventionId: integer("interventionId")
       .notNull()
       .references(() => interventions.id),
-    authorUserId: int("authorUserId")
+    authorUserId: integer("authorUserId")
       .notNull()
       .references(() => users.id),
-    authorType: mysqlEnum("authorType", ["artisan", "client"]).notNull(),
-    rating: int("rating").notNull(),
+    authorType: reviewsAuthorTypeEnum("authorType").notNull(),
+    rating: integer("rating").notNull(),
     comment: text("comment"),
-    moderation: mysqlEnum("moderation", ["pending", "approved", "hidden"])
+    moderation: reviewsModerationEnum("moderation")
       .default("pending")
       .notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
   t => [uniqueIndex("review_request_role").on(t.requestId, t.authorType)]
 );
-export const audit = mysqlTable("mds_audit", {
+export const audit = pgTable("mds_audit", {
   id: id(),
-  actorUserId: int("actorUserId").references(() => users.id),
+  actorUserId: integer("actorUserId").references(() => users.id),
   action: varchar("action", { length: 100 }).notNull(),
   entityType: varchar("entityType", { length: 50 }).notNull(),
-  entityId: int("entityId"),
+  entityId: integer("entityId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
-export const siteVisits = mysqlTable(
+export const siteVisits = pgTable(
   "mds_site_visits",
   {
     id: id(),
@@ -641,36 +752,50 @@ export const siteVisits = mysqlTable(
   t => [uniqueIndex("site_visits_visitor_day").on(t.visitorHash, t.visitDay)]
 );
 
-export const payments = mysqlTable(
+export const paymentsPurposeEnum = pgEnum("mds_payments_purpose", [
+  "full",
+  "deposit",
+  "balance",
+]);
+export const paymentsProviderEnum = pgEnum("mds_payments_provider", [
+  "stripe",
+  "manual",
+]);
+export const paymentsModeEnum = pgEnum("mds_payments_mode", [
+  "test",
+  "live",
+  "offline",
+]);
+export const paymentsStatusEnum = pgEnum("mds_payments_status", [
+  "pending",
+  "succeeded",
+  "failed",
+  "expired",
+  "cancelled",
+]);
+
+export const payments = pgTable(
   "mds_payments",
   {
     id: id(),
-    requestId: int("requestId")
+    requestId: integer("requestId")
       .notNull()
       .references(() => requests.id),
-    invoiceId: int("invoiceId").references(() => invoices.id),
-    planId: int("planId"),
-    purpose: mysqlEnum("purpose", ["full", "deposit", "balance"])
-      .default("full")
-      .notNull(),
-    receivedAmountCents: int("receivedAmountCents"),
+    invoiceId: integer("invoiceId").references(() => invoices.id),
+    planId: integer("planId"),
+    purpose: paymentsPurposeEnum("purpose").default("full").notNull(),
+    receivedAmountCents: integer("receivedAmountCents"),
     creditedAt: timestamp("creditedAt"),
-    provider: mysqlEnum("provider", ["stripe", "manual"]).notNull(),
-    mode: mysqlEnum("mode", ["test", "live", "offline"]).notNull(),
-    status: mysqlEnum("status", [
-      "pending",
-      "succeeded",
-      "failed",
-      "expired",
-      "cancelled",
-    ]).notNull(),
-    amountCents: int("amountCents").notNull(),
+    provider: paymentsProviderEnum("provider").notNull(),
+    mode: paymentsModeEnum("mode").notNull(),
+    status: paymentsStatusEnum("status").notNull(),
+    amountCents: integer("amountCents").notNull(),
     currency: varchar("currency", { length: 3 }).default("EUR").notNull(),
     checkoutSessionId: varchar("checkoutSessionId", { length: 255 }).unique(),
     paymentIntentId: varchar("paymentIntentId", { length: 255 }).unique(),
     checkoutKey: varchar("checkoutKey", { length: 100 }).unique(),
     reference: varchar("reference", { length: 255 }),
-    verifiedBy: int("verifiedBy").references(() => users.id),
+    verifiedBy: integer("verifiedBy").references(() => users.id),
     verificationNote: text("verificationNote"),
     expiresAt: timestamp("expiresAt"),
     confirmedAt: timestamp("confirmedAt"),
@@ -682,141 +807,175 @@ export const payments = mysqlTable(
     index("payments_invoice").on(t.invoiceId),
   ]
 );
-export const paymentEvents = mysqlTable("mds_payment_events", {
+export const paymentEventsModeEnum = pgEnum("mds_payment_events_mode", [
+  "test",
+  "live",
+]);
+
+export const paymentEvents = pgTable("mds_payment_events", {
   eventId: varchar("eventId", { length: 255 }).primaryKey(),
   provider: varchar("provider", { length: 30 }).notNull(),
-  mode: mysqlEnum("mode", ["test", "live"]).notNull(),
+  mode: paymentEventsModeEnum("mode").notNull(),
   type: varchar("type", { length: 100 }).notNull(),
-  paymentId: int("paymentId").references(() => payments.id),
+  paymentId: integer("paymentId").references(() => payments.id),
   outcome: varchar("outcome", { length: 100 }).notNull(),
   processedAt: timestamp("processedAt").defaultNow().notNull(),
 });
 
-export const quoteDrafts = mysqlTable("mds_quote_drafts", {
+export const quoteDraftsStatusEnum = pgEnum("mds_quote_drafts_status", [
+  "draft",
+  "generated",
+  "issued",
+]);
+
+export const quoteDrafts = pgTable("mds_quote_drafts", {
   id: id(),
-  requestId: int("requestId")
+  requestId: integer("requestId")
     .notNull()
     .references(() => requests.id),
-  version: int("version").default(0).notNull(),
-  status: mysqlEnum("status", ["draft", "generated", "issued"])
-    .default("draft")
-    .notNull(),
+  version: integer("version").default(0).notNull(),
+  status: quoteDraftsStatusEnum("status").default("draft").notNull(),
   content: json("content").$type<QuoteContent>().notNull(),
-  totalCents: int("totalCents").notNull(),
-  documentId: int("documentId").references(() => documents.id),
+  totalCents: integer("totalCents").notNull(),
+  documentId: integer("documentId").references(() => documents.id),
   reference: varchar("reference", { length: 80 }).notNull().unique(),
   ...dates(),
 });
-export const incidents = mysqlTable("mds_incidents", {
+export const incidentsKindEnum = pgEnum("mds_incidents_kind", [
+  "problem",
+  "no_slot",
+  "client_absent",
+  "artisan_unavailable",
+  "complaint",
+  "payment_failed",
+]);
+export const incidentsStatusEnum = pgEnum("mds_incidents_status", [
+  "open",
+  "resolved",
+]);
+export const incidentsActorTypeEnum = pgEnum("mds_incidents_actorType", [
+  "artisan",
+  "client",
+  "system",
+]);
+
+export const incidents = pgTable("mds_incidents", {
   id: id(),
-  requestId: int("requestId")
+  requestId: integer("requestId")
     .notNull()
     .references(() => requests.id),
-  kind: mysqlEnum("kind", [
-    "problem",
-    "no_slot",
-    "client_absent",
-    "artisan_unavailable",
-    "complaint",
-    "payment_failed",
-  ]).notNull(),
+  kind: incidentsKindEnum("kind").notNull(),
   message: text("message").notNull(),
-  status: mysqlEnum("status", ["open", "resolved"]).default("open").notNull(),
-  reportedBy: int("reportedBy").references(() => users.id),
-  actorType: mysqlEnum("actorType", ["artisan", "client", "system"]).notNull(),
+  status: incidentsStatusEnum("status").default("open").notNull(),
+  reportedBy: integer("reportedBy").references(() => users.id),
+  actorType: incidentsActorTypeEnum("actorType").notNull(),
   resolution: text("resolution"),
-  resolvedBy: int("resolvedBy").references(() => users.id),
+  resolvedBy: integer("resolvedBy").references(() => users.id),
   resolvedAt: timestamp("resolvedAt"),
   ...dates(),
 });
-export const extraWorks = mysqlTable("mds_extra_works", {
+export const extraWorksStatusEnum = pgEnum("mds_extra_works_status", [
+  "pending",
+  "accepted",
+  "refused",
+  "cancelled",
+  "in_progress",
+  "completed",
+]);
+
+export const extraWorks = pgTable("mds_extra_works", {
   id: id(),
-  requestId: int("requestId")
+  requestId: integer("requestId")
     .notNull()
     .references(() => requests.id),
   scope: text("scope").notNull(),
-  amountCents: int("amountCents").notNull(),
-  durationMinutes: int("durationMinutes").notNull(),
+  amountCents: integer("amountCents").notNull(),
+  durationMinutes: integer("durationMinutes").notNull(),
   conditions: text("conditions").notNull(),
-  documentId: int("documentId").references(() => documents.id),
-  status: mysqlEnum("status", [
-    "pending",
-    "accepted",
-    "refused",
-    "cancelled",
-    "in_progress",
-    "completed",
-  ])
-    .default("pending")
-    .notNull(),
-  version: int("version").default(0).notNull(),
+  documentId: integer("documentId").references(() => documents.id),
+  status: extraWorksStatusEnum("status").default("pending").notNull(),
+  version: integer("version").default(0).notNull(),
   expiresAt: timestamp("expiresAt"),
   acceptedAt: timestamp("acceptedAt"),
-  acceptedBy: int("acceptedBy").references(() => users.id),
+  acceptedBy: integer("acceptedBy").references(() => users.id),
   startedAt: timestamp("startedAt"),
   completedAt: timestamp("completedAt"),
   ...dates(),
 });
-export const paymentPlans = mysqlTable("mds_payment_plans", {
+export const paymentPlansStatusEnum = pgEnum("mds_payment_plans_status", [
+  "proposed",
+  "accepted",
+  "refused",
+  "cancelled",
+]);
+
+export const paymentPlans = pgTable("mds_payment_plans", {
   id: id(),
-  requestId: int("requestId")
+  requestId: integer("requestId")
     .notNull()
     .references(() => requests.id),
-  version: int("version").default(0).notNull(),
-  totalCents: int("totalCents").notNull(),
-  depositCents: int("depositCents").notNull(),
+  version: integer("version").default(0).notNull(),
+  totalCents: integer("totalCents").notNull(),
+  depositCents: integer("depositCents").notNull(),
   conditions: text("conditions").notNull(),
-  status: mysqlEnum("status", ["proposed", "accepted", "refused", "cancelled"])
-    .default("proposed")
-    .notNull(),
+  status: paymentPlansStatusEnum("status").default("proposed").notNull(),
   acceptedAt: timestamp("acceptedAt"),
   ...dates(),
 });
-export const refunds = mysqlTable("mds_refunds", {
+export const refundsModeEnum = pgEnum("mds_refunds_mode", ["test", "live"]);
+export const refundsStatusEnum = pgEnum("mds_refunds_status", [
+  "pending",
+  "succeeded",
+  "failed",
+  "cancelled",
+]);
+
+export const refunds = pgTable("mds_refunds", {
   id: id(),
-  paymentId: int("paymentId")
+  paymentId: integer("paymentId")
     .notNull()
     .references(() => payments.id),
-  amountCents: int("amountCents").notNull(),
+  amountCents: integer("amountCents").notNull(),
   currency: varchar("currency", { length: 3 }).default("EUR").notNull(),
-  mode: mysqlEnum("mode", ["test", "live"]).notNull(),
-  status: mysqlEnum("status", [
-    "pending",
-    "succeeded",
-    "failed",
-    "cancelled",
-  ]).notNull(),
+  mode: refundsModeEnum("mode").notNull(),
+  status: refundsStatusEnum("status").notNull(),
   providerRefundId: varchar("providerRefundId", { length: 255 }).unique(),
   idempotencyKey: varchar("idempotencyKey", { length: 100 }).notNull().unique(),
   reason: text("reason").notNull(),
-  requestedBy: int("requestedBy")
+  requestedBy: integer("requestedBy")
     .notNull()
     .references(() => users.id),
   confirmedAt: timestamp("confirmedAt"),
   ...dates(),
 });
-export const messageOutbox = mysqlTable("mds_message_outbox", {
+export const messageOutboxChannelEnum = pgEnum("mds_message_outbox_channel", [
+  "email",
+  "sms",
+]);
+export const messageOutboxStatusEnum = pgEnum("mds_message_outbox_status", [
+  "queued",
+  "sending",
+  "accepted",
+  "delivered",
+  "failed",
+  "disabled",
+  "uncertain",
+  "cancelled",
+]);
+
+export const messageOutbox = pgTable("mds_message_outbox", {
   id: id(),
   dedupeKey: varchar("dedupeKey", { length: 180 }).notNull().unique(),
-  requestId: int("requestId").references(() => requests.id),
-  userId: int("userId").references(() => users.id),
-  organizationId: int("organizationId").references(() => organizations.id),
-  channel: mysqlEnum("channel", ["email", "sms"]).notNull(),
+  requestId: integer("requestId").references(() => requests.id),
+  userId: integer("userId").references(() => users.id),
+  organizationId: integer("organizationId").references(() => organizations.id),
+  channel: messageOutboxChannelEnum("channel").notNull(),
   recipient: varchar("recipient", { length: 320 }).notNull(),
   subject: varchar("subject", { length: 200 }).notNull(),
   body: text("body").notNull(),
-  status: mysqlEnum("status", [
-    "queued",
-    "sending",
-    "accepted",
-    "delivered",
-    "failed",
-    "disabled",
-    "uncertain",
-    "cancelled",
-  ]).notNull(),
+  status: messageOutboxStatusEnum("status").notNull(),
   providerId: varchar("providerId", { length: 255 }),
-  attempts: int("attempts").default(0).notNull(),
+  attempts: integer("attempts").default(0).notNull(),
   nextAttemptAt: timestamp("nextAttemptAt"),
   leaseUntil: timestamp("leaseUntil"),
   lastError: varchar("lastError", { length: 500 }),
@@ -824,24 +983,23 @@ export const messageOutbox = mysqlTable("mds_message_outbox", {
   deliveredAt: timestamp("deliveredAt"),
   ...dates(),
 });
-export const assistantActions = mysqlTable("mds_assistant_actions", {
-  id: id(),
-  requestId: int("requestId").references(() => requests.id),
-  createdBy: int("createdBy")
-    .notNull()
-    .references(() => users.id),
-  actionType: mysqlEnum("actionType", [
+export const assistantActionsActionTypeEnum = pgEnum(
+  "mds_assistant_actions_actionType",
+  [
     "follow_up",
     "quote_review",
     "invoice_review",
     "appointment_confirmation",
     "call_script",
-  ]).notNull(),
-  channel: mysqlEnum("channel", ["email", "sms", "call"]).notNull(),
-  recipient: varchar("recipient", { length: 320 }).notNull(),
-  subject: varchar("subject", { length: 200 }).notNull(),
-  body: text("body").notNull(),
-  status: mysqlEnum("status", [
+  ]
+);
+export const assistantActionsChannelEnum = pgEnum(
+  "mds_assistant_actions_channel",
+  ["email", "sms", "call"]
+);
+export const assistantActionsStatusEnum = pgEnum(
+  "mds_assistant_actions_status",
+  [
     "proposed",
     "approved",
     "sent",
@@ -850,30 +1008,57 @@ export const assistantActions = mysqlTable("mds_assistant_actions", {
     // Validated by the artisan, waiting for scheduledFor. Appended last so the
     // existing enum values keep their position in MySQL.
     "scheduled",
-  ])
-    .default("proposed")
-    .notNull(),
-  dedupeKey: varchar("dedupeKey", { length: 180 }).notNull().unique(),
-  lastError: varchar("lastError", { length: 500 }),
-  scheduledFor: timestamp("scheduledFor"),
-  approvedAt: timestamp("approvedAt"),
-  completedAt: timestamp("completedAt"),
-  ...dates(),
-}, table => [
-  index("assistant_actions_request").on(table.requestId),
-  index("assistant_actions_status").on(table.status),
-  index("assistant_actions_due").on(table.status, table.scheduledFor),
+  ]
+);
+
+export const assistantActions = pgTable(
+  "mds_assistant_actions",
+  {
+    id: id(),
+    requestId: integer("requestId").references(() => requests.id),
+    createdBy: integer("createdBy")
+      .notNull()
+      .references(() => users.id),
+    actionType: assistantActionsActionTypeEnum("actionType").notNull(),
+    channel: assistantActionsChannelEnum("channel").notNull(),
+    recipient: varchar("recipient", { length: 320 }).notNull(),
+    subject: varchar("subject", { length: 200 }).notNull(),
+    body: text("body").notNull(),
+    status: assistantActionsStatusEnum("status").default("proposed").notNull(),
+    dedupeKey: varchar("dedupeKey", { length: 180 }).notNull().unique(),
+    lastError: varchar("lastError", { length: 500 }),
+    scheduledFor: timestamp("scheduledFor"),
+    approvedAt: timestamp("approvedAt"),
+    completedAt: timestamp("completedAt"),
+    ...dates(),
+  },
+  table => [
+    index("assistant_actions_request").on(table.requestId),
+    index("assistant_actions_status").on(table.status),
+    index("assistant_actions_due").on(table.status, table.scheduledFor),
+  ]
+);
+export const voiceCallLogsDirectionEnum = pgEnum(
+  "mds_voice_call_logs_direction",
+  ["inbound", "outbound"]
+);
+export const voiceCallLogsStatusEnum = pgEnum("mds_voice_call_logs_status", [
+  "received",
+  "in_progress",
+  "completed",
+  "failed",
 ]);
-export const voiceCallLogs = mysqlTable(
+
+export const voiceCallLogs = pgTable(
   "mds_voice_call_logs",
   {
     id: id(),
     callSid: varchar("callSid", { length: 120 }).notNull().unique(),
     fromNumber: varchar("fromNumber", { length: 30 }),
     toNumber: varchar("toNumber", { length: 30 }),
-    direction: mysqlEnum("direction", ["inbound", "outbound"]).notNull(),
-    status: mysqlEnum("status", ["received", "in_progress", "completed", "failed"]).default("received").notNull(),
-    requestId: int("requestId").references(() => requests.id),
+    direction: voiceCallLogsDirectionEnum("direction").notNull(),
+    status: voiceCallLogsStatusEnum("status").default("received").notNull(),
+    requestId: integer("requestId").references(() => requests.id),
     transcript: text("transcript"),
     summary: text("summary"),
     lastError: varchar("lastError", { length: 500 }),
@@ -886,30 +1071,45 @@ export const voiceCallLogs = mysqlTable(
     index("voice_call_logs_request").on(table.requestId),
   ]
 );
-export const reminders = mysqlTable("mds_reminders", {
+export const remindersKindEnum = pgEnum("mds_reminders_kind", [
+  "proposal",
+  "appointment",
+]);
+
+export const reminders = pgTable("mds_reminders", {
   id: id(),
   dedupeKey: varchar("dedupeKey", { length: 180 }).notNull().unique(),
-  requestId: int("requestId")
+  requestId: integer("requestId")
     .notNull()
     .references(() => requests.id),
-  kind: mysqlEnum("kind", ["proposal", "appointment"]).notNull(),
+  kind: remindersKindEnum("kind").notNull(),
   dueAt: timestamp("dueAt").notNull(),
   sentAt: timestamp("sentAt"),
   ...dates(),
 });
-export const automationTasks = mysqlTable("mds_automation_tasks", {
-  id: int("id").primaryKey(),
+export const automationTasks = pgTable("mds_automation_tasks", {
+  id: integer("id").primaryKey(),
   taskUid: varchar("taskUid", { length: 255 }).unique(),
   enabled: boolean("enabled").default(false).notNull(),
   lastRunAt: timestamp("lastRunAt"),
   ...dates(),
 });
-export const automationRuns = mysqlTable("mds_automation_runs", {
+export const automationRunsSourceEnum = pgEnum("mds_automation_runs_source", [
+  "scheduled",
+  "manual",
+]);
+export const automationRunsStatusEnum = pgEnum("mds_automation_runs_status", [
+  "running",
+  "succeeded",
+  "failed",
+]);
+
+export const automationRuns = pgTable("mds_automation_runs", {
   id: id(),
   runKey: varchar("runKey", { length: 180 }).notNull().unique(),
   taskUid: varchar("taskUid", { length: 255 }),
-  source: mysqlEnum("source", ["scheduled", "manual"]).notNull(),
-  status: mysqlEnum("status", ["running", "succeeded", "failed"]).notNull(),
+  source: automationRunsSourceEnum("source").notNull(),
+  status: automationRunsStatusEnum("status").notNull(),
   summary: json("summary").$type<Record<string, number>>(),
   error: varchar("error", { length: 500 }),
   startedAt: timestamp("startedAt").defaultNow().notNull(),

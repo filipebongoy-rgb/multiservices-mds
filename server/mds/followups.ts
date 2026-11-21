@@ -178,7 +178,7 @@ export async function scheduleFollowUp(
         "Une relance est déjà programmée pour ce dossier sur ce canal. Annulez-la avant d’en programmer une autre.",
         "CONFLICT"
       );
-    const [changed] = await tx
+    const changed = await tx
       .update(s.assistantActions)
       .set({
         status: "scheduled",
@@ -194,8 +194,8 @@ export async function scheduleFollowUp(
           eq(s.assistantActions.id, action.id),
           eq(s.assistantActions.status, "proposed")
         )
-      );
-    if (changed.affectedRows !== 1)
+      ).returning({ id: s.assistantActions.id });
+    if (changed.length !== 1)
       fail("Cette proposition a déjà été traitée.", "CONFLICT");
     await recordAudit(
       tx,
@@ -218,7 +218,7 @@ export async function unscheduleFollowUp(
 ) {
   const now = input.now ?? new Date();
   return db.transaction(async tx => {
-    const [changed] = await tx
+    const changed = await tx
       .update(s.assistantActions)
       .set({
         status: "cancelled",
@@ -230,8 +230,8 @@ export async function unscheduleFollowUp(
           eq(s.assistantActions.id, input.actionId),
           eq(s.assistantActions.status, "scheduled")
         )
-      );
-    if (changed.affectedRows !== 1)
+      ).returning({ id: s.assistantActions.id });
+    if (changed.length !== 1)
       fail(
         "Cette relance n’est plus programmée : elle a déjà été envoyée ou annulée.",
         "CONFLICT"
@@ -411,7 +411,7 @@ export async function syncAssistantActions(db: Database, now = new Date()) {
           "L’envoi n’a pas pu être confirmé : vérifiez avec le client avant de relancer.",
       };
     if (!next) continue;
-    const [changed] = await db
+    const changed = await db
       .update(s.assistantActions)
       .set({ ...next, completedAt: now })
       .where(
@@ -419,8 +419,8 @@ export async function syncAssistantActions(db: Database, now = new Date()) {
           eq(s.assistantActions.id, id),
           eq(s.assistantActions.status, "approved")
         )
-      );
-    if (changed.affectedRows !== 1) continue;
+      ).returning({ id: s.assistantActions.id });
+    if (changed.length !== 1) continue;
     if (next.status === "sent") sent++;
     else failed++;
   }

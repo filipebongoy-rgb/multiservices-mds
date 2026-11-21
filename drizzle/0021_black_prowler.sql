@@ -1,1 +1,0 @@
-ALTER TABLE `mds_requests` ADD `deletedAt` timestamp;

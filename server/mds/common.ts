@@ -235,7 +235,7 @@ export async function event(
   const [createdEvent] = await db
     .insert(s.events)
     .values({ requestId: request.id, status, message, actorType, actorUserId })
-    .$returningId();
+    .returning({ id: s.events.id });
   const p = await principal(db);
   await db.insert(s.notifications).values({
     requestId: request.id,

@@ -1,17 +1,24 @@
 import { and, eq } from "drizzle-orm";
-import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
+import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import { InsertUser, adminInvites, users } from "../drizzle/schema";
-import { createPool, type Pool } from "mysql2/promise";
 
-let _db: MySql2Database<Record<string, unknown>> | null = null;
-let _pool: Pool | null = null;
+let _db: PostgresJsDatabase<Record<string, unknown>> | null = null;
+let _client: ReturnType<typeof postgres> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _pool = createPool(process.env.DATABASE_URL);
-      _db = drizzle(_pool);
+      // `prepare: false` : le pooleur Supabase (mode transaction) refuse les
+      // requêtes préparées. Max 5 connexions pour rester sous la limite gratuite.
+      _client = postgres(process.env.DATABASE_URL, {
+        prepare: false,
+        max: 5,
+        idle_timeout: 20,
+        connect_timeout: 15,
+      });
+      _db = drizzle(_client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -21,8 +28,8 @@ export async function getDb() {
 }
 
 export async function closeDatabase() {
-  if (_pool) await _pool.end();
-  _pool = null;
+  if (_client) await _client.end();
+  _client = null;
   _db = null;
 }
 
@@ -69,7 +76,8 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: users.openId,
       set: updateSet,
     });
     if (user.email) {

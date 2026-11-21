@@ -183,7 +183,7 @@ export const documentsRouter = router({
             iv: encrypted.iv,
             authTag: encrypted.authTag,
           })
-          .$returningId();
+          .returning({ id: s.documents.id });
         if (input.kind === "contract" && scope.organizationId)
           await tx.insert(s.contracts).values({
             organizationId: scope.organizationId,

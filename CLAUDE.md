@@ -10,7 +10,7 @@ pnpm test
 pnpm dev
 ```
 
-Le serveur de développement écoute sur le port `3000` par défaut. L’application utilise React, Vite, Express, tRPC, Drizzle ORM, MySQL et wouter.
+Le serveur de développement écoute sur le port `3000` par défaut. L’application utilise React, Vite, Express, tRPC, Drizzle ORM, PostgreSQL (Supabase) et wouter.
 
 ## Architecture
 
@@ -19,7 +19,7 @@ Le serveur de développement écoute sur le port `3000` par défaut. L’applica
 - `server/mds/` : routeurs et règles métier côté serveur.
 - `server/_core/` : démarrage Express, authentification, configuration et stockage.
 - `shared/` : schémas et types partagés entre client et serveur.
-- `drizzle/` : schéma MySQL et migrations.
+- `drizzle/` : schéma PostgreSQL et migrations.
 - `scripts/` : seed, prérendu et opérations de maintenance.
 
 ## Routes importantes

@@ -367,7 +367,7 @@ export const stageProcedures = {
             status: "proposed",
             version: 0,
           })
-          .$returningId();
+          .returning({ id: s.paymentPlans.id });
         await tx
           .update(s.requests)
           .set({

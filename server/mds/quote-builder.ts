@@ -125,7 +125,7 @@ export const quoteBuilderRouter = router({
               status: "draft",
               reference: `MDS-D-${new Date().toISOString().slice(0, 10)}-${randomUUID()}`,
             })
-            .$returningId();
+            .returning({ id: s.quoteDrafts.id });
           id = created.id;
         }
         await bumpOperationRequest(tx, r, "quote:save");
@@ -190,7 +190,7 @@ export const quoteBuilderRouter = router({
             iv: encrypted.iv,
             authTag: encrypted.authTag,
           })
-          .$returningId();
+          .returning({ id: s.documents.id });
         await tx
           .update(s.quoteDrafts)
           .set({

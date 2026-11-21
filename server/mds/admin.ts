@@ -26,7 +26,7 @@ export const adminRouter = router({
     const succeedPayments = await db
       .select({ amountCents: s.payments.amountCents })
       .from(s.payments)
-      .where(sql`${s.payments.status} = "succeeded"`);
+      .where(eq(s.payments.status, "succeeded"));
 
     // 2. Dernières connexions (depuis users + audit)
     const logins = await db
@@ -37,7 +37,7 @@ export const adminRouter = router({
         createdAt: s.audit.createdAt,
       })
       .from(s.audit)
-      .where(sql`${s.audit.action} = "user.login"`)
+      .where(eq(s.audit.action, "user.login"))
       .orderBy(desc(s.audit.id))
       .limit(30);
 
@@ -147,10 +147,10 @@ export const adminRouter = router({
       day: "2-digit",
     }).format(new Date());
     const [visitTotals] = await db
-      .select({ total: sql<number>`count(*)` })
+      .select({ total: sql<number>`count(*)::int` })
       .from(s.siteVisits);
     const [todayVisitTotals] = await db
-      .select({ total: sql<number>`count(*)` })
+      .select({ total: sql<number>`count(*)::int` })
       .from(s.siteVisits)
       .where(sql`${s.siteVisits.visitDay} = ${visitDay}`);
 

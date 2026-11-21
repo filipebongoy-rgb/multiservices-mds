@@ -71,7 +71,7 @@ function parseSignaturePng(dataUrl: string): Buffer {
 
 export async function expireRequest(tx: Tx, request: s.MdsRequest) {
   if (!isExpired(request)) return false;
-  const [changed] = await tx
+  const changed = await tx
     .update(s.requests)
     .set({
       status: "expired",
@@ -85,8 +85,8 @@ export async function expireRequest(tx: Tx, request: s.MdsRequest) {
         eq(s.requests.id, request.id),
         eq(s.requests.version, request.version)
       )
-    );
-  if (changed.affectedRows !== 1) return false;
+    ).returning({ id: s.requests.id });
+  if (changed.length !== 1) return false;
   if (request.quoteStatus === "pending")
     await tx
       .update(s.quotes)
@@ -188,7 +188,7 @@ export async function autoConfirmRequest(requestId: number, actor: number) {
       ...times,
       ...margins,
       status: "confirmed",
-    }).$returningId();
+    }).returning({ id: s.appointments.id });
     await tx.insert(s.interventions).values({ requestId: r.id, appointmentId: appointment.id });
     // Par défaut, un collaborateur actif est réputé compétent pour tout le
     // catalogue MDS et couvert par la zone Rennes + 30 km. On choisit le moins
@@ -256,7 +256,7 @@ async function update(
   patch: Partial<typeof s.requests.$inferInsert>,
   action: string
 ) {
-  const [result] = await tx
+  const result = await tx
     .update(s.requests)
     .set({
       ...patch,
@@ -264,8 +264,8 @@ async function update(
       lastAction: action,
       lastActionVersion: r.version,
     })
-    .where(and(eq(s.requests.id, r.id), eq(s.requests.version, r.version)));
-  if (result.affectedRows !== 1)
+    .where(and(eq(s.requests.id, r.id), eq(s.requests.version, r.version))).returning({ id: s.requests.id });
+  if (result.length !== 1)
     fail("Le dossier a changé. Actualisez-le avant de continuer.", "CONFLICT");
 }
 
@@ -404,7 +404,7 @@ export const requestsRouter = router({
             consentAt: new Date(),
             status: service ? "awaiting_mds" : "to_analyze",
           })
-          .$returningId();
+          .returning({ id: s.requests.id });
         const r = await load(tx, created);
         if (waitlistRequested) {
           await tx.insert(s.waitlistEntries).values({
@@ -1221,7 +1221,7 @@ export const requestsRouter = router({
                 ...margins,
                 status: "confirmed",
               })
-              .$returningId();
+              .returning({ id: s.appointments.id });
             await tx
               .insert(s.interventions)
               .values({ requestId: r.id, appointmentId: appointment.id });
@@ -1251,7 +1251,7 @@ export const requestsRouter = router({
             if (r.quoteStatus !== "pending")
               fail("Aucun devis n’attend de réponse.", "CONFLICT");
             const accepted = input.action === "acceptQuote";
-            const [changed] = await tx
+            const changed = await tx
               .update(s.quotes)
               .set({
                 status: accepted ? "accepted" : "refused",
@@ -1262,8 +1262,8 @@ export const requestsRouter = router({
                   eq(s.quotes.requestId, r.id),
                   eq(s.quotes.status, "pending")
                 )
-              );
-            if (changed.affectedRows !== 1)
+              ).returning({ id: s.quotes.id });
+            if (changed.length !== 1)
               fail("Le devis courant est introuvable ou a changé.", "CONFLICT");
             patch = {
               status: accepted ? "awaiting_client" : "quote_refused",
@@ -1377,7 +1377,7 @@ export const requestsRouter = router({
                     iv: encrypted.iv,
                     authTag: encrypted.authTag,
                   })
-                  .$returningId();
+                  .returning({ id: s.documents.id });
                 signatureDocId = created.id;
               }
               await tx

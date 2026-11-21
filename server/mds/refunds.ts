@@ -394,7 +394,7 @@ export const refundProcedures = {
             reason: input.reason,
             requestedBy: ctx.user.id,
           })
-          .$returningId();
+          .returning({ id: s.refunds.id });
         await tx
           .update(s.payments)
           .set({ receivedAmountCents: actual.received })

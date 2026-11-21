@@ -133,15 +133,15 @@ export async function bumpOperationRequest(
   r: s.MdsRequest,
   action: string
 ) {
-  const [changed] = await tx
+  const changed = await tx
     .update(s.requests)
     .set({
       version: r.version + 1,
       lastAction: action,
       lastActionVersion: r.version,
     })
-    .where(and(eq(s.requests.id, r.id), eq(s.requests.version, r.version)));
-  if (changed.affectedRows !== 1)
+    .where(and(eq(s.requests.id, r.id), eq(s.requests.version, r.version))).returning({ id: s.requests.id });
+  if (changed.length !== 1)
     fail("Le dossier a changé. Actualisez-le avant de continuer.", "CONFLICT");
 }
 async function clientRequest(
@@ -223,7 +223,7 @@ export const operationsRouter = router({
           reportedBy: ctx.user.id,
           status: "open",
         })
-        .$returningId();
+        .returning({ id: s.incidents.id });
       await bumpOperationRequest(tx, r, "incident:report");
       const blocking = blockingIncidentKinds.some(kind => kind === input.kind);
       await event(
@@ -267,7 +267,7 @@ export const operationsRouter = router({
             reportedBy: actor,
             status: "open",
           })
-          .$returningId();
+          .returning({ id: s.incidents.id });
         await bumpOperationRequest(tx, r, "incident:complaint");
         await event(
           tx,
@@ -392,7 +392,7 @@ export const operationsRouter = router({
             version: 0,
             expiresAt: new Date(Date.now() + p.proposalExpiryHours * 3600000),
           })
-          .$returningId();
+          .returning({ id: s.extraWorks.id });
         await bumpOperationRequest(tx, r, "extra:propose");
         await event(
           tx,

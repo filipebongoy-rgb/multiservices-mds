@@ -4,7 +4,8 @@
  * Idempotent : ne touche pas aux dossiers clients existants.
  */
 import { getDb } from "../server/db";
-import { sql } from "drizzle-orm";
+import { and, count, eq, isNull, sql } from "drizzle-orm";
+import { services } from "../drizzle/schema";
 
 interface Entry {
   trade: string;
@@ -95,35 +96,66 @@ async function run() {
   if (!db) throw new Error("Base de données indisponible");
   let updated = 0;
   for (const e of entries) {
-    const res: any = await db.execute(sql`UPDATE mds_services SET
-      name = ${e.name},
-      description = ${e.description},
-      photoUrl = ${e.photoUrl},
-      priceCents = ${e.priceCents},
-      pricingRule = ${e.pricingRule},
-      pricingMode = ${e.pricingMode},
-      durationMinutes = ${e.durationMinutes},
-      travelMode = 'included',
-      zone = 'Rennes et 30 km',
-      active = 1,
-      deletedAt = NULL
-    WHERE trade = ${e.trade} AND LOWER(name) = LOWER(${e.name})`);
-    if (res[0]?.affectedRows) updated += res[0].affectedRows;
+    const changed = await db
+      .update(services)
+      .set({
+        name: e.name,
+        description: e.description,
+        photoUrl: e.photoUrl,
+        priceCents: e.priceCents,
+        pricingRule: e.pricingRule,
+        pricingMode: e.pricingMode,
+        durationMinutes: e.durationMinutes,
+        travelMode: "included",
+        zone: "Rennes et 30 km",
+        active: true,
+        deletedAt: null,
+      })
+      .where(
+        and(
+          eq(services.trade, e.trade),
+          sql`lower(${services.name}) = lower(${e.name})`
+        )
+      )
+      .returning({ id: services.id });
+    if (changed.length) updated += changed.length;
     else {
-      // name didn't match existing row (e.g. "Chasse d’eau")
-      const res2: any = await db.execute(sql`INSERT INTO mds_services
-        (seedKey, trade, name, description, photoUrl, priceCents, pricingRule, durationMinutes, questions, problemTypes, conditions, zone, active, pricingMode, travelMode)
-      VALUES (
-        ${"v1:" + e.trade + ":" + e.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")},
-        ${e.trade}, ${e.name}, ${e.description}, ${e.photoUrl},
-        ${e.priceCents}, ${e.pricingRule}, ${e.durationMinutes},
-        JSON_ARRAY(), JSON_ARRAY(), '', 'Rennes et 30 km', 1, ${e.pricingMode}, 'included'
-      )`);
-      if (res2[0]?.affectedRows) updated += res2[0].affectedRows;
+      // Pas de ligne au même nom (ex. « Chasse d’eau ») : on crée la prestation.
+      const created = await db
+        .insert(services)
+        .values({
+          seedKey:
+            "v1:" + e.trade + ":" + e.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          trade: e.trade,
+          name: e.name,
+          description: e.description,
+          photoUrl: e.photoUrl,
+          priceCents: e.priceCents,
+          pricingRule: e.pricingRule,
+          durationMinutes: e.durationMinutes,
+          questions: [],
+          problemTypes: [],
+          conditions: "",
+          zone: "Rennes et 30 km",
+          active: true,
+          pricingMode: e.pricingMode,
+          travelMode: "included",
+        })
+        .returning({ id: services.id });
+      updated += created.length;
     }
   }
-  const [cnt] = await db.execute(sql`SELECT COUNT(*) c FROM mds_services WHERE active = 1 AND deletedAt IS NULL`);
-  console.log(`Updated catalogue: ${updated} services updated, ${(cnt as any)[0].c} active.`);
+  const [cnt] = await db
+    .select({ total: count() })
+    .from(services)
+    .where(and(eq(services.active, true), isNull(services.deletedAt)));
+  console.log(`Updated catalogue: ${updated} services updated, ${cnt.total} active.`);
 }
 
-run().catch((e) => { console.error(e); process.exit(1); });
+run().then(
+  () => process.exit(0),
+  e => {
+    console.error(e);
+    process.exit(1);
+  }
+);

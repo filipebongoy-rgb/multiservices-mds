@@ -373,7 +373,7 @@ async function applyEvidence(
     return "live_deposit_received";
   }
   if (!invoice) throw new Error("Missing fulfillment invoice");
-  const [changed] = await tx
+  const changed = await tx
     .update(s.requests)
     .set({
       status: "paid",
@@ -387,8 +387,8 @@ async function applyEvidence(
         eq(s.requests.version, request.version),
         eq(s.requests.status, "invoiced")
       )
-    );
-  if (changed.affectedRows !== 1)
+    ).returning({ id: s.requests.id });
+  if (changed.length !== 1)
     throw new Error("Concurrent payment fulfillment change");
   await tx
     .update(s.invoices)

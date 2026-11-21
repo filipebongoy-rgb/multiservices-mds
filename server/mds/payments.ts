@@ -445,7 +445,7 @@ export const paymentsRouter = router({
             reference: `MDS-P-${randomUUID().slice(0, 18).toUpperCase()}`,
             expiresAt,
           })
-          .$returningId();
+          .returning({ id: s.payments.id });
         const [payment] = await tx
           .select()
           .from(s.payments)

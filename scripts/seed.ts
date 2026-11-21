@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { randomBytes } from "node:crypto";
 import { readFile, writeFile, chmod, access } from "node:fs/promises";
+import { dirname } from "node:path";
 import { eq } from "drizzle-orm";
 import { trades } from "../shared/mds";
 import * as s from "../drizzle/schema";
@@ -12,13 +13,18 @@ async function exists(path: string) { try { await access(path); return true; } c
 async function seed() {
   const db = await dbRequired();
   await db.transaction(async tx => {
-    await tx.insert(s.settings).values({ id: 1, legalNotice: "" }).onDuplicateKeyUpdate({ set: { id: 1 } });
+    await tx.insert(s.settings).values({ id: 1, legalNotice: "" }).onConflictDoNothing();
     const p = await principal(tx, true);
     if (!p.trackingSecret) {
       await tx.update(s.settings).set({ trackingSecret: randomBytes(32).toString("hex") }).where(eq(s.settings.id, 1));
       console.log("Clé de suivi applicative indépendante initialisée une fois, non exposée.");
     }
-    if (!p.artisanUserId && !p.activationHash) {
+    // Hébergement sans le dossier d’origine (Render, etc.) : pas de fichier privé
+    // possible ; le premier administrateur passe par une invitation (guide).
+    const activationAvailable = await exists(dirname(activationFile));
+    if (!activationAvailable) {
+      console.log("Fichier d’activation indisponible ici : utilisez l’invitation administrateur.");
+    } else if (!p.artisanUserId && !p.activationHash) {
       let code: string;
       if (await exists(activationFile)) {
         code = (await readFile(activationFile, "utf8")).trim();

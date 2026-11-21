@@ -130,7 +130,7 @@ export async function runAutomation(
     const [created] = await tx
       .insert(s.automationRuns)
       .values({ runKey, taskUid, source, status: "running", startedAt: now })
-      .$returningId();
+      .returning({ id: s.automationRuns.id });
     return { id: created.id, duplicate: false };
   });
   if (run.duplicate)
@@ -593,7 +593,11 @@ export function registerAutomationRoutes(app: Express) {
         null
       );
       return res.json(result);
-    } catch {
+    } catch (error) {
+      console.error(
+        "[MDS] maintenance planifiée en échec :",
+        error instanceof Error ? error.message : "erreur inconnue"
+      );
       return res.status(500).json({
         error:
           "Le traitement MDS n’a pas abouti. Vérifiez l’activation de la tâche et le journal.",

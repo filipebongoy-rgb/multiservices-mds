@@ -149,7 +149,7 @@ export const locationRouter = router({
       if (destination && !intervention.approachNotifiedAt) {
         const distance = distanceMeters(input, destination);
         if (distance <= APPROACH_DISTANCE_M) {
-          const [result] = await db
+          const result = await db
             .update(s.interventions)
             .set({ approachNotifiedAt: new Date() })
             .where(
@@ -157,8 +157,8 @@ export const locationRouter = router({
                 eq(s.interventions.id, intervention.id),
                 isNull(s.interventions.approachNotifiedAt)
               )
-            );
-          if (result.affectedRows > 0) {
+            ).returning({ id: s.interventions.id });
+          if (result.length > 0) {
             approaching = true;
             await event(
               db,

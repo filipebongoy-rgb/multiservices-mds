@@ -147,7 +147,7 @@ export const mdsRouter = router({
             "CONFLICT"
           );
         return db.transaction(async tx => {
-          const [changed] = await tx
+          const changed = await tx
             .update(s.users)
             .set({
               name: input.name,
@@ -158,8 +158,8 @@ export const mdsRouter = router({
               postcode: input.postcode || null,
               city: input.city || null,
             })
-            .where(eq(s.users.id, ctx.user.id));
-          if (changed.affectedRows !== 1)
+            .where(eq(s.users.id, ctx.user.id)).returning({ id: s.users.id });
+          if (changed.length !== 1)
             fail("Votre profil est introuvable.", "NOT_FOUND");
           await recordAudit(
             tx,
@@ -397,7 +397,7 @@ export const mdsRouter = router({
           const [created] = await tx
             .insert(s.services)
             .values({ ...values, pricingVersion: 1 })
-            .$returningId();
+            .returning({ id: s.services.id });
           serviceId = created.id;
           await tx.insert(s.tariffs).values({
             serviceId: created.id,
@@ -553,7 +553,7 @@ export const mdsRouter = router({
               authorType,
               moderation: "pending",
             })
-            .$returningId();
+            .returning({ id: s.reviews.id });
           await recordAudit(
             tx,
             ctx.user.id,
@@ -615,7 +615,7 @@ export const mdsRouter = router({
         await tx
           .insert(s.notificationReads)
           .values({ notificationId: input.id, userId: ctx.user.id })
-          .onDuplicateKeyUpdate({ set: { notificationId: input.id } });
+          .onConflictDoNothing();
         return { success: true as const };
       });
     }),

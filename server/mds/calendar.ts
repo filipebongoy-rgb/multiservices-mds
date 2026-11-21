@@ -421,7 +421,7 @@ export const calendarRouter = router({
         const [created] = await tx
           .insert(s.availability)
           .values(values)
-          .$returningId();
+          .returning({ id: s.availability.id });
         id = created.id;
       }
       await recordAudit(

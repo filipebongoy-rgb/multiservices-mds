@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getTableName, type SQL } from "drizzle-orm";
-import { MySqlDialect } from "drizzle-orm/mysql-core";
+import { PgDialect } from "drizzle-orm/pg-core";
 import express from "express";
 import type { Server } from "node:http";
 import * as s from "../../drizzle/schema";
@@ -42,21 +42,20 @@ import { processPaymentEvent, registerPaymentWebhook } from "./payment-webhook";
 
 type Row = Record<string, any>;
 // Private mock: no dependence on the concurrent modifications of test-db.ts, no production import/write.
-const dialect = new MySqlDialect();
+const dialect = new PgDialect();
 function matches(sql: SQL | undefined, row: Row) {
   if (!sql) return true;
   const query = dialect.sqlToQuery(sql);
   const tokens =
     query.sql.match(
-      /`[^`]+`(?:\.`[^`]+`)?|\(|\)|,|<=|>=|<>|!=|=|<|>|\?|\b\w+\b/g
+      /"[^"]+"(?:\."[^"]+")?|\(|\)|,|<=|>=|<>|!=|=|<|>|\$\d+|\b\w+\b/g
     ) || [];
   let pos = 0;
-  let parameter = 0;
   function value(): any {
     const token = tokens[pos++];
-    if (token === "?") return query.params[parameter++];
-    if (token.startsWith("`")) {
-      const pieces = token.split("`").filter(x => x && x !== ".");
+    if (/^\$\d+$/.test(token)) return query.params[Number(token.slice(1)) - 1];
+    if (token.startsWith('"')) {
+      const pieces = token.split('"').filter(x => x && x !== ".");
       return pieces.length > 1 ? row[pieces.join(".")] : row[pieces[0]];
     }
     return token === "true"
@@ -199,6 +198,7 @@ class PaymentTestDatabase {
     let locked = false;
     let data: Row = {};
     let max = Infinity;
+    let returning: { fields?: Row } | undefined;
     const joins: { table: any; sql: SQL }[] = [];
     const self = this;
     const query: any = {
@@ -233,9 +233,9 @@ class PaymentTestDatabase {
         data = v;
         return query;
       },
-      $returningId: async () => {
-        const result = await execute();
-        return [{ id: result[0].insertId }];
+      returning(returned?: Row) {
+        returning = { fields: returned };
+        return query;
       },
       then: (yes: any, no: any) => execute().then(yes, no),
     };
@@ -246,6 +246,20 @@ class PaymentTestDatabase {
           val,
         ])
       );
+    // PostgreSQL ne renvoie des lignes que si `returning` est demandé.
+    const project = (list: Row[]) =>
+      returning
+        ? list.map(r =>
+            returning!.fields
+              ? Object.fromEntries(
+                  Object.entries(returning!.fields).map(([key, col]) => [
+                    key,
+                    r[(col as any).name],
+                  ])
+                )
+              : structuredClone(r)
+          )
+        : [];
     async function execute() {
       const name = getTableName(table);
       if (locked && name === "mds_settings") await acquire();
@@ -306,20 +320,21 @@ class PaymentTestDatabase {
                 invoiceId: null,
               }
             : {};
-        rows.push({
+        const inserted = {
           id,
           createdAt: new Date(),
           updatedAt: new Date(),
           ...defaults,
           ...structuredClone(data),
-        });
-        return [{ insertId: id, affectedRows: 1 }];
+        };
+        rows.push(inserted);
+        return project([inserted]);
       }
       const selected = rows
         .filter(r => matches(condition, { ...r, ...qualify(r, table) }))
         .slice(0, max);
       for (const r of selected) Object.assign(r, structuredClone(data));
-      return [{ affectedRows: selected.length }];
+      return project(selected);
     }
     return query;
   }

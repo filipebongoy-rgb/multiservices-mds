@@ -605,7 +605,7 @@ export const assistantRouter = router({
         version: 0,
         status: "draft",
         reference: `MDS-D-${now.toISOString().slice(0, 10)}-${Date.now()}`,
-      }).$returningId();
+      }).returning({ id: s.quoteDrafts.id });
       await recordAudit(db, ctx.user.id, "assistant.quoteDraft.prepare", "quoteDraft", created.id);
       return { created: true as const, draftId: created.id, totalCents: totals.totalCents, note: `${provisionalPrice != null ? "Une estimation provisoire" : "Le brouillon de devis"} de ${new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(totals.totalCents / 100)} a été préparée. Vérifiez le montant avant génération et envoi.` };
     }),
@@ -627,7 +627,7 @@ export const assistantRouter = router({
       body: draft.body,
       status: "proposed",
       dedupeKey,
-    }).$returningId();
+    }).returning({ id: s.assistantActions.id });
     await recordAudit(db, ctx.user.id, "assistant.draft", "assistant_action", created.id);
     return {
       id: created.id,
@@ -652,8 +652,8 @@ export const assistantRouter = router({
     if ((input.subject && input.subject !== action.subject) || (input.body && input.body !== action.body)) {
       const subject = input.subject ?? action.subject;
       const body = input.body ?? action.body;
-      const [edited] = await db.update(s.assistantActions).set({ subject, body }).where(and(eq(s.assistantActions.id, action.id), eq(s.assistantActions.status, "proposed")));
-      if (edited.affectedRows !== 1) fail("Cette proposition a déjà été traitée.", "CONFLICT");
+      const edited = await db.update(s.assistantActions).set({ subject, body }).where(and(eq(s.assistantActions.id, action.id), eq(s.assistantActions.status, "proposed"))).returning({ id: s.assistantActions.id });
+      if (edited.length !== 1) fail("Cette proposition a déjà été traitée.", "CONFLICT");
       action.subject = subject;
       action.body = body;
     }

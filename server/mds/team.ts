@@ -41,7 +41,7 @@ export const teamRouter = router({
           await recordAudit(tx, ctx.user.id, "team.invite.update", "artisanTeam", existing.id);
           return { id: existing.id, status: user ? "active" as const : "pending" as const };
         }
-        const [created] = await tx.insert(s.artisanTeam).values({ ownerUserId: ctx.user.id, userId: user?.id ?? null, email: input.email, displayName: input.displayName, role: input.role, status: user ? "active" : "pending" }).$returningId();
+        const [created] = await tx.insert(s.artisanTeam).values({ ownerUserId: ctx.user.id, userId: user?.id ?? null, email: input.email, displayName: input.displayName, role: input.role, status: user ? "active" : "pending" }).returning({ id: s.artisanTeam.id });
         if (user) {
           await tx.insert(s.notifications).values({ userId: user.id, audience: "artisan", title: "Accès collaborateur MDS", message: "Vous pouvez maintenant consulter et réaliser les interventions qui vous sont affectées." });
         }

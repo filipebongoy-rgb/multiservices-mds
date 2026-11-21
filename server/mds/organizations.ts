@@ -50,7 +50,7 @@ export const organizationsRouter = router({
         const [created] = await tx
           .insert(s.organizations)
           .values({ ...input, ownerUserId: ctx.user.id })
-          .$returningId();
+          .returning({ id: s.organizations.id });
         await tx.insert(s.members).values({
           organizationId: created.id,
           userId: ctx.user.id,
@@ -196,7 +196,7 @@ export const organizationsRouter = router({
       return db.transaction(async tx => {
         await principal(tx, true);
         await membership(tx, input.organizationId, ctx.user, true);
-        const [created] = await tx.insert(s.sites).values(input).$returningId();
+        const [created] = await tx.insert(s.sites).values(input).returning({ id: s.sites.id });
         await recordAudit(tx, ctx.user.id, "site.create", "site", created.id);
         await tx.insert(s.notifications).values({
           organizationId: input.organizationId,
@@ -277,7 +277,7 @@ export const organizationsRouter = router({
             invitedBy: ctx.user.id,
             expiresAt: new Date(Date.now() + 7 * 86400000),
           })
-          .$returningId();
+          .returning({ id: s.invitations.id });
         await recordAudit(
           tx,
           ctx.user.id,

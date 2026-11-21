@@ -287,7 +287,7 @@ export async function processOutbox(
     )
     .limit(maximum);
   for (const row of abandoned) {
-    const [abandonedClaim] = await db
+    const abandonedClaim = await db
       .update(s.messageOutbox)
       .set({
         status: "uncertain",
@@ -302,8 +302,8 @@ export async function processOutbox(
           eq(s.messageOutbox.attempts, row.attempts),
           lte(s.messageOutbox.leaseUntil, now)
         )
-      );
-    if (abandonedClaim.affectedRows === 1) uncertain++;
+      ).returning({ id: s.messageOutbox.id });
+    if (abandonedClaim.length === 1) uncertain++;
   }
   const rows = await db
     .select()
@@ -333,7 +333,7 @@ export async function processOutbox(
         );
       continue;
     }
-    const [claim] = await db
+    const claim = await db
       .update(s.messageOutbox)
       .set({
         status: "sending",
@@ -346,11 +346,11 @@ export async function processOutbox(
           eq(s.messageOutbox.status, "queued"),
           eq(s.messageOutbox.attempts, row.attempts)
         )
-      );
-    if (claim.affectedRows !== 1) continue;
+      ).returning({ id: s.messageOutbox.id });
+    if (claim.length !== 1) continue;
     try {
       const sent = await deliverMessage(row, p);
-      const [completedClaim] = await db
+      const completedClaim = await db
         .update(s.messageOutbox)
         .set({
           status: sent.status,
@@ -367,8 +367,8 @@ export async function processOutbox(
             eq(s.messageOutbox.status, "sending"),
             eq(s.messageOutbox.attempts, row.attempts + 1)
           )
-        );
-      if (completedClaim.affectedRows === 1) accepted++;
+        ).returning({ id: s.messageOutbox.id });
+      if (completedClaim.length === 1) accepted++;
       else uncertain++;
     } catch (e) {
       const failure =
@@ -381,7 +381,7 @@ export async function processOutbox(
         : retry
           ? "queued"
           : "failed";
-      const [failedClaim] = await db
+      const failedClaim = await db
         .update(s.messageOutbox)
         .set({
           status,
@@ -397,8 +397,8 @@ export async function processOutbox(
             eq(s.messageOutbox.status, "sending"),
             eq(s.messageOutbox.attempts, row.attempts + 1)
           )
-        );
-      if (failedClaim.affectedRows === 1) {
+        ).returning({ id: s.messageOutbox.id });
+      if (failedClaim.length === 1) {
         if (failure.uncertain) uncertain++;
         else failed++;
       }

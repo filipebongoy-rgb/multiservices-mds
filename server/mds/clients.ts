@@ -1,4 +1,4 @@
-import { eq, like, or } from "drizzle-orm";
+import { eq, ilike, or } from "drizzle-orm";
 import { z } from "zod";
 import { router } from "../_core/trpc";
 import * as s from "../../drizzle/schema";
@@ -50,7 +50,7 @@ export async function findOrCreateClient(
       email: input.email.trim(),
       phone: input.phone.trim(),
     })
-    .$returningId();
+    .returning({ id: s.clients.id });
   const [row] = await tx
     .select()
     .from(s.clients)
@@ -69,9 +69,9 @@ export const clientsRouter = router({
       .where(
         search
           ? or(
-              like(s.clients.name, `%${search}%`),
-              like(s.clients.email, `%${search}%`),
-              like(s.clients.phone, `%${search}%`)
+              ilike(s.clients.name, `%${search}%`),
+              ilike(s.clients.email, `%${search}%`),
+              ilike(s.clients.phone, `%${search}%`)
             )
           : undefined
       );

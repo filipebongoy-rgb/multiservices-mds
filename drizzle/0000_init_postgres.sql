@@ -803,3 +803,17 @@ CREATE UNIQUE INDEX "site_visits_visitor_day" ON "mds_site_visits" USING btree (
 CREATE INDEX "voice_call_logs_status" ON "mds_voice_call_logs" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "voice_call_logs_request" ON "mds_voice_call_logs" USING btree ("requestId");--> statement-breakpoint
 CREATE INDEX "waitlist_status_created" ON "mds_waitlist_entries" USING btree ("status","createdAt");
+--> statement-breakpoint
+-- Supabase expose le schéma public par son API : on active la sécurité par ligne
+-- (sans règle = aucun accès pour les rôles anon/authenticated). Le serveur MDS
+-- se connecte avec le rôle propriétaire de la base, qui n'est pas concerné.
+DO $$
+DECLARE t record;
+BEGIN
+  FOR t IN
+    SELECT tablename FROM pg_tables
+    WHERE schemaname = 'public' AND (tablename LIKE 'mds\_%' OR tablename = 'users')
+  LOOP
+    EXECUTE format('ALTER TABLE %I.%I ENABLE ROW LEVEL SECURITY', 'public', t.tablename);
+  END LOOP;
+END $$;

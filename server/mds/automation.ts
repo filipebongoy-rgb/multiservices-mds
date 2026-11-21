@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import { and, eq, inArray, isNull, lte } from "drizzle-orm";
 import { z } from "zod";
 import { jwtVerify } from "jose";
@@ -24,7 +24,26 @@ import {
   retrieveMessageStatus,
 } from "./outbox";
 
+/**
+ * Déclencheur externe (hébergement hors Manus) : un cron gratuit appelle
+ * l’endpoint avec `Authorization: Bearer <MDS_CRON_SECRET>`. Le secret doit
+ * faire au moins 32 caractères ; sans lui, cette voie reste fermée.
+ */
+export const EXTERNAL_CRON_TASK = "external-cron";
+const MIN_CRON_SECRET_LENGTH = 32;
+export function externalCronAuthorized(req: Pick<Request, "headers">) {
+  const secret = process.env.MDS_CRON_SECRET ?? "";
+  if (secret.length < MIN_CRON_SECRET_LENGTH) return false;
+  const header = req.headers.authorization ?? "";
+  const match = /^Bearer (.+)$/.exec(header);
+  if (!match) return false;
+  const given = Buffer.from(match[1]);
+  const expected = Buffer.from(secret);
+  return given.length === expected.length && timingSafeEqual(given, expected);
+}
+
 export async function scheduledIdentity(req: Pick<Request, "headers">) {
+  if (externalCronAuthorized(req)) return EXTERNAL_CRON_TASK;
   const token = parse(req.headers.cookie || "").app_session_id;
   const secret = process.env.MANUS_JWT_SECRET,
     projectId = process.env.MANUS_PROJECT_ID,

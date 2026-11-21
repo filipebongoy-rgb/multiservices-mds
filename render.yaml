@@ -1,0 +1,25 @@
+# Hébergement gratuit : Render (serveur) + TiDB Cloud Starter (base MySQL).
+# Guide : HEBERGEMENT-GRATUIT.md
+services:
+  - type: web
+    name: multiservices-mds
+    runtime: docker
+    plan: free
+    dockerCommand: pnpm start:free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # à saisir dans Render, jamais dans GitHub
+      - key: MANUS_JWT_SECRET
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MDS_CRON_SECRET
+        generateValue: true
+      - key: MDS_VISIT_SALT
+        generateValue: true
+      - key: MDS_SEED_ON_START
+        value: "1" # premier lancement : charge le catalogue ; à retirer ensuite

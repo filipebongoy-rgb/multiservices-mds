@@ -193,3 +193,28 @@ describe("maintenance idempotente en mémoire", () => {
     expect(db.rows(s.requests)[0].status).toBe("in_progress");
   });
 });
+
+describe("déclencheur externe par secret (hébergement gratuit)", () => {
+  const secret = "s".repeat(40);
+  const bearer = (value: string) => ({ headers: { authorization: `Bearer ${value}` } });
+  afterEach(() => vi.unstubAllEnvs());
+  it("accepte le bon secret", async () => {
+    vi.stubEnv("MDS_CRON_SECRET", secret);
+    await expect(scheduledIdentity(bearer(secret))).resolves.toBe("external-cron");
+  });
+  it("refuse un mauvais secret, un secret de longueur différente et l’absence d’en-tête", async () => {
+    vi.stubEnv("MDS_CRON_SECRET", secret);
+    await expect(scheduledIdentity(bearer("x".repeat(40)))).rejects.toThrow();
+    await expect(scheduledIdentity(bearer(secret + "x"))).rejects.toThrow();
+    await expect(scheduledIdentity({ headers: {} })).rejects.toThrow();
+    await expect(
+      scheduledIdentity({ headers: { authorization: secret } })
+    ).rejects.toThrow();
+  });
+  it("reste fermé tant que le secret est absent ou trop court", async () => {
+    vi.stubEnv("MDS_CRON_SECRET", "");
+    await expect(scheduledIdentity(bearer(""))).rejects.toThrow();
+    vi.stubEnv("MDS_CRON_SECRET", "court");
+    await expect(scheduledIdentity(bearer("court"))).rejects.toThrow();
+  });
+});
